@@ -158,6 +158,7 @@ const LOGIN_SCREEN=document.getElementById('loginScreen');
 </div>
 <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px">
 <button class="btn danger" id="deleteReportLink">Report 삭제</button>
+<button class="btn danger" id="deleteTestItemLink" style="background:#fff4e5;border-color:#e59a3a;color:#9a5b00">시험 항목 삭제</button>
 <button class="btn ghost" id="openReportFile" style="display:none">Report 열기</button>
 <button class="btn primary" id="saveReportLink">연결 저장</button>
 </div>
@@ -366,7 +367,7 @@ async function refreshReportLinks(){
   b.onclick=async()=>{
    const no=b.dataset.no, x=DATA.find(r=>String(r.No)===String(no));
    if(!x)return;
-   currentReportNo=no; currentReportFile=null;
+   currentReportNo=no; currentReportFile=null; document.getElementById('reportMeta').dataset.no=no;
    document.getElementById('reportMeta').textContent=`${x?.Model||''} | ${x?.['Report No']||'-'} | ${x?.['CR No']||'-'}`;
    document.getElementById('chosenFile').textContent='선택된 파일 없음';
    const saved=await getReportFromDB(no).catch(()=>null);
@@ -940,6 +941,97 @@ document.getElementById('manualSaveContinue').onclick=()=>saveManualV16(false);
       }
     });
     obs.observe(modal,{attributes:true,attributeFilter:['class']});
+  }
+})();
+</script>
+
+<script>
+/* v21: 시험 항목(전체 DB 행) 삭제 */
+(function(){
+  async function reloadAllDataV21(){
+    const {data,error}=await supabaseClient.from('reliability_tests')
+      .select('*').order('request_date',{ascending:true}).order('id',{ascending:true});
+    if(error)throw error;
+    DATA=(data||[]).map(mapDbRow);
+    filtered=[...DATA];
+    try{initFilters()}catch(e){}
+    try{render()}catch(e){}
+    try{initReportModels()}catch(e){}
+    try{renderReport()}catch(e){}
+    try{renderManualList()}catch(e){}
+  }
+
+  async function deleteTestItemV21(no){
+    const x=DATA.find(r=>Number(r.No)===Number(no));
+    if(!x)throw new Error('선택한 시험 항목을 찾을 수 없습니다.');
+
+    let info=null;
+    try{ info=await getReportInfoV16(no); }catch(e){}
+
+    const title=(x.Model||'미지정 Model');
+    const report=(x['Report No']||'연결된 Report 없음');
+    const ok=confirm(
+      '시험 항목 전체를 삭제하시겠습니까?\\n\\n'+
+      'Model: '+title+'\\n'+
+      'Report No.: '+report+'\\n\\n'+
+      '시험 데이터가 DB에서 완전히 삭제됩니다.\\n'+
+      '연결된 Report 파일이 있으면 Storage에서도 함께 삭제됩니다.\\n\\n'+
+      '삭제 후 복구할 수 없습니다.'
+    );
+    if(!ok)return false;
+
+    const btn=document.getElementById('deleteTestItemLink');
+    const old=btn?.textContent;
+    if(btn){btn.disabled=true;btn.textContent='삭제 중...';}
+
+    try{
+      // Remove file first when connected.
+      if(info?.report_path){
+        const s=await supabaseClient.storage.from(REPORT_BUCKET_V16).remove([info.report_path]);
+        if(s.error)throw s.error;
+      }
+
+      // Delete the full database row.
+      const d=await supabaseClient.from('reliability_tests')
+        .delete().eq('id',Number(no)).select('*').single();
+      if(d.error)throw d.error;
+
+      await reloadAllDataV21();
+
+      // Close both modals/views cleanly.
+      const rm=document.getElementById('reportModal');
+      if(rm)rm.classList.remove('show');
+
+      alert('시험 항목이 완전히 삭제되었습니다.');
+      return true;
+    }catch(e){
+      console.error(e);
+      alert('시험 항목 삭제 실패: '+(e.message||e.details||e));
+      return false;
+    }finally{
+      if(btn){btn.disabled=false;btn.textContent=old||'시험 항목 삭제';}
+    }
+  }
+
+  // Set handler every time the Report modal opens from any report link/register.
+  document.addEventListener('click',function(e){
+    const b=e.target.closest('.report-link,.report-register');
+    if(!b)return;
+    const no=b.dataset.no;
+    setTimeout(function(){
+      const btn=document.getElementById('deleteTestItemLink');
+      if(!btn)return;
+      btn.style.display='inline-block';
+      btn.onclick=function(){ deleteTestItemV21(no); };
+    },350);
+  },true);
+
+  const btn=document.getElementById('deleteTestItemLink');
+  if(btn){
+    btn.onclick=function(){
+      const no=window.currentReportNo || document.getElementById('reportMeta')?.dataset?.no;
+      if(no!=null) deleteTestItemV21(no);
+    };
   }
 })();
 </script>
