@@ -157,7 +157,7 @@ const LOGIN_SCREEN=document.getElementById('loginScreen');
 <div id="chosenFile" class="file-note">선택된 파일 없음</div><div id="uploadProgress" class="upload-progress" style="display:none"><div></div></div>
 </div>
 <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px">
-<button class="btn danger" id="deleteReportLink" style="display:none">Report 삭제</button>
+<button class="btn danger" id="deleteReportLink">Report 삭제</button>
 <button class="btn ghost" id="openReportFile" style="display:none">Report 열기</button>
 <button class="btn primary" id="saveReportLink">연결 저장</button>
 </div>
@@ -852,63 +852,91 @@ document.getElementById('manualSaveContinue').onclick=()=>saveManualV16(false);
 
 <script>
 (function(){
-  async function refreshDeleteButtonV19(no){
+  async function refreshDeleteButtonV20(no){
     const btn=document.getElementById('deleteReportLink');
     if(!btn)return;
-    btn.style.display='none';
-    btn.onclick=null;
-    try{
-      const info=await getReportInfoV16(no);
-      if(!info || !info.report_path)return;
-      btn.style.display='inline-block';
-      btn.onclick=async function(){
-        if(!confirm('이 Report 파일을 삭제하시겠습니까?\n\n'+(info.report_filename||info.report_path)+'\n\n삭제 후 복구할 수 없습니다.'))return;
-        btn.disabled=true; const old=btn.textContent; btn.textContent='삭제 중...';
-        try{
+
+    btn.style.display='inline-block';
+    btn.textContent='Report 삭제';
+    btn.disabled=false;
+
+    btn.onclick=async function(){
+      let info=null;
+      try{ info=await getReportInfoV16(no); }catch(e){}
+      const name=info?.report_filename || DATA.find(r=>Number(r.No)===Number(no))?.['Report No'] || '연결된 Report';
+
+      if(!confirm('다음 Report를 삭제하시겠습니까?\n\n'+name+
+        '\n\n파일이 있으면 Supabase Storage에서도 삭제되고,\nReport No. 및 파일 연결 정보도 함께 삭제됩니다.')) return;
+
+      btn.disabled=true;
+      const oldtxt=btn.textContent;
+      btn.textContent='삭제 중...';
+
+      try{
+        // 1) Delete the physical file when one exists.
+        if(info?.report_path){
           const s=await supabaseClient.storage.from(REPORT_BUCKET_V16).remove([info.report_path]);
           if(s.error)throw s.error;
-          const d=await supabaseClient.from('reliability_tests')
-            .update({report_path:null,report_filename:null,report_mime:null,updated_at:new Date().toISOString()})
-            .eq('id',Number(no)).select('*').single();
-          if(d.error)throw d.error;
-          const mapped=mapDbRow(d.data);
-          const i=DATA.findIndex(r=>Number(r.No)===Number(no));
-          if(i>=0)DATA[i]=mapped;
-          filtered=[...DATA];
-          try{render()}catch(e){}
-          try{initReportModels()}catch(e){}
-          try{renderReport()}catch(e){}
-          document.getElementById('openReportFile').style.display='none';
-          document.getElementById('reportStoragePath').textContent='';
-          document.getElementById('reportHelp').textContent='Report 파일이 삭제되었습니다.';
-          btn.style.display='none';
-          alert('Report가 삭제되었습니다.');
-        }catch(e){
-          console.error(e);
-          alert('Report 삭제 실패: '+(e.message||e.details||e));
-        }finally{
-          btn.disabled=false;btn.textContent=old;
         }
-      };
-    }catch(e){}
+
+        // 2) Remove the Report connection and Report No.
+        const d=await supabaseClient.from('reliability_tests')
+          .update({
+            report_path:null,
+            report_filename:null,
+            report_mime:null,
+            report_no:null,
+            updated_at:new Date().toISOString()
+          })
+          .eq('id',Number(no))
+          .select('*').single();
+
+        if(d.error)throw d.error;
+
+        // 3) Refresh local data/UI.
+        const mapped=mapDbRow(d.data);
+        const idx=DATA.findIndex(r=>Number(r.No)===Number(no));
+        if(idx>=0) DATA[idx]=mapped;
+        filtered=[...DATA];
+
+        try{initFilters()}catch(e){}
+        try{render()}catch(e){}
+        try{initReportModels()}catch(e){}
+        try{renderReport()}catch(e){}
+        try{renderManualList()}catch(e){}
+
+        document.getElementById('openReportFile').style.display='none';
+        document.getElementById('reportStoragePath').textContent='';
+        document.getElementById('reportHelp').textContent='Report가 삭제되었습니다.';
+        document.getElementById('chosenFile').textContent='선택된 파일 없음';
+        document.getElementById('reportFile').value='';
+        btn.style.display='none';
+
+        alert('Report 삭제가 완료되었습니다.');
+      }catch(e){
+        console.error(e);
+        alert('Report 삭제 실패: '+(e.message||e.details||e));
+      }finally{
+        btn.disabled=false;
+        btn.textContent=oldtxt;
+      }
+    };
   }
 
-  // Refresh when Report modal's open/save UI is used.
   document.addEventListener('click', function(e){
     const b=e.target.closest('.report-link,.report-register');
     if(!b)return;
     const no=b.dataset.no;
-    setTimeout(function(){refreshDeleteButtonV19(no)},500);
+    setTimeout(function(){refreshDeleteButtonV20(no)},300);
   }, true);
 
-  // If modal is already open on page load, keep button hidden until a Report is selected.
   const modal=document.getElementById('reportModal');
   if(modal){
     const obs=new MutationObserver(function(){
       if(modal.classList.contains('show')){
         const meta=document.getElementById('reportMeta')?.textContent||'';
         const x=DATA.find(r=>meta.startsWith(String(r.Model||'')));
-        if(x)refreshDeleteButtonV19(x.No);
+        if(x)refreshDeleteButtonV20(x.No);
       }
     });
     obs.observe(modal,{attributes:true,attributeFilter:['class']});
