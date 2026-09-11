@@ -158,7 +158,7 @@ const LOGIN_SCREEN=document.getElementById('loginScreen');
 </div>
 <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px">
 <button class="btn danger" id="deleteReportLink">Report 삭제</button>
-<button class="btn danger" id="deleteTestItemLink" type="button" style="background:#fff4e5;border-color:#e59a3a;color:#9a5b00">시험 항목 삭제</button>
+<button class="btn danger" id="deleteTestItemLink" type="button" onclick="window.deleteTestItemNow()" style="background:#fff4e5;border-color:#e59a3a;color:#9a5b00;cursor:pointer">시험 항목 삭제</button>
 <button class="btn ghost" id="openReportFile" style="display:none">Report 열기</button>
 <button class="btn primary" id="saveReportLink">연결 저장</button>
 </div>
@@ -755,64 +755,14 @@ async function showReportModalV16(no){
   ensureReportStorageMetaV16();
   const x=DATA.find(r=>String(r.No)===String(no)); if(!x)return;
   currentReportNo=String(no);currentReportFile=null;
+  document.getElementById('reportModal').dataset.itemId=String(no);
   document.getElementById('reportMeta').textContent=`${x.Model||''} | ${x['Report No']||'-'} | ${x['CR No']||'-'}`;
   document.getElementById('chosenFile').textContent='선택된 파일 없음';
   document.getElementById('reportStoragePath').textContent='';
   const p=document.getElementById('uploadProgress');if(p)p.style.display='none';
   const openBtn=document.getElementById('openReportFile');openBtn.style.display='none';
   const itemDelBtn=document.getElementById('deleteTestItemLink');
-  if(itemDelBtn){
-    itemDelBtn.disabled=false;
-    itemDelBtn.onclick=async()=>{
-      const targetNo=Number(currentReportNo);
-      if(!targetNo){alert('삭제할 시험 항목을 찾을 수 없습니다.');return}
-      const row=DATA.find(r=>Number(r.No)===targetNo);
-      const label=row?`${row.Model||''} / ${row['Report No']||'-'}`:`No.${targetNo}`;
-      if(!confirm(`시험 항목 자체를 삭제하시겠습니까?\n\n${label}\n\nReport 파일이 있으면 Storage에서도 함께 삭제되고, 시험 데이터 행도 DB에서 완전히 삭제됩니다.`))return;
-
-      itemDelBtn.disabled=true;
-      const oldText=itemDelBtn.textContent;
-      itemDelBtn.textContent='삭제 중...';
-
-      try{
-        // Remove linked Report from Storage first when present.
-        let info=null;
-        try{ info=await getReportInfoV16(targetNo); }catch(_){}
-        if(info?.report_path){
-          const sr=await supabaseClient.storage.from(REPORT_BUCKET_V16).remove([info.report_path]);
-          if(sr.error)throw sr.error;
-        }
-
-        // Delete the actual test row from Supabase.
-        const {error}=await supabaseClient.from('reliability_tests').delete().eq('id',targetNo);
-        if(error)throw error;
-
-        // Refresh from server to guarantee persistence after reload.
-        const {data,error:loadErr}=await supabaseClient
-          .from('reliability_tests').select('*').order('id',{ascending:true});
-        if(loadErr)throw loadErr;
-
-        DATA=(data||[]).map(mapDbRow);
-        filtered=[...DATA];
-
-        try{render()}catch(_){}
-        try{initFilters()}catch(_){}
-        try{initReportModels()}catch(_){}
-        try{renderReport()}catch(_){}
-        try{renderManualList()}catch(_){}
-
-        document.getElementById('reportModal').classList.remove('show');
-        alert('시험 항목이 삭제되었습니다.');
-      }catch(err){
-        console.error(err);
-        alert('시험 항목 삭제 실패: '+(err.message||err.details||err));
-      }finally{
-        itemDelBtn.disabled=false;
-        itemDelBtn.textContent=oldText;
-      }
-    };
-  }
-
+  if(itemDelBtn){itemDelBtn.disabled=false;itemDelBtn.textContent='시험 항목 삭제';}
   document.getElementById('reportHelp').textContent='PDF/Excel을 선택한 뒤 [연결 저장]을 누르세요. 공용 Supabase Storage에 저장됩니다.';
   try{
     const info=await getReportInfoV16(no);
@@ -905,4 +855,57 @@ document.getElementById('manualSave').onclick=()=>saveManualV16(true);
 document.getElementById('manualSaveContinue').onclick=()=>saveManualV16(false);
 </script>
 
+
+<script>
+window.deleteTestItemNow = async function(){
+  const modal=document.getElementById('reportModal');
+  const btn=document.getElementById('deleteTestItemLink');
+  const targetNo=Number(modal?.dataset?.itemId||document.getElementById('reportMeta')?.dataset?.no||0);
+  if(!targetNo){
+    alert('삭제할 시험 항목을 찾을 수 없습니다.');
+    return;
+  }
+
+  const row=(typeof DATA!=='undefined') ? DATA.find(r=>Number(r.No)===targetNo) : null;
+  const label=row ? ((row.Model||'')+' / '+(row['Report No']||'-')) : ('No.'+targetNo);
+
+  if(!confirm('시험 항목 자체를 삭제하시겠습니까?\\n\\n'+label+
+    '\\n\\nReport 파일이 있으면 Storage에서도 함께 삭제되고, 시험 데이터가 DB에서 완전히 삭제됩니다.')) return;
+
+  const old=btn?btn.textContent:'시험 항목 삭제';
+  if(btn){btn.disabled=true;btn.textContent='삭제 중...';}
+
+  try{
+    let info=null;
+    try{info=await getReportInfoV16(targetNo);}catch(_){}
+    if(info?.report_path){
+      const sr=await supabaseClient.storage.from(REPORT_BUCKET_V16).remove([info.report_path]);
+      if(sr.error) throw sr.error;
+    }
+
+    const del=await supabaseClient.from('reliability_tests').delete().eq('id',targetNo);
+    if(del.error) throw del.error;
+
+    const loaded=await supabaseClient.from('reliability_tests').select('*').order('id',{ascending:true});
+    if(loaded.error) throw loaded.error;
+
+    DATA=(loaded.data||[]).map(mapDbRow);
+    filtered=[...DATA];
+
+    try{render()}catch(_){}
+    try{initFilters()}catch(_){}
+    try{initReportModels()}catch(_){}
+    try{renderReport()}catch(_){}
+    try{renderManualList()}catch(_){}
+
+    modal.classList.remove('show');
+    alert('시험 항목이 삭제되었습니다.');
+  }catch(err){
+    console.error(err);
+    alert('시험 항목 삭제 실패: '+(err.message||err.details||err));
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent=old;}
+  }
+};
+</script>
 </body></html>
