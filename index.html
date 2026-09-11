@@ -751,6 +751,7 @@ function ensureReportStorageMetaV16(){
   }
 }
 async function showReportModalV16(no){
+  const __metaNo=document.getElementById('reportMeta'); if(__metaNo)__metaNo.dataset.no=String(no);
   ensureReportStorageMetaV16();
   const x=DATA.find(r=>String(r.No)===String(no)); if(!x)return;
   currentReportNo=String(no);currentReportFile=null;
@@ -946,86 +947,96 @@ document.getElementById('manualSaveContinue').onclick=()=>saveManualV16(false);
 </script>
 
 <script>
-/* v22: robust 시험 항목 전체 삭제 */
-window.deleteCurrentTestItemV22 = async function(){
-  const no = window.currentReportNo || document.getElementById('reportMeta')?.dataset?.no;
-  if(no==null || no===''){
-    alert('삭제할 시험 항목을 확인할 수 없습니다.');
-    return;
-  }
-  const x=(window.DATA||[]).find(r=>Number(r.No)===Number(no));
-  if(!x){ alert('선택한 시험 항목을 찾을 수 없습니다.'); return; }
+(function(){
+  async function refreshDeleteButtonV20(no){
+    const btn=document.getElementById('deleteReportLink');
+    if(!btn)return;
 
-  let info=null;
-  try{ info=await window.getReportInfoV16(Number(no)); }catch(e){}
-  const model=x.Model||'미지정 Model';
-  const report=x['Report No']||'연결된 Report 없음';
-  const ok=confirm(
-    '시험 항목 전체를 삭제하시겠습니까?
-
-'+
-    'Model: '+model+'
-'+
-    'Report No.: '+report+'
-
-'+
-    '시험 데이터가 DB에서 완전히 삭제됩니다.
-'+
-    '연결된 Report 파일이 있으면 Storage에서도 함께 삭제됩니다.
-
-'+
-    '삭제 후 복구할 수 없습니다.'
-  );
-  if(!ok)return;
-
-  const btn=document.getElementById('deleteTestItemLink');
-  const old=btn?.textContent;
-  if(btn){btn.disabled=true;btn.textContent='삭제 중...';}
-  try{
-    if(info?.report_path){
-      const s=await supabaseClient.storage.from(REPORT_BUCKET_V16).remove([info.report_path]);
-      if(s.error)throw s.error;
-    }
-    const d=await supabaseClient.from('reliability_tests').delete().eq('id',Number(no));
-    if(d.error)throw d.error;
-
-    // Server is source of truth.
-    const q=await supabaseClient.from('reliability_tests').select('*').order('request_date',{ascending:true}).order('id',{ascending:true});
-    if(q.error)throw q.error;
-    DATA=q.data||[];
-    filtered=[...DATA];
-    try{initFilters();}catch(e){}
-    try{render();}catch(e){}
-    try{initReportModels();renderReport();}catch(e){}
-    try{renderManualList();}catch(e){}
-
-    const rm=document.getElementById('reportModal'); if(rm)rm.classList.remove('show');
-    window.currentReportNo=null;
-    alert('시험 항목이 완전히 삭제되었습니다.');
-  }catch(e){
-    console.error(e);
-    alert('시험 항목 삭제 실패: '+(e.message||e.details||e.hint||e));
-  }finally{
-    if(btn){btn.disabled=false;btn.textContent=old||'시험 항목 삭제';}
-  }
-};
-
-// Direct binding after DOM is parsed, plus delegated fallback.
-function bindDeleteV22(){
-  const btn=document.getElementById('deleteTestItemLink');
-  if(btn){
-    btn.onclick=function(e){e.preventDefault();e.stopPropagation();window.deleteCurrentTestItemV22();};
     btn.style.display='inline-block';
-  }
-}
-if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',bindDeleteV22);
-else bindDeleteV22();
+    btn.textContent='Report 삭제';
+    btn.disabled=false;
 
-document.addEventListener('click',function(e){
-  const btn=e.target.closest('#deleteTestItemLink');
-  if(!btn)return;
-  e.preventDefault(); e.stopPropagation();
-  window.deleteCurrentTestItemV22();
-},true);
+    btn.onclick=async function(){
+      let info=null;
+      try{ info=await getReportInfoV16(no); }catch(e){}
+      const name=info?.report_filename || DATA.find(r=>Number(r.No)===Number(no))?.['Report No'] || '연결된 Report';
+
+      if(!confirm('다음 Report를 삭제하시겠습니까?\\n\\n'+name+
+        '\\n\\n파일이 있으면 Supabase Storage에서도 삭제되고,\\nReport No. 및 파일 연결 정보도 함께 삭제됩니다.')) return;
+
+      btn.disabled=true;
+      const oldtxt=btn.textContent;
+      btn.textContent='삭제 중...';
+
+      try{
+        // 1) Delete the physical file when one exists.
+        if(info?.report_path){
+          const s=await supabaseClient.storage.from(REPORT_BUCKET_V16).remove([info.report_path]);
+          if(s.error)throw s.error;
+        }
+
+        // 2) Remove the Report connection and Report No.
+        const d=await supabaseClient.from('reliability_tests')
+          .update({
+            report_path:null,
+            report_filename:null,
+            report_mime:null,
+            report_no:null,
+            updated_at:new Date().toISOString()
+          })
+          .eq('id',Number(no))
+          .select('*').single();
+
+        if(d.error)throw d.error;
+
+        // 3) Refresh local data/UI.
+        const mapped=mapDbRow(d.data);
+        const idx=DATA.findIndex(r=>Number(r.No)===Number(no));
+        if(idx>=0) DATA[idx]=mapped;
+        filtered=[...DATA];
+
+        try{initFilters()}catch(e){}
+        try{render()}catch(e){}
+        try{initReportModels()}catch(e){}
+        try{renderReport()}catch(e){}
+        try{renderManualList()}catch(e){}
+
+        document.getElementById('openReportFile').style.display='none';
+        document.getElementById('reportStoragePath').textContent='';
+        document.getElementById('reportHelp').textContent='Report가 삭제되었습니다.';
+        document.getElementById('chosenFile').textContent='선택된 파일 없음';
+        document.getElementById('reportFile').value='';
+        btn.style.display='none';
+
+        alert('Report 삭제가 완료되었습니다.');
+      }catch(e){
+        console.error(e);
+        alert('Report 삭제 실패: '+(e.message||e.details||e));
+      }finally{
+        btn.disabled=false;
+        btn.textContent=oldtxt;
+      }
+    };
+  }
+
+  document.addEventListener('click', function(e){
+    const b=e.target.closest('.report-link,.report-register');
+    if(!b)return;
+    const no=b.dataset.no;
+    setTimeout(function(){refreshDeleteButtonV20(no)},300);
+  }, true);
+
+  const modal=document.getElementById('reportModal');
+  if(modal){
+    const obs=new MutationObserver(function(){
+      if(modal.classList.contains('show')){
+        const meta=document.getElementById('reportMeta')?.textContent||'';
+        const x=DATA.find(r=>meta.startsWith(String(r.Model||'')));
+        if(x)refreshDeleteButtonV20(x.No);
+      }
+    });
+    obs.observe(modal,{attributes:true,attributeFilter:['class']});
+  }
+})();
 </script>
 </body></html>
