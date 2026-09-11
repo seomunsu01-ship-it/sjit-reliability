@@ -193,7 +193,7 @@ const LOGIN_SCREEN=document.getElementById('loginScreen');
     <button class="btn ghost" id="manualSaveContinue">저장 후 계속 등록</button>
     <button class="btn primary" id="manualSave">저장 후 닫기</button>
   </div>
-  <div class="file-note" data-k="manualNote">저장한 항목은 이 PC의 브라우저에 계속 남아 있어 나중에 추가 Report를 계속 등록할 수 있습니다.</div>
+  <div class="file-note" data-k="manualNote">시험 데이터와 Report 파일은 공용 Supabase 서버에 저장되어 다른 로그인 사용자도 확인할 수 있습니다.</div>
  </div>
 </div>
 </main></div></div><script>
@@ -694,17 +694,29 @@ async function getReportInfoV16(rowId){
 async function uploadReportV16(rowId,file){
   if(!file)throw new Error('Report 파일을 선택하세요.');
   const old=await getReportInfoV16(rowId).catch(()=>null);
-  const path=`${Number(rowId)}/${Date.now()}_${safeReportNameV16(file.name)}`;
+
+  // Storage object key: ASCII-only path to avoid invalid-key errors from
+  // browser/S3-compatible storage when Korean/spaces/special characters are used.
+  const ext=((file.name||'').match(/\.([A-Za-z0-9]+)$/)||['','bin'])[1].toLowerCase();
+  const token=(crypto.randomUUID?crypto.randomUUID().replace(/-/g,''):String(Date.now())+Math.random().toString(36).slice(2));
+  const path=`reports/${Number(rowId)}/${Date.now()}_${token}.${ext}`;
+
   const {error:upErr}=await supabaseClient.storage.from(REPORT_BUCKET_V16)
     .upload(path,file,{upsert:false,contentType:file.type||'application/octet-stream'});
   if(upErr)throw upErr;
+
   const {data,error:dbErr}=await supabaseClient.from('reliability_tests').update({
-    report_path:path,report_filename:file.name,report_mime:file.type||null,updated_at:new Date().toISOString()
+    report_path:path,
+    report_filename:file.name,
+    report_mime:file.type||null,
+    updated_at:new Date().toISOString()
   }).eq('id',Number(rowId)).select('*').single();
+
   if(dbErr){
     await supabaseClient.storage.from(REPORT_BUCKET_V16).remove([path]).catch(()=>{});
     throw dbErr;
   }
+
   if(old?.report_path && old.report_path!==path){
     await supabaseClient.storage.from(REPORT_BUCKET_V16).remove([old.report_path]).catch(()=>{});
   }
