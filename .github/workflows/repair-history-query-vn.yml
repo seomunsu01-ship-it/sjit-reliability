@@ -1,4 +1,4 @@
-# FINAL HISTORY REPAIR - fix function boundary
+# FINAL HISTORY REPAIR - latest main
 name: Restore inspection history query
 on:
   push:
@@ -30,9 +30,7 @@ jobs:
             const ui=window._histUI,from=$('histFrom2').value,to=$('histTo2').value,term=($('search').value||'').trim().toLowerCase(),rf=$('filterResult').value;const d=rows.filter(x=>{const date=String(x.date||'').slice(0,10),text=[x.customer,x.part,x.name,x.lot].join(' ').toLowerCase();return(!from||date>=from)&&(!to||date<=to)&&(!term||text.includes(term))&&(!rf||x.result===rf)});const pages=Math.max(1,Math.ceil(d.length/ui.size));ui.page=Math.min(ui.page,pages);const a=(ui.page-1)*ui.size,e=Math.min(a+ui.size,d.length);body.innerHTML=d.slice(a,e).map(x=>'<tr><td>'+esc(x.date)+'</td><td>'+esc(x.customer)+'</td><td>'+esc(x.part)+'</td><td>'+esc(x.name)+'</td><td>'+esc(x.lot)+'</td><td>'+x.inQty.toLocaleString()+'</td><td>'+x.testQty.toLocaleString()+'</td><td>'+x.badQty.toLocaleString()+'</td><td>'+((x.testQty?x.badQty/x.testQty*100:0).toFixed(2))+'%</td><td><span class="badge '+(x.result==='FAIL'?'fail':'pass')+'">'+x.result+'</span></td><td>'+esc(x.inspector||'-')+'</td></tr>').join('')||'<tr><td colspan="11" class="empty">조회된 검사 이력이 없습니다.</td></tr>';const test=d.reduce((s,x)=>s+x.testQty,0),bad=d.reduce((s,x)=>s+x.badQty,0),lots=new Set(d.map(x=>x.lot||x.part));$('histSummary2').innerHTML='<div class="card"><div class="label">기간</div><div class="num" style="font-size:16px">'+(from&&to?from+' ~ '+to:'전체 기간')+'</div></div><div class="card"><div class="label">검사 LOT 수</div><div class="num">'+lots.size+'</div></div><div class="card"><div class="label">검사 수량</div><div class="num">'+test.toLocaleString()+' pcs</div></div><div class="card"><div class="label">불량 수량</div><div class="num danger-text">'+bad.toLocaleString()+' pcs</div></div>';const nav=$('histPage2');nav.innerHTML='<span>'+ (d.length?(a+1):0)+'-'+e+' / '+d.length+'건</span><span id="histNums2"></span><span>페이지당</span><select id="histSize2"><option value="20">20건</option><option value="50">50건</option><option value="100">100건</option></select>';const nb=$('histNums2'),add=(txt,p,disabled,active)=>{const b=document.createElement('button');b.type='button';b.textContent=txt;b.disabled=disabled;b.className='btn'+(active?' primary':'');b.onclick=()=>{ui.page=p;renderHistory()};nb.appendChild(b)};add('‹',Math.max(1,ui.page-1),ui.page===1,false);for(let p=1;p<=pages;p++){if(p>7&&p<pages-1){if(p===8)nb.insertAdjacentHTML('beforeend',' <span>…</span> ');continue}add(String(p),p,false,p===ui.page)}add('›',Math.min(pages,ui.page+1),ui.page===pages,false);$('histSize2').value=String(ui.size);$('histSize2').onchange=()=>{ui.size=Number($('histSize2').value);ui.page=1;renderHistory()};
           }function renderStats'''
           s=s[:old.start()]+new+s[old.end()-len('function renderStats'):]
-          s=s.replace('function renderStatsfunction renderStatsfunction renderStats(){','function renderStats(){')
-          s=s.replace('function renderStatsfunction renderStats(){','function renderStats(){')
-          s=s.replace('function renderStatsfunction renderStats','function renderStats')
+          s=s.replace('function renderStatsfunction renderStatsfunction renderStats(){','function renderStats(){').replace('function renderStatsfunction renderStats(){','function renderStats(){').replace('function renderStatsfunction renderStats','function renderStats')
           p.write_text(s,encoding='utf-8')
       - name: Commit and push safely
         shell: bash
@@ -41,13 +39,9 @@ jobs:
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git diff -- daily-inspection/index.html > /tmp/history.patch
           test -s /tmp/history.patch || exit 0
-          for i in {1..10}; do
-            git fetch origin main
-            git reset --hard origin/main
-            git apply /tmp/history.patch
-            git add daily-inspection/index.html
-            git commit -m 'Restore inspection history query controller' || true
-            git push origin HEAD:main && exit 0
-            sleep 3
-          done
-          exit 1
+          git fetch origin main
+          git reset --hard origin/main
+          git apply /tmp/history.patch
+          git add daily-inspection/index.html
+          git commit -m 'Restore inspection history query controller' || true
+          git push origin HEAD:main
