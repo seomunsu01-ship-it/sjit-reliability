@@ -1,1 +1,70 @@
-(()=>{const $=id=>document.getElementById(id),state={rows:[],page:1,size:20};const esc=v=>String(v??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]));function get(){const h=$('history');if(!h)return;let d=[...h.querySelectorAll('input[type=date]')];if(d.length<2){const x=document.createElement('div');x.className='history-period-tools';x.innerHTML='<b>기간 조회</b><input id="histFrom" type="date"><span>~</span><input id="histTo" type="date"><button data-v5="today">오늘</button><button data-v5="7">최근 7일</button><button data-v5="month">이번 달</button><button data-v5="prev">지난 달</button><button id="histSearch" class="primary">조회</button><button id="histReset">전체</button>';(h.querySelector('#monthBar')||h.querySelector('.toolbar')).insertAdjacentElement('afterend',x);d=[x.querySelector('#histFrom'),x.querySelector('#histTo')];const z=new Date(),f=new Date(z.getFullYear(),z.getMonth(),1);d[0].value=f.toISOString().slice(0,10);d[1].value=z.toISOString().slice(0,10)}return{h,dates:d,text:h.querySelector('#search'),sel:h.querySelector('#filterResult'),table:h.querySelector('table.table')||h.querySelector('table')}}async function load(){const c=get(),S=window.sb;if(!c||!S)return;const f=c.dates[0].value||'0000-01-01',t=c.dates[1].value||'9999-12-31',term=(c.text?.value||'').trim().toLowerCase(),rf=(c.sel?.value||'').trim().toUpperCase();const q=await S.from('daily_inspections').select('inspection_date,customer,part_no,part_name,lot_no,in_qty,test_qty,bad_qty,result,inspector').gte('inspection_date',f).lte('inspection_date',t).order('inspection_date',{ascending:false});if(q.error)return console.error(q.error);state.rows=(q.data||[]).filter(r=>(!term||[r.customer,r.part_no,r.part_name,r.lot_no].join(' ').toLowerCase().includes(term))&&(!rf||rf==='ALL'||String(r.result||'').toUpperCase()===rf));state.page=1;render(c)}function render(c){const b=c.table?.tBodies[0];if(!b)return;const total=state.rows.length,pages=Math.max(1,Math.ceil(total/state.size));state.page=Math.min(state.page,pages);const a=(state.page-1)*state.size,e=Math.min(a+state.size,total);b.innerHTML=state.rows.slice(a,e).map(r=>`<tr><td>${esc(r.inspection_date)}</td><td>${esc(r.customer)}</td><td>${esc(r.part_no)}</td><td>${esc(r.part_name)}</td><td>${esc(r.lot_no)}</td><td>${Number(r.in_qty||0).toLocaleString()}</td><td>${Number(r.test_qty||0).toLocaleString()}</td><td>${Number(r.bad_qty||0).toLocaleString()}</td><td>${r.test_qty?((Number(r.bad_qty||0)/Number(r.test_qty||0))*100).toFixed(2):'0.00'}%</td><td><span class="badge ${String(r.result||'PASS').toUpperCase()==='FAIL'?'fail':'pass'}">${String(r.result||'PASS').toUpperCase()}</span></td><td>${esc(r.inspector||'-')}</td></tr>`).join('')||'<tr><td colspan="11" class="empty">검색된 검사 이력이 없습니다.</td></tr>';let n=c.h.querySelector('.history-final-pagination');if(!n){n=document.createElement('div');n.className='history-final-pagination';c.table.parentElement.appendChild(n)}n.innerHTML=`${total?a+1:0}-${e} / ${total}건　`;const box=document.createElement('span');n.appendChild(box);for(let p=1;p<=pages;p++){if(p>7&&p<pages-1){if(p===8)box.insertAdjacentHTML('beforeend',' … ');continue}const z=document.createElement('button');z.textContent=p;z.className=p===state.page?'active':'';z.onclick=()=>{state.page=p;render(c)};box.appendChild(z)}const s=document.createElement('select');[20,50,100].forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v+'건';s.appendChild(o)});s.value=state.size;s.onchange=()=>{state.size=+s.value;state.page=1;render(c)};n.append('　페이지당 ',s);let sum=c.h.querySelector('.history-final-summary');if(!sum){sum=document.createElement('div');sum.className='history-final-summary';c.h.querySelector('.month-summary')?.insertAdjacentElement('afterend',sum)}const lots=new Set(state.rows.map(r=>r.lot_no||r.part_no)),test=state.rows.reduce((x,r)=>x+ +r.test_qty||0,0),bad=state.rows.reduce((x,r)=>x+ +r.bad_qty||0,0);if(sum)sum.innerHTML=`<div>기간<br><b>${f(c)} ~ ${t(c)}</b></div><div>검사 LOT 수<br><b>${lots.size} LOT</b></div><div>검사 수량<br><b>${test.toLocaleString()} pcs</b></div><div>불량 수량<br><b class="bad">${bad.toLocaleString()} pcs</b></div>`}const f=c=>c.dates[0].value,t=c=>c.dates[1].value;function bind(){const c=get();if(!c||!c.h.classList.contains('active'))return;const b=c.h.querySelector('#histSearch');if(b&&!b.dataset.v5){b.dataset.v5=1;b.onclick=e=>{e.preventDefault();load()}}const r=c.h.querySelector('#histReset');if(r&&!r.dataset.v5){r.dataset.v5=1;r.onclick=()=>{c.text&&(c.text.value='');c.sel&&(c.sel.value='');load()}}c.h.querySelectorAll('[data-v5]').forEach(b=>{if(b.dataset.bound)return;b.dataset.bound=1;b.onclick=()=>{const d=new Date(),k=b.dataset.v5;if(k==='today')c.dates[0].value=c.dates[1].value=d.toISOString().slice(0,10);else if(k==='7'){const x=new Date(d);x.setDate(d.getDate()-6);c.dates[0].value=x.toISOString().slice(0,10);c.dates[1].value=d.toISOString().slice(0,10)}else if(k==='month'){c.dates[0].value=new Date(d.getFullYear(),d.getMonth(),1).toISOString().slice(0,10);c.dates[1].value=d.toISOString().slice(0,10)}else{c.dates[0].value=new Date(d.getFullYear(),d.getMonth()-1,1).toISOString().slice(0,10);c.dates[1].value=new Date(d.getFullYear(),d.getMonth(),0).toISOString().slice(0,10)}load()}})}document.addEventListener('click',e=>{if(e.target.closest?.('[data-page="history"]'))setTimeout(bind,300)});setInterval(bind,1000);setTimeout(bind,800)})();
+(()=>{
+'use strict';
+const $=id=>document.getElementById(id);
+const state={rows:[],page:1,size:20,lastKey:''};
+const esc=v=>String(v??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]));
+const date=v=>String(v||'').slice(0,10);
+function get(){
+ const h=$('history'); if(!h||!h.classList.contains('active')) return null;
+ const dates=[...h.querySelectorAll('input[type="date"]')].slice(0,2);
+ const text=$('search')||h.querySelector('input[type="text"]');
+ const sel=$('filterResult')||[...h.querySelectorAll('select')].find(x=>[...x.options].some(o=>/PASS|FAIL|All Result|전체/i.test(o.textContent||'')));
+ const table=h.querySelector('table.table')||h.querySelector('table');
+ const buttons=[...h.querySelectorAll('button')];
+ const query=buttons.find(b=>/^(조회|검색|기간 조회)$/i.test((b.textContent||'').trim()));
+ return {h,dates,text,sel,table,query};
+}
+function setCard(h,label,value,bad=false){
+ const els=[...h.querySelectorAll('.card')];
+ const card=els.find(x=>(x.textContent||'').includes(label));
+ if(!card)return;
+ const n=card.querySelector('.num'); if(n){n.textContent=value;if(bad)n.classList.add('danger-text')}
+}
+function setSummary(c,from,to,rows){
+ setCard(c.h,'검사 LOT 수',rows.length.toLocaleString());
+ setCard(c.h,'검사 수량',rows.reduce((s,r)=>s+Number(r.test_qty||0),0).toLocaleString()+' pcs');
+ setCard(c.h,'불량 수량',rows.reduce((s,r)=>s+Number(r.bad_qty||0),0).toLocaleString()+' pcs',true);
+ const period=[...c.h.querySelectorAll('*')].find(x=>x.children.length===0 && (x.textContent||'').trim()==='기간');
+ if(period){const b=period.parentElement?.querySelector('b');if(b)b.textContent=`${from} ~ ${to}`}
+}
+function render(c){
+ const total=state.rows.length,pages=Math.max(1,Math.ceil(total/state.size));state.page=Math.min(state.page,pages);
+ const start=(state.page-1)*state.size,end=Math.min(start+state.size,total),body=c.table?.tBodies[0];if(!body)return;
+ body.innerHTML=state.rows.slice(start,end).map(r=>{const test=Number(r.test_qty||0),bad=Number(r.bad_qty||0),rate=test?(bad/test*100).toFixed(2):'0.00',res=String(r.result||'PASS').toUpperCase();return `<tr><td>${esc(date(r.inspection_date))}</td><td>${esc(r.customer)}</td><td>${esc(r.part_no)}</td><td>${esc(r.part_name)}</td><td>${esc(r.lot_no)}</td><td>${Number(r.in_qty||0).toLocaleString()}</td><td>${test.toLocaleString()}</td><td>${bad.toLocaleString()}</td><td>${rate}%</td><td><span class="badge ${res==='FAIL'?'fail':'pass'}">${res}</span></td><td>${esc(r.inspector||'-')}</td></tr>`}).join('')||'<tr><td colspan="11" class="empty">검색된 검사 이력이 없습니다.</td></tr>';
+ let nav=c.table.parentElement.querySelector('.history-pagination');if(!nav){nav=document.createElement('div');nav.className='history-pagination';c.table.parentElement.appendChild(nav)}
+ nav.innerHTML=`${total?start+1:0}-${end} / ${total}건`;
+ const pagesBox=document.createElement('span');pagesBox.style.marginLeft='12px';
+ for(let p=1;p<=pages;p++){if(p>7&&p<pages-1){if(p===8)pagesBox.append(' … ');continue}const b=document.createElement('button');b.type='button';b.textContent=p;b.className=p===state.page?'active':'';b.onclick=()=>{state.page=p;render(c)};pagesBox.appendChild(b)}
+ nav.appendChild(pagesBox);nav.append('  页面당 ');
+ const s=document.createElement('select');[20,50,100].forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v+'건';s.appendChild(o)});s.value=state.size;s.onchange=()=>{state.size=Number(s.value);state.page=1;render(c)};nav.appendChild(s);
+ setSummary(c,state.from,state.to,state.rows);
+}
+async function load(force=true){
+ const c=get();if(!c)return;
+ const from=date(c.dates[0]?.value)||'0000-01-01',to=date(c.dates[1]?.value)||'9999-12-31',term=(c.text?.value||'').trim().toLowerCase(),rf=(c.sel?.value||'').trim().toUpperCase();
+ const key=from+'|'+to+'|'+term+'|'+rf;if(!force&&key===state.lastKey)return;state.lastKey=key;
+ const S=window.sb||(typeof sb!=='undefined'?sb:null);if(!S)return;
+ const q=await S.from('daily_inspections').select('inspection_date,customer,part_no,part_name,lot_no,in_qty,test_qty,bad_qty,result,inspector').order('inspection_date',{ascending:false});
+ if(q.error){console.error(q.error);return}
+ state.from=from;state.to=to;
+ state.rows=(q.data||[]).filter(r=>{const d=date(r.inspection_date);const hay=[r.customer,r.part_no,r.part_name,r.lot_no].join(' ').toLowerCase();const ok=String(r.result||'').toUpperCase();return d>=from&&d<=to&&(!term||hay.includes(term))&&(!rf||rf==='ALL'||rf==='전체'||ok===rf)});
+ state.page=1;render(c);
+}
+function buttonText(b){return (b?.textContent||'').replace(/\s+/g,' ').trim()}
+function intercept(){
+ const c=get();if(!c)return;
+ document.addEventListener('click',e=>{
+   if(!get())return;
+   const b=e.target.closest?.('button');if(!b)return;
+   const t=buttonText(b);
+   if(t==='조회'||t==='검색'||t==='기간 조회'){e.preventDefault();e.stopImmediatePropagation();load(true)}
+   else if(t==='오늘'||t==='최근 7일'||t==='이번 달'||t==='지난 달'){
+     e.preventDefault();e.stopImmediatePropagation();const now=new Date(),end=date(now);let a=new Date(now);
+     if(t==='최근 7일')a.setDate(a.getDate()-6);else if(t==='이번 달')a=new Date(now.getFullYear(),now.getMonth(),1);else if(t==='지난 달'){a=new Date(now.getFullYear(),now.getMonth()-1,1);c.dates[1].value=date(new Date(now.getFullYear(),now.getMonth(),0))}
+     c.dates[0].value=date(a);if(t!=='지난 달')c.dates[1].value=end;load(true)
+   }
+ },true);
+}
+function bindInputs(){const c=get();if(!c)return;c.dates.forEach(d=>{if(!d.dataset.histV5){d.dataset.histV5=1;d.addEventListener('change',()=>load(true))}});if(c.text&&!c.text.dataset.histV5){c.text.dataset.histV5=1;c.text.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();load(true)}})}if(c.sel&&!c.sel.dataset.histV5){c.sel.dataset.histV5=1;c.sel.addEventListener('change',()=>load(true))}}
+intercept();setInterval(()=>{bindInputs();if(get()&&!state.lastKey)load(true)},800);document.addEventListener('click',e=>{if(e.target.closest?.('[data-page="history"]'))setTimeout(()=>{state.lastKey='';load(true)},250)},true);setTimeout(()=>{state.lastKey='';load(true)},700);
+})();
