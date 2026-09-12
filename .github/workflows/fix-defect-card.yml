@@ -6,7 +6,7 @@ permissions:
   contents: write
 jobs:
   patch:
-    if: ${{ !startsWith(github.event.head_commit.message, 'Add defect detail modal to dashboard') }}
+    if: ${{ !startsWith(github.event.head_commit.message, 'Defect detail applied') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -22,9 +22,8 @@ jobs:
               js=r'''<script id="DEFECT-CARD-DETAIL-V2">(function(){
           function esc(v){return String(v==null?'':v).replace(/[&<>\"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]})}
           function openDefectDetail(){
-            var S=window.supabaseClient||window.db;
-            if(!S){alert('DB 연결 정보를 찾을 수 없습니다.');return}
-            var m=document.getElementById('dashboardMonth'), month=m&&m.value?m.value:'';
+            var S=window.supabaseClient||window.db;if(!S){alert('DB 연결 정보를 찾을 수 없습니다.');return}
+            var m=document.getElementById('dashboardMonth'),month=m&&m.value?m.value:'';
             var vi=false;try{vi=window.parent!==window&&window.parent.location.pathname.indexOf('/vi.html')>=0}catch(e){}
             var L=vi?{t:'Chi tiết lỗi',close:'Đóng',month:'Tháng',qty:'Số lượng lỗi',date:'Ngày kiểm tra',maker:'Nhà cung cấp',part:'Mã Part',name:'Tên vật liệu',lot:'Số LOT',content:'Nội dung lỗi',result:'Kết quả',inspector:'Nhân viên kiểm tra',none:'Không có dữ liệu lỗi trong tháng đã chọn.'}:{t:'불량 상세 내용',close:'닫기',month:'조회 월',qty:'불량 수량',date:'검사일자',maker:'공급업체(Maker)',part:'Part No.',name:'품명',lot:'LOT No.',content:'불량 내용',result:'판정',inspector:'검사원',none:'선택한 월에 불량 데이터가 없습니다.'};
             S.from('daily_inspections').select('inspection_date,customer,part_no,part_name,lot_no,bad_qty,result,defect_content,inspector').gt('bad_qty',0).order('inspection_date',{ascending:false}).then(function(r){
@@ -49,5 +48,5 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add daily-inspection/index.html
-          git diff --cached --quiet || git commit -m 'Add defect detail modal to dashboard'
+          git diff --cached --quiet || git commit -m 'Defect detail applied'
           git push
