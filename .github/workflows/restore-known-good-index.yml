@@ -1,0 +1,29 @@
+name: Restore known-good application index
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restore index from last known-good production commit
+        shell: bash
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          if grep -q 'SJIT_KNOWN_GOOD_RESTORED' daily-inspection/index.html; then exit 0; fi
+          git fetch origin 0e8eeb12d416b334822099f7c7c2b8d07d58c7bf
+          git checkout 0e8eeb12d416b334822099f7c7c2b8d07d58c7bf -- daily-inspection/index.html
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('daily-inspection/index.html')
+          s=p.read_text(encoding='utf-8')
+          s=s.replace('</body></html>','<script>/* SJIT_KNOWN_GOOD_RESTORED */</script></body></html>')
+          p.write_text(s,encoding='utf-8')
+          PY
+          git add daily-inspection/index.html
+          git commit -m 'Restore known-good application index'
+          git push origin HEAD:main
