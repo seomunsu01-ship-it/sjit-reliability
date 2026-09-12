@@ -1,0 +1,67 @@
+name: Emergency login repair
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Repair login safely
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+          p=Path('daily-inspection/index.html')
+          s=p.read_text(encoding='utf-8')
+          if 'SJIT_LOGIN_EMERGENCY_V1' not in s:
+              js=r'''<script id="SJIT_LOGIN_EMERGENCY_V1">
+(function(){
+  const URL='https://heaouuczehysapjhoslv.supabase.co';
+  const KEY='sb_publishable_ijtjC3p8aHEhrczByMuODg_lPtVKxkk';
+  async function getClient(){
+    try{if(typeof sb!=='undefined' && sb) return sb}catch(e){}
+    if(window.supabase&&window.supabase.createClient)return window.supabase.createClient(URL,KEY);
+    await new Promise((resolve,reject)=>{const x=document.createElement('script');x.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';x.onload=resolve;x.onerror=reject;document.head.appendChild(x)});
+    if(window.supabase&&window.supabase.createClient)return window.supabase.createClient(URL,KEY);
+    throw new Error('Supabase client unavailable');
+  }
+  async function loginFallback(){
+    const email=document.getElementById('loginEmail'),pw=document.getElementById('loginPw'),msg=document.getElementById('loginMsg'),btn=document.getElementById('loginBtn');
+    if(!email||!pw||!btn)return;
+    btn.onclick=async function(){
+      const e=email.value.trim(),p=pw.value;
+      if(!e||!p){msg.textContent='이메일과 비밀번호를 입력하세요.';return}
+      btn.disabled=true;msg.textContent='로그인 중...';
+      try{
+        const client=await getClient();
+        const r=await client.auth.signInWithPassword({email:e,password:p});
+        if(r.error)throw r.error;
+        window.currentUser=r.data.user;
+        const login=document.getElementById('login'),app=document.getElementById('app');
+        if(login)login.classList.add('hidden');if(app)app.classList.remove('hidden');
+        if(typeof load==='function'){try{load()}catch(x){}}
+        else location.reload();
+      }catch(err){msg.textContent='로그인 실패: '+(err.message||err);console.error('SJIT emergency login',err)}
+      finally{btn.disabled=false}
+    };
+    pw.onkeydown=function(e){if(e.key==='Enter')btn.click()};
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',loginFallback);else loginFallback();
+})();
+</script>'''
+              s=s.replace('</body></html>',js+'</body></html>')
+              p.write_text(s,encoding='utf-8')
+          else:
+              print('Emergency login already installed')
+      - name: Commit repair
+        shell: bash
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add daily-inspection/index.html
+          git diff --cached --quiet && exit 0
+          git commit -m 'Emergency repair login handler'
+          git push origin HEAD:main
