@@ -35,20 +35,7 @@ jobs:
 
             git show "$PATCH_COMMIT:daily-inspection/index.html" > /tmp/patched.html
 
-            python - <<'PY'
-            from pathlib import Path
-            import re
-            target=Path('daily-inspection/index.html')
-            source=Path('/tmp/patched.html').read_text(encoding='utf-8')
-            text=target.read_text(encoding='utf-8')
-            style=re.search(r'<style>\s*\.history-period-tools.*?</style>', source, re.S)
-            script=re.search(r'<script>\s*/\* SJIT_HISTORY_PERIOD_FILTER_V1 \*/.*?</script>', source, re.S)
-            if not style or not script:
-                raise SystemExit('Could not extract history filter patch from source commit')
-            text=text.replace('</head>', style.group(0)+'</head>', 1)
-            text=text.replace('</body>', script.group(0)+'</body>', 1)
-            target.write_text(text, encoding='utf-8')
-            PY
+            python -c 'from pathlib import Path; import re; target=Path("daily-inspection/index.html"); source=Path("/tmp/patched.html").read_text(encoding="utf-8"); text=target.read_text(encoding="utf-8"); style=re.search(r"<style>\\s*\\.history-period-tools.*?</style>",source,re.S); script=re.search(r"<script>\\s*/\\* SJIT_HISTORY_PERIOD_FILTER_V1 \\*/.*?</script>",source,re.S); assert style and script, "Could not extract history filter patch"; target.write_text(text.replace("</head>",style.group(0)+"</head>",1).replace("</body>",script.group(0)+"</body>",1),encoding="utf-8")'
 
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
