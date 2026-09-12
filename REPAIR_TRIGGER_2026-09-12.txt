@@ -1,0 +1,1 @@
+Trigger automatic history query and Vietnamese UI repair workflow.
