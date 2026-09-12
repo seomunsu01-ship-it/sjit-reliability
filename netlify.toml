@@ -1,6 +1,8 @@
 [build]
   publish = "."
 
+# Clean static deploy: history query fix is embedded in the HTML.
+
 [[redirects]]
   from = "/"
   to = "/index.html"
