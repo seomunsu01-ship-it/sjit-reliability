@@ -16,109 +16,24 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Add pagination and summary behavior
+      - name: Patch pagination
         shell: bash
         run: |
           python - <<'PY'
           from pathlib import Path
-          target = Path('daily-inspection/index.html')
-          text = target.read_text(encoding='utf-8')
-          marker = '/* SJIT_HISTORY_PAGINATION_V1 */'
+          target=Path('daily-inspection/index.html')
+          text=target.read_text(encoding='utf-8')
+          marker='/* SJIT_HISTORY_PAGINATION_V2 */'
           if marker in text:
+              print('Pagination already applied')
               raise SystemExit(0)
-          css = r'''
-          <style>
-          .history-pagination{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:14px;padding:10px 2px 2px}
-          .history-pagination-info{font-size:12px;color:#64748b}
-          .history-pagination-pages{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
-          .history-pagination button{min-width:34px;height:34px;border:1px solid #d7dce5;background:#fff;color:#475569;border-radius:8px;font-size:12px;font-weight:700;padding:0 9px}
-          .history-pagination button:hover{background:#eff6ff;border-color:#93c5fd;color:#2563eb}
-          .history-pagination button.active{background:#2563eb;border-color:#2563eb;color:#fff}
-          .history-pagination button:disabled{opacity:.4;cursor:not-allowed}
-          .history-pagination .dots{padding:0 3px;color:#64748b;font-weight:700}
-          .history-pagination-size{display:flex;align-items:center;gap:6px;font-size:12px;color:#64748b}
-          .history-pagination-size select{border:1px solid #d7dce5;border-radius:8px;padding:7px 9px;background:#fff}
-          </style>'''
-          js = r'''
-          <script>
-          /* SJIT_HISTORY_PAGINATION_V1 */
-          (()=>{
-            const state={page:1,size:20,table:null,body:null,rows:[]};
-            let timer=0;
-            const norm=s=>(s||'').replace(/\s+/g,' ').trim();
-            function findTable(){
-              const tables=[...document.querySelectorAll('table')];
-              return tables.find(t=>{const h=norm(t.querySelector('thead')?.innerText||t.rows[0]?.innerText||'');return /Maker/i.test(h)&&/Part No\.?/i.test(h)&&/Inspector/i.test(h)})||null;
-            }
-            function isHistoryVisible(t){
-              if(!t)return false;
-              const p=t.closest('.page');
-              return !p||p.classList.contains('active');
-            }
-            function render(){
-              const t=state.table=findTable();
-              if(!t||!isHistoryVisible(t))return;
-              const body=t.tBodies[0]; if(!body)return;
-              state.body=body;
-              state.rows=[...body.rows];
-              const total=state.rows.length;
-              const pages=Math.max(1,Math.ceil(total/state.size));
-              if(state.page>pages)state.page=pages;
-              state.rows.forEach((r,i)=>r.style.display=(i>=(state.page-1)*state.size&&i<state.page*state.size)?'':'none');
-              let nav=t.parentElement.querySelector(':scope > .history-pagination');
-              if(!nav){nav=document.createElement('div');nav.className='history-pagination';t.parentElement.appendChild(nav)}
-              const from=total?((state.page-1)*state.size+1):0;
-              const to=Math.min(state.page*state.size,total);
-              const pageButtons=[];
-              const add=(label,p,disabled=false,active=false)=>{const b=document.createElement('button');b.type='button';b.textContent=label;b.disabled=disabled;if(active)b.className='active';b.onclick=()=>{state.page=p;render()};pageButtons.push(b)};
-              add('‹',Math.max(1,state.page-1),state.page===1);
-              const list=[];
-              if(pages<=7){for(let i=1;i<=pages;i++)list.push(i)}
-              else{
-                list.push(1);
-                if(state.page>4)list.push('…');
-                const a=Math.max(2,state.page-1),b=Math.min(pages-1,state.page+1);
-                for(let i=a;i<=b;i++)list.push(i);
-                if(state.page<pages-3)list.push('…');
-                list.push(pages);
-              }
-              list.forEach(x=>{if(x==='…'){const s=document.createElement('span');s.className='dots';s.textContent='…';pageButtons.push(s)}else add(String(x),x,false,x===state.page)});
-              add('›',Math.min(pages,state.page+1),state.page===pages);
-              nav.innerHTML='';
-              const info=document.createElement('div');info.className='history-pagination-info';info.textContent=`${from}-${to} / ${total}건`;
-              const wrap=document.createElement('div');wrap.className='history-pagination-pages';pageButtons.forEach(x=>wrap.appendChild(x));
-              const size=document.createElement('div');size.className='history-pagination-size';size.innerHTML='페이지당 <select><option value="20">20</option><option value="50">50</option><option value="100">100</option></select>건';
-              const sel=size.querySelector('select');sel.value=String(state.size);sel.onchange=()=>{state.size=Number(sel.value)||20;state.page=1;render()};
-              nav.append(info,wrap,size);
-              updateSummary(state.rows);
-            }
-            function updateSummary(rows){
-              const summary=document.querySelector('.history-period-summary');
-              if(!summary)return;
-              const vals=[...summary.querySelectorAll('.hstat-value')];
-              if(vals.length<4)return;
-              const visible=rows.filter(r=>r.cells.length>=10);
-              const lot=visible.length;
-              const test=visible.reduce((s,r)=>s+(parseFloat((r.cells[6]?.innerText||'').replace(/,/g,''))||0),0);
-              const bad=visible.reduce((s,r)=>s+(parseFloat((r.cells[7]?.innerText||'').replace(/,/g,''))||0),0);
-              vals[0].textContent=vals[0].textContent||'-';
-              vals[1].innerHTML=`${lot.toLocaleString()} <small>LOT</small>`;
-              vals[2].innerHTML=`${test.toLocaleString()} <small>pcs</small>`;
-              vals[3].innerHTML=`${bad.toLocaleString()} <small>pcs</small>`;
-            }
-            function schedule(){clearTimeout(timer);timer=setTimeout(render,80)}
-            const mo=new MutationObserver(schedule);mo.observe(document.body,{subtree:true,childList:true});
-            document.addEventListener('click',e=>{if(e.target.closest('.nav button,.month-tab,.history-period-tools button'))setTimeout(()=>{state.page=1;schedule()},120)});
-            setTimeout(render,500);setTimeout(render,1200);
-          })();
-          </script>'''
+          css='''<style>.history-pagination{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:14px;padding:10px 2px 2px}.history-pagination-info{font-size:12px;color:#64748b}.history-pagination-pages{display:flex;align-items:center;gap:5px;flex-wrap:wrap}.history-pagination button{min-width:34px;height:34px;border:1px solid #d7dce5;background:#fff;color:#475569;border-radius:8px;font-size:12px;font-weight:700;padding:0 9px}.history-pagination button:hover{background:#eff6ff;border-color:#93c5fd;color:#2563eb}.history-pagination button.active{background:#2563eb;border-color:#2563eb;color:#fff}.history-pagination button:disabled{opacity:.4;cursor:not-allowed}.history-pagination .dots{padding:0 3px;color:#64748b;font-weight:700}.history-pagination-size{display:flex;align-items:center;gap:6px;font-size:12px;color:#64748b}.history-pagination-size select{border:1px solid #d7dce5;border-radius:8px;padding:7px 9px;background:#fff}</style>'''
+          js='''<script>/* SJIT_HISTORY_PAGINATION_V2 */(()=>{const s={p:1,n:20};let tm=0;const q=x=>(x||'').replace(/\\s+/g,' ').trim();function run(){const t=[...document.querySelectorAll('table')].find(t=>{const h=q(t.querySelector('thead')?.innerText||t.rows[0]?.innerText||'');return /Maker/i.test(h)&&/Part No\\.?/i.test(h)&&/Inspector/i.test(h)});if(!t||t.closest('.page')&&!t.closest('.page').classList.contains('active'))return;const b=t.tBodies[0];if(!b)return;const r=[...b.rows],total=r.length,pages=Math.max(1,Math.ceil(total/s.n));if(s.p>pages)s.p=pages;r.forEach((x,i)=>x.style.display=i>=(s.p-1)*s.n&&i<s.p*s.n?'':'none');let nav=t.parentElement.querySelector(':scope > .history-pagination');if(!nav){nav=document.createElement('div');nav.className='history-pagination';t.parentElement.appendChild(nav)}nav.innerHTML='';const info=document.createElement('div');info.className='history-pagination-info';info.textContent=(total?((s.p-1)*s.n+1):0)+'-'+Math.min(s.p*s.n,total)+' / '+total+'건';const pagesBox=document.createElement('div');pagesBox.className='history-pagination-pages';const add=(txt,p,off,act)=>{const z=document.createElement('button');z.type='button';z.textContent=txt;z.disabled=!!off;if(act)z.className='active';z.onclick=()=>{s.p=p;run()};pagesBox.appendChild(z)};add('‹',Math.max(1,s.p-1),s.p===1,false);let a=[];if(pages<=7)for(let i=1;i<=pages;i++)a.push(i);else{a=[1];if(s.p>4)a.push('…');for(let i=Math.max(2,s.p-1);i<=Math.min(pages-1,s.p+1);i++)a.push(i);if(s.p<pages-3)a.push('…');a.push(pages)}a.forEach(x=>{if(x==='…'){const d=document.createElement('span');d.className='dots';d.textContent='…';pagesBox.appendChild(d)}else add(String(x),x,false,x===s.p)});add('›',Math.min(pages,s.p+1),s.p===pages,false);const size=document.createElement('div');size.className='history-pagination-size';size.innerHTML='페이지당 <select><option value="20">20</option><option value="50">50</option><option value="100">100</option></select>건';const sel=size.querySelector('select');sel.value=String(s.n);sel.onchange=()=>{s.n=Number(sel.value)||20;s.p=1;run()};nav.append(info,pagesBox,size)}function later(){clearTimeout(tm);tm=setTimeout(run,120)}new MutationObserver(later).observe(document.body,{subtree:true,childList:true});document.addEventListener('click',e=>{if(e.target.closest('.nav button,.month-tab,.history-period-tools button')){s.p=1;setTimeout(run,200)}});setTimeout(run,500);setTimeout(run,1200)})()</script>'''
           text=text.replace('</head>',css+'</head>',1).replace('</body>',js+'</body>',1)
           target.write_text(text,encoding='utf-8')
           PY
-
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add daily-inspection/index.html
-          git commit -m "Add paginated inspection history view"
+          git commit -m "Add paginated inspection history view" || true
           git push origin main
