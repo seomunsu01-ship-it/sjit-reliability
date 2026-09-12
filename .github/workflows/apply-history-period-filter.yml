@@ -1,0 +1,179 @@
+name: Apply inspection history period filter
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/apply-history-period-filter.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch-history:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Patch inspection history UI
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path('daily-inspection/index.html')
+          text = path.read_text(encoding='utf-8')
+          marker = '/* SJIT_HISTORY_PERIOD_FILTER_V1 */'
+          if marker in text:
+              print('History period filter already applied.')
+              raise SystemExit(0)
+
+          style = r'''<style>
+          .history-period-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:4px 0 12px}
+          .history-period-tools .period-label{font-size:12px;font-weight:800;color:#172033;margin-right:3px}
+          .history-period-tools input{border:1px solid #d7dce5;border-radius:8px;padding:9px 10px;background:#fff;color:#172033}
+          .history-period-tools .period-sep{color:#64748b;font-weight:700}
+          .history-period-tools button{border:1px solid #d7dce5;background:#fff;color:#475569;padding:9px 12px;border-radius:8px;font-size:12px;font-weight:700}
+          .history-period-tools button:hover{background:#eff6ff;border-color:#93c5fd}
+          .history-period-tools button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
+          .history-period-tools button.active{background:#eff6ff;border-color:#93c5fd;color:#2563eb}
+          .history-period-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:2px 0 13px}
+          .history-period-summary .hstat{background:#fff;border:1px solid #e2e8f0;border-radius:11px;padding:12px 14px;box-shadow:0 4px 16px rgba(15,23,42,.04)}
+          .history-period-summary .hstat-label{font-size:11px;color:#64748b;font-weight:700}
+          .history-period-summary .hstat-value{font-size:20px;font-weight:800;margin-top:5px;color:#172033}
+          .history-period-summary .hstat-value.bad{color:#dc2626}
+          .history-period-summary .hstat-period{font-size:15px;color:#2563eb;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+          .history-legacy-hide{display:none!important}
+          @media(max-width:900px){.history-period-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
+          @media(max-width:600px){.history-period-summary{grid-template-columns:1fr}.history-period-tools input{width:145px}}
+          </style>'''
+
+          script = r'''<script>
+          /* SJIT_HISTORY_PERIOD_FILTER_V1 */
+          (function(){
+            const S=()=>window.sb;
+            let allRows=[];
+            let filteredRows=[];
+            let installed=false;
+            let rendering=false;
+            let observer=null;
+
+            const esc=v=>String(v??'').replace(/[&<>\"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[m]));
+            const num=v=>Number(v)||0;
+            const fmt=v=>num(v).toLocaleString('en-US');
+            const isoDate=d=>{const x=new Date(d); if(Number.isNaN(x.getTime())) return ''; return x.toISOString().slice(0,10)};
+            const monthStart=d=>new Date(d.getFullYear(),d.getMonth(),1);
+            const monthEnd=d=>new Date(d.getFullYear(),d.getMonth()+1,0);
+            const ymd=d=>{const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${day}`};
+
+            function historyPage(){return document.getElementById('history')}
+            function tableBody(){const h=historyPage();return h?.querySelector('.table tbody')||h?.querySelector('tbody')}
+            function tableHead(){const h=historyPage();return h?.querySelector('.table thead')||h?.querySelector('thead')}
+
+            function ensureUI(){
+              const h=historyPage(); if(!h||installed)return false;
+              const panel=h.querySelector('.panel'); if(!panel)return false;
+              const monthBar=h.querySelector('.month-bar');
+              if(monthBar)monthBar.classList.add('history-legacy-hide');
+              const oldSummary=h.querySelector('.month-summary');
+              if(oldSummary)oldSummary.classList.add('history-legacy-hide');
+
+              const toolbar=h.querySelector('.toolbar');
+              const controls=document.createElement('div');
+              controls.className='history-period-tools';
+              controls.innerHTML=`<span class="period-label">기간 조회</span>
+                <input id="histFrom" type="date"><span class="period-sep">~</span><input id="histTo" type="date">
+                <button type="button" id="histToday">오늘</button><button type="button" id="hist7">최근 7일</button>
+                <button type="button" id="histThisMonth" class="active">이번 달</button><button type="button" id="histLastMonth">지난 달</button>
+                <button type="button" id="histApply" class="primary">조회</button><button type="button" id="histAll">전체</button>`;
+              if(toolbar) toolbar.insertAdjacentElement('afterend',controls); else panel.insertBefore(controls,panel.firstChild);
+
+              const summary=document.createElement('div');
+              summary.className='history-period-summary';
+              summary.innerHTML=`<div class="hstat"><div class="hstat-label">기간</div><div class="hstat-value hstat-period" id="histStatPeriod">-</div></div>
+                <div class="hstat"><div class="hstat-label">검사 LOT 수</div><div class="hstat-value" id="histStatLot">0 <small style="font-size:11px;color:#64748b">LOT</small></div></div>
+                <div class="hstat"><div class="hstat-label">검사 수량</div><div class="hstat-value" id="histStatTest">0 <small style="font-size:11px;color:#64748b">PCS</small></div></div>
+                <div class="hstat"><div class="hstat-label">불량 수량</div><div class="hstat-value bad" id="histStatBad">0 <small style="font-size:11px;color:#64748b">PCS</small></div></div>`;
+              controls.insertAdjacentElement('afterend',summary);
+
+              const now=new Date();
+              document.getElementById('histFrom').value=ymd(monthStart(now));
+              document.getElementById('histTo').value=ymd(monthEnd(now));
+              bind('histToday',()=>setRange(new Date(),new Date()));
+              bind('hist7',()=>{const t=new Date(),f=new Date(t);f.setDate(t.getDate()-6);setRange(f,t)});
+              bind('histThisMonth',()=>setRange(monthStart(new Date()),monthEnd(new Date()),'this'));
+              bind('histLastMonth',()=>{const t=new Date();t.setDate(1);t.setDate(0);setRange(monthStart(t),monthEnd(t),'last')});
+              bind('histApply',()=>applyRange(document.getElementById('histFrom').value,document.getElementById('histTo').value));
+              bind('histAll',()=>{document.getElementById('histFrom').value='';document.getElementById('histTo').value='';setActive('histAll');renderRows(allRows,'전체 기간')});
+              installed=true;
+              return true;
+            }
+            function bind(id,fn){const e=document.getElementById(id);if(e)e.addEventListener('click',fn)}
+            function setActive(id){document.querySelectorAll('.history-period-tools button').forEach(b=>b.classList.remove('active'));const e=document.getElementById(id);if(e)e.classList.add('active')}
+            function setRange(from,to,which){document.getElementById('histFrom').value=ymd(from);document.getElementById('histTo').value=ymd(to);setActive(which==='this'?'histThisMonth':which==='last'?'histLastMonth':'');applyRange(ymd(from),ymd(to))}
+
+            async function loadRows(){
+              const sb=S(); if(!sb)return;
+              const {data,error}=await sb.from('daily_inspections').select('inspection_date,customer,part_no,part_name,lot_no,in_qty,incoming_qty,test_qty,inspection_qty,bad_qty,defect_qty,result');
+              if(error){console.error('history period query',error);return}
+              allRows=data||[];
+              const f=document.getElementById('histFrom')?.value, t=document.getElementById('histTo')?.value;
+              if(f&&t)renderRows(allRows.filter(r=>String(r.inspection_date)>=f&&String(r.inspection_date)<=t),`${f} ~ ${t}`); else renderRows(allRows,'전체 기간');
+            }
+
+            function applyRange(f,t){
+              if(f&&t&&f>t){alert('시작일은 종료일보다 빠르거나 같아야 합니다.');return}
+              setActive('histApply');
+              const rows=(f&&t)?allRows.filter(r=>String(r.inspection_date)>=f&&String(r.inspection_date)<=t):allRows;
+              renderRows(rows,(f&&t)?`${f} ~ ${t}`:'전체 기간');
+            }
+
+            function renderRows(rows,period){
+              const body=tableBody(); if(!body)return;
+              rendering=true;
+              filteredRows=rows||[];
+              const testQty=filteredRows.reduce((s,r)=>s+num(r.test_qty||r.inspection_qty),0);
+              const badQty=filteredRows.reduce((s,r)=>s+num(r.bad_qty||r.defect_qty),0);
+              const lotCount=filteredRows.length;
+              const p=document.getElementById('histStatPeriod'),l=document.getElementById('histStatLot'),q=document.getElementById('histStatTest'),b=document.getElementById('histStatBad');
+              if(p)p.textContent=period||'전체 기간'; if(l)l.innerHTML=`${fmt(lotCount)} <small style="font-size:11px;color:#64748b">LOT</small>`; if(q)q.innerHTML=`${fmt(testQty)} <small style="font-size:11px;color:#64748b">PCS</small>`; if(b)b.innerHTML=`${fmt(badQty)} <small style="font-size:11px;color:#64748b">PCS</small>`;
+              body.innerHTML=filteredRows.map((r,i)=>{const tq=num(r.test_qty||r.inspection_qty),bad=num(r.bad_qty||r.defect_qty),rate=tq?((bad/tq)*100).toFixed(2):'0.00';const pass=String(r.result||'').toUpperCase()==='PASS'||bad===0;return `<tr><td>${esc(r.inspection_date||'')}</td><td>${esc(r.customer||'')}</td><td>${esc(r.part_no||'')}</td><td>${esc(r.part_name||'')}</td><td>${esc(r.lot_no||'-')}</td><td>${fmt(r.in_qty||r.incoming_qty)}</td><td>${fmt(tq)}</td><td>${fmt(bad)}</td><td>${rate}%</td><td><span class="badge ${pass?'pass':'fail'}">${pass?'OK':'NG'}</span></td></tr>`}).join('')||`<tr><td colspan="10" class="empty">조회된 검사 이력이 없습니다.</td></tr>`;
+              const head=tableHead(); if(head){const cells=head.querySelectorAll('th');const labels=['Date','Maker','Part No.','Part Name','LOT','In','Test','Defect','Rate(%)','Result'];cells.forEach((c,i)=>{if(labels[i])c.textContent=labels[i]})}
+              rendering=false;
+            }
+
+            function startObserver(){
+              const body=tableBody();if(!body||observer)return;
+              observer=new MutationObserver(()=>{if(!rendering){const f=document.getElementById('histFrom')?.value,t=document.getElementById('histTo')?.value;if(f&&t){setTimeout(()=>renderRows(allRows.filter(r=>String(r.inspection_date)>=f&&String(r.inspection_date)<=t),`${f} ~ ${t}`),20)}}});
+              observer.observe(body,{childList:true});
+            }
+
+            function activate(){
+              if(!ensureUI())return;
+              startObserver();
+              if(!allRows.length)loadRows();else{const f=document.getElementById('histFrom')?.value,t=document.getElementById('histTo')?.value;renderRows((f&&t)?allRows.filter(r=>String(r.inspection_date)>=f&&String(r.inspection_date)<=t):allRows,(f&&t)?`${f} ~ ${t}`:'전체 기간')}
+            }
+
+            document.addEventListener('click',e=>{const nav=e.target.closest?.('[data-page="history"]');if(nav)setTimeout(activate,30)});
+            window.addEventListener('load',()=>setTimeout(()=>{if(historyPage()?.classList.contains('active'))activate()},200));
+            const boot=setInterval(()=>{if(window.sb){clearInterval(boot);setTimeout(()=>{if(historyPage()?.classList.contains('active'))activate()},100)}},300);
+          })();
+          </script>'''
+
+          text = text.replace('</head>', style + '</head>', 1)
+          text = text.replace('</body>', script + '</body>', 1)
+          path.write_text(text, encoding='utf-8')
+          print('Inspection history period filter patched.')
+
+      - name: Commit patch
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add daily-inspection/index.html
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "Add inspection history period filter"
+          git push
