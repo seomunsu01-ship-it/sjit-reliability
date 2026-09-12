@@ -1,7 +1,7 @@
 [build]
-  publish = "daily-inspection"
+  publish = "."
 
 [[redirects]]
   from = "/"
-  to = "/"
+  to = "/daily-inspection/"
   status = 200
