@@ -236,4 +236,26 @@ var i=setInterval(function(){if(bind())clearInterval(i)},300);setTimeout(functio
             window.addEventListener('load',()=>setTimeout(()=>{if(historyPage()?.classList.contains('active'))activate()},200));
             const boot=setInterval(()=>{if(window.sb){clearInterval(boot);setTimeout(()=>{if(historyPage()?.classList.contains('active'))activate()},100)}},300);
           })();
-          </script></body></html>
+          </script><script id="DEFECT-CARD-DETAIL">(function(){
+function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function isVi(){try{return window.parent!==window&&window.parent.location.pathname.indexOf('/vi.html')>=0}catch(e){return false}}
+function openDetail(){
+  var S=window.supabaseClient||window.db;if(!S){alert('DB 연결 정보를 찾을 수 없습니다.');return}
+  var vi=isVi(),m= document.getElementById('dashboardMonth'),month=m&&m.value?m.value:'';
+  var L=vi?{t:'Chi tiết lỗi',c:'Đóng',month:'Tháng',qty:'Số lượng lỗi',date:'Ngày',maker:'Nhà cung cấp',part:'Mã Part',name:'Tên vật liệu',lot:'Số LOT',content:'Nội dung lỗi',result:'Kết quả',inspector:'Nhân viên kiểm tra',none:'Không có dữ liệu lỗi trong tháng đã chọn.'}:{t:'불량 상세 내용',c:'닫기',month:'조회 월',qty:'불량 수량',date:'검사일자',maker:'공급업체(Maker)',part:'Part No.',name:'품명',lot:'LOT No.',content:'불량 내용',result:'판정',inspector:'검사원',none:'선택한 월에 불량 데이터가 없습니다.'};
+  S.from('daily_inspections').select('inspection_date,customer,part_no,part_name,lot_no,bad_qty,result,defect_content,inspector').gt('bad_qty',0).order('inspection_date',{ascending:false}).then(function(r){
+    if(r.error){alert(r.error.message);return}
+    var rows=(r.data||[]).filter(function(x){return !month||String(x.inspection_date||'').indexOf(month)===0});
+    var ov=document.createElement('div');ov.style.cssText='position:fixed;inset:0;background:rgba(15,23,42,.48);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px';
+    var box=document.createElement('div');box.style.cssText='width:min(1200px,96vw);max-height:88vh;overflow:auto;background:#fff;border-radius:16px;padding:22px;box-shadow:0 20px 70px rgba(15,23,42,.28)';
+    var total=rows.reduce(function(a,x){return a+Number(x.bad_qty||0)},0);
+    var html='<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px"><h2 style="margin:0;font-size:19px">🚨 '+L.t+'</h2><button id="defectClose" style="border:1px solid #d7dce5;background:#fff;border-radius:8px;padding:7px 12px;font-weight:700;cursor:pointer">'+L.c+'</button></div>';
+    html+='<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px"><div style="background:#fff7f7;border:1px solid #fecaca;border-radius:9px;padding:9px 12px;font-size:12px">'+L.month+': <b>'+esc(month||'ALL')+'</b></div><div style="background:#fff7f7;border:1px solid #fecaca;border-radius:9px;padding:9px 12px;font-size:12px">'+L.qty+': <b>'+total.toLocaleString()+' PCS</b></div><div style="background:#fff7f7;border:1px solid #fecaca;border-radius:9px;padding:9px 12px;font-size:12px">LOT: <b>'+rows.length+'</b></div></div>';
+    html+='<div style="overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:12px;min-width:900px"><thead><tr>'+[L.date,L.maker,L.part,L.name,L.lot,L.qty,L.content,L.result,L.inspector].map(function(h){return '<th style="padding:9px;border-bottom:1px solid #e2e8f0;background:#f8fafc;color:#64748b;text-align:left;white-space:nowrap">'+h+'</th>'}).join('')+'</tr></thead><tbody>';
+    html+=rows.length?rows.map(function(x){return '<tr>'+[x.inspection_date,x.customer,x.part_no,x.part_name,x.lot_no].map(function(v){return '<td style="padding:9px;border-bottom:1px solid #e2e8f0;white-space:nowrap">'+esc(v)+'</td>'}).join('')+'<td style="padding:9px;border-bottom:1px solid #e2e8f0;color:#dc2626;font-weight:700;white-space:nowrap">'+Number(x.bad_qty||0).toLocaleString()+'</td><td style="padding:9px;border-bottom:1px solid #e2e8f0;white-space:nowrap">'+esc(x.defect_content||'-')+'</td><td style="padding:9px;border-bottom:1px solid #e2e8f0;white-space:nowrap">'+esc(x.result||'FAIL')+'</td><td style="padding:9px;border-bottom:1px solid #e2e8f0;white-space:nowrap">'+esc(x.inspector||'-')+'</td></tr>'}).join(''):'<tr><td colspan="9" style="padding:30px;text-align:center;color:#64748b">'+L.none+'</td></tr>';
+    html+='</tbody></table></div>';box.innerHTML=html;ov.appendChild(box);document.body.appendChild(ov);box.querySelector('#defectClose').onclick=function(){ov.remove()};ov.onclick=function(e){if(e.target===ov)ov.remove()};
+  });
+}
+function bind(){var n=document.getElementById('kBad');if(!n||n.dataset.defectBound)return false;n.dataset.defectBound='1';n.style.cursor='pointer';n.title=isVi()?'Nhấp để xem chi tiết lỗi':'클릭하면 불량 상세 내용을 확인합니다';n.addEventListener('click',openDetail);return true}
+var timer=setInterval(function(){if(bind())clearInterval(timer)},500);setTimeout(function(){clearInterval(timer);bind()},10000);
+})();</script></body></html>
