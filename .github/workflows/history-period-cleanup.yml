@@ -1,0 +1,28 @@
+name: Clean inspection history period filter
+
+on:
+  push:
+    branches: [history-period-final]
+    paths:
+      - '.github/workflows/history-period-cleanup.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Normalize history filter markup
+        shell: bash
+        run: |
+          python -c 'from pathlib import Path; import re; wf=Path(".github/workflows/apply-history-period-filter.yml").read_text(encoding="utf-8"); target=Path("daily-inspection/index.html"); text=target.read_text(encoding="utf-8"); style=re.search(r"(<style>\s*\\.history-period-tools.*?</style>)",wf,re.S).group(1); script=re.search(r"(<script>\s*/\\* SJIT_HISTORY_PERIOD_FILTER_V1 \\*/.*?</script>)",wf,re.S).group(1); text=re.sub(r"<style>\s*<style>\s*\\.history-period-tools.*?</style>\s*</style>","",text,flags=re.S); text=re.sub(r"<style>\s*\\.history-period-tools.*?</style>","",text,flags=re.S); text=re.sub(r"<script>\s*<script>\s*/\\* SJIT_HISTORY_PERIOD_FILTER_V1 \\*/.*?</script>\s*</script>","",text,flags=re.S); text=re.sub(r"<script>\s*/\\* SJIT_HISTORY_PERIOD_FILTER_V1 \\*/.*?</script>","",text,flags=re.S); text=text.replace("</head>",style+"</head>",1).replace("</body>",script+"</body>",1); target.write_text(text,encoding="utf-8")'
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add daily-inspection/index.html
+          git commit -m "Clean inspection history period filter markup"
+          git push origin history-period-final
