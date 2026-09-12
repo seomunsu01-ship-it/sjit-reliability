@@ -1,0 +1,38 @@
+name: Install history fix v4
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add history fix script to page
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('daily-inspection/index.html')
+          s=p.read_text(encoding='utf-8')
+          tag='<script src="./history-fix-v4.js?v=4"></script>'
+          if tag not in s:
+              marker='</body>'
+              if marker not in s:
+                  raise SystemExit('index.html has no </body> marker')
+              s=s.replace(marker, tag+marker, 1)
+              p.write_text(s,encoding='utf-8')
+          print('history fix v4 installed:', tag in s)
+          PY
+      - name: Commit if changed
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add daily-inspection/index.html
+          if git diff --cached --quiet; then
+            echo 'No changes needed'
+          else
+            git commit -m 'Install inspection history fix v4'
+            git push
+          fi
