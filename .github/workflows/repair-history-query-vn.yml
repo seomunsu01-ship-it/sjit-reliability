@@ -19,7 +19,7 @@ jobs:
           s=re.sub(r'<script>\s*/\*\s*SJIT_HISTORY_QUERY_FIXED_[^*]*\*/.*?</script>', '', s, flags=re.S)
           s=re.sub(r'<script>\s*/\*\s*SJIT_HISTORY_QUERY_SAFE_[^*]*\*/.*?</script>', '', s, flags=re.S)
           s=re.sub(r'<script>\s*/\*\s*SJIT_HISTORY_QUERY_FINAL_[^*]*\*/.*?</script>', '', s, flags=re.S)
-          js=r'''<script>/* SJIT_HISTORY_QUERY_FINAL_V9 */
+          js=r'''<script>/* SJIT_HISTORY_QUERY_FINAL_V10 */
           (()=>{
             const state={all:[],rows:[],page:1,size:20,loaded:false};
             const $=id=>document.getElementById(id);
@@ -27,12 +27,71 @@ jobs:
             const client=()=>{try{return window.sb||(typeof sb!=='undefined'?sb:null)}catch(e){return window.sb||null}};
             const h=()=>$('history');
             const active=()=>!!h()?.classList.contains('active');
-            function setup(){const x=h();if(!x)return null;let t=x.querySelector('table.table')||x.querySelector('table');if(!t)return null;let c=x.querySelector('.history-final-v9');if(!c){c=document.createElement('div');c.className='history-final-v9';c.innerHTML='<b>기간 조회</b><input id="v9From" type="date"><span>~</span><input id="v9To" type="date"><button type="button" data-v9-range="today">오늘</button><button type="button" data-v9-range="7">최근 7일</button><button type="button" data-v9-range="month" class="active">이번 달</button><button type="button" data-v9-range="prev">지난 달</button><button type="button" id="v9Search" class="primary">조회</button><button type="button" id="v9All">전체</button>';t.parentElement.insertBefore(c,t)}const d=new Date(),first=new Date(d.getFullYear(),d.getMonth(),1);if(!$('v9From').value)$('v9From').value=first.toISOString().slice(0,10);if(!$('v9To').value)$('v9To').value=d.toISOString().slice(0,10);x.querySelectorAll('.history-period-tools,.history-period-summary,.history-pagination,.history-final-pagination,.history-final-summary,.month-summary').forEach(e=>e.style.display='none');return{h:x,t,c}}
-            function render(){const c=setup();if(!c?.t?.tBodies[0])return;const rows=state.rows,total=rows.length,pages=Math.max(1,Math.ceil(total/state.size));state.page=Math.min(state.page,pages);const a=(state.page-1)*state.size,e=Math.min(a+state.size,total);c.t.tBodies[0].innerHTML=rows.slice(a,e).map(r=>{const test=Number(r.test_qty??r.inspection_qty??0),bad=Number(r.bad_qty??r.defect_qty??0);return '<tr><td>'+esc(r.inspection_date)+'</td><td>'+esc(r.customer)+'</td><td>'+esc(r.part_no)+'</td><td>'+esc(r.part_name)+'</td><td>'+esc(r.lot_no)+'</td><td>'+Number(r.in_qty??r.incoming_qty??0).toLocaleString()+'</td><td>'+test.toLocaleString()+'</td><td>'+bad.toLocaleString()+'</td><td>'+((test?bad/test*100:0).toFixed(2))+'%</td><td><span class="badge '+(String(r.result||'PASS').toUpperCase()==='FAIL'?'fail':'pass')+'">'+String(r.result||'PASS').toUpperCase()+'</span></td><td>'+esc(r.inspector||'-')+'</td></tr>'}).join('')||'<tr><td colspan="11" class="empty">조회된 검사 이력이 없습니다.</td></tr>';let sum=c.h.querySelector('.history-final-v9-summary');if(!sum){sum=document.createElement('div');sum.className='history-final-v9-summary';c.t.parentElement.insertBefore(sum,c.t)}const test=rows.reduce((n,r)=>n+Number(r.test_qty??r.inspection_qty??0),0),bad=rows.reduce((n,r)=>n+Number(r.bad_qty??r.defect_qty??0),0),lots=new Set(rows.map(r=>r.lot_no||r.part_no));sum.innerHTML='<div><span>기간</span><b class="period">'+esc($('v9From').value)+' ~ '+esc($('v9To').value)+'</b></div><div><span>검사 LOT 수</span><b>'+lots.size+' LOT</b></div><div><span>검사 수량</span><b>'+test.toLocaleString()+' pcs</b></div><div><span>불량 수량</span><b class="bad">'+bad.toLocaleString()+' pcs</b></div>';let nav=c.h.querySelector('.history-final-v9-page');if(!nav){nav=document.createElement('div');nav.className='history-final-v9-page';c.t.parentElement.appendChild(nav)}nav.innerHTML='<span>'+(total?a+1:0)+'-'+e+' / '+total+'건</span><span id="v9Pages"></span><select id="v9Size"><option value="20">20건</option><option value="50">50건</option><option value="100">100건</option></select>';const box=$('v9Pages'),add=(txt,p,dis,act)=>{const z=document.createElement('button');z.type='button';z.textContent=txt;z.disabled=dis;if(act)z.className='active';z.onclick=()=>{state.page=p;render()};box.appendChild(z)};add('‹',Math.max(1,state.page-1),state.page===1,false);for(let p=1;p<=pages;p++){if(p>7&&p<pages-1){if(p===8)box.insertAdjacentHTML('beforeend','<span>…</span>');continue}add(String(p),p,false,p===state.page)}add('›',Math.min(pages,state.page+1),state.page===pages,false);const sz=$('v9Size');sz.value=String(state.size);sz.onchange=()=>{state.size=Number(sz.value);state.page=1;render()}}
-            function apply(){const from=$('v9From').value||'0000-01-01',to=$('v9To').value||'9999-12-31',a=from<=to?from:to,b=from<=to?to:from,term=($('search')?.value||'').trim().toLowerCase(),sel=$('filterResult'),rf=(sel?.value||'').toUpperCase();state.rows=state.all.filter(r=>{const d=String(r.inspection_date||'').slice(0,10),hay=[r.customer,r.part_no,r.part_name,r.lot_no].join(' ').toLowerCase(),res=String(r.result||'').toUpperCase();return d>=a&&d<=b&&(!term||hay.includes(term))&&(!rf||rf==='ALL'||/all|전체|tất cả/i.test(String(sel?.selectedOptions?.[0]?.textContent||''))||res===rf)});state.page=1;render()}
-            async function load(){const S=client();if(!S||state.loaded)return;const q=await S.from('daily_inspections').select('*').order('inspection_date',{ascending:false});if(q.error){console.error('SJIT V9',q.error);return}state.all=q.data||[];state.loaded=true;apply()}
-            function bind(){if(!active())return;const c=setup();if(!c)return;const b=$('v9Search'),all=$('v9All');if(b&&!b.dataset.bound){b.dataset.bound=1;b.onclick=e=>{e.preventDefault();e.stopImmediatePropagation();apply()}}if(all&&!all.dataset.bound){all.dataset.bound=1;all.onclick=e=>{e.preventDefault();e.stopImmediatePropagation();$('v9From').value='0000-01-01';$('v9To').value='9999-12-31';apply()}}c.c.querySelectorAll('[data-v9-range]').forEach(z=>{if(z.dataset.bound)return;z.dataset.bound=1;z.onclick=()=>{const d=new Date(),k=z.dataset.v9Range;if(k==='today')$('v9From').value=$('v9To').value=d.toISOString().slice(0,10);else if(k==='7'){const q=new Date(d);q.setDate(d.getDate()-6);$('v9From').value=q.toISOString().slice(0,10);$('v9To').value=d.toISOString().slice(0,10)}else if(k==='month'){$('v9From').value=new Date(d.getFullYear(),d.getMonth(),1).toISOString().slice(0,10);$('v9To').value=d.toISOString().slice(0,10)}else{$('v9From').value=new Date(d.getFullYear(),d.getMonth()-1,1).toISOString().slice(0,10);$('v9To').value=new Date(d.getFullYear(),d.getMonth(),0).toISOString().slice(0,10)}apply()}});[$('v9From'),$('v9To')].forEach(z=>{if(z&&!z.dataset.bound){z.dataset.bound=1;z.onchange=apply}})}
-            function tick(){if(active()){bind();load()}}document.addEventListener('click',e=>{if(e.target.closest?.('[data-page="history"]'))setTimeout(tick,300)});setInterval(tick,1000);setTimeout(tick,800)
+            function setup(){
+              const x=h(); if(!x)return null;
+              let t=x.querySelector('table.table')||x.querySelector('table'); if(!t)return null;
+              let c=x.querySelector('.history-final-v9');
+              if(!c){
+                c=document.createElement('div'); c.className='history-final-v9';
+                c.style.cssText='display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:4px 0 12px';
+                c.innerHTML='<b>기간 조회</b><input id="v9From" type="date"><span>~</span><input id="v9To" type="date"><button type="button" data-v9-range="today">오늘</button><button type="button" data-v9-range="7">최근 7일</button><button type="button" data-v9-range="month" class="active">이번 달</button><button type="button" data-v9-range="prev">지난 달</button><button type="button" id="v9Search" class="primary">조회</button><button type="button" id="v9All">전체</button>';
+                t.parentElement.insertBefore(c,t);
+              }
+              const d=new Date(), first=new Date(d.getFullYear(),d.getMonth(),1);
+              if(!$('v9From').value)$('v9From').value=first.toISOString().slice(0,10);
+              if(!$('v9To').value)$('v9To').value=d.toISOString().slice(0,10);
+              x.querySelectorAll('.history-period-tools,.history-period-summary,.history-pagination,.history-final-pagination,.history-final-summary,.month-summary').forEach(e=>e.style.display='none');
+              x.querySelectorAll('div').forEach(e=>{
+                if(e===c || e.closest('.history-final-v9') || e.closest('.history-final-v9-summary') || e.closest('.history-final-v9-page'))return;
+                const text=(e.innerText||'').trim();
+                if(/^기간 조회/.test(text) && e.querySelector('input[type="date"]'))e.style.display='none';
+              });
+              return{h:x,t,c};
+            }
+            function render(){
+              const c=setup(); if(!c?.t?.tBodies[0])return;
+              const rows=state.rows,total=rows.length,pages=Math.max(1,Math.ceil(total/state.size));
+              state.page=Math.min(state.page,pages); const a=(state.page-1)*state.size,e=Math.min(a+state.size,total);
+              c.t.tBodies[0].innerHTML=rows.slice(a,e).map(r=>{
+                const test=Number(r.test_qty??r.inspection_qty??0),bad=Number(r.bad_qty??r.defect_qty??0);
+                return '<tr><td>'+esc(String(r.inspection_date||'').slice(0,10))+'</td><td>'+esc(r.customer)+'</td><td>'+esc(r.part_no)+'</td><td>'+esc(r.part_name)+'</td><td>'+esc(r.lot_no)+'</td><td>'+Number(r.in_qty??r.incoming_qty??0).toLocaleString()+'</td><td>'+test.toLocaleString()+'</td><td>'+bad.toLocaleString()+'</td><td>'+((test?bad/test*100:0).toFixed(2))+'%</td><td><span class="badge '+(String(r.result||'PASS').toUpperCase()==='FAIL'?'fail':'pass')+'">'+String(r.result||'PASS').toUpperCase()+'</span></td><td>'+esc(r.inspector||'-')+'</td></tr>'
+              }).join('')||'<tr><td colspan="11" class="empty">조회된 검사 이력이 없습니다.</td></tr>';
+              let sum=c.h.querySelector('.history-final-v9-summary');
+              if(!sum){sum=document.createElement('div');sum.className='history-final-v9-summary';sum.style.cssText='display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:2px 0 13px';c.t.parentElement.insertBefore(sum,c.t)}
+              const test=rows.reduce((n,r)=>n+Number(r.test_qty??r.inspection_qty??0),0),bad=rows.reduce((n,r)=>n+Number(r.bad_qty??r.defect_qty??0),0),lots=new Set(rows.map(r=>r.lot_no||r.part_no));
+              sum.innerHTML='<div><span>기간</span><b class="period">'+esc($('v9From').value)+' ~ '+esc($('v9To').value)+'</b></div><div><span>검사 LOT 수</span><b>'+lots.size+' LOT</b></div><div><span>검사 수량</span><b>'+test.toLocaleString()+' pcs</b></div><div><span>불량 수량</span><b class="bad">'+bad.toLocaleString()+' pcs</b></div>';
+              let nav=c.h.querySelector('.history-final-v9-page');
+              if(!nav){nav=document.createElement('div');nav.className='history-final-v9-page';nav.style.cssText='display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:14px;padding:10px 2px 2px';c.t.parentElement.appendChild(nav)}
+              nav.innerHTML='<span>'+(total?a+1:0)+'-'+e+' / '+total+'건</span><span id="v9Pages"></span><select id="v9Size"><option value="20">20건</option><option value="50">50건</option><option value="100">100건</option></select>';
+              const box=$('v9Pages'),add=(txt,p,dis,act)=>{const z=document.createElement('button');z.type='button';z.textContent=txt;z.disabled=dis;if(act)z.className='active';z.onclick=ev=>{ev.preventDefault();ev.stopPropagation();state.page=p;render()};box.appendChild(z)};
+              add('‹',Math.max(1,state.page-1),state.page===1,false);
+              for(let p=1;p<=pages;p++){if(p>7&&p<pages-1){if(p===8)box.insertAdjacentHTML('beforeend','<span>…</span>');continue}add(String(p),p,false,p===state.page)}
+              add('›',Math.min(pages,state.page+1),state.page===pages,false);
+              const sz=$('v9Size');sz.value=String(state.size);sz.onchange=()=>{state.size=Number(sz.value);state.page=1;render()};
+            }
+            function apply(){
+              const from=$('v9From')?.value||'0000-01-01',to=$('v9To')?.value||'9999-12-31',a=from<=to?from:to,b=from<=to?to:from;
+              const term=($('search')?.value||'').trim().toLowerCase(),sel=$('filterResult'),rf=(sel?.value||'').toUpperCase();
+              state.rows=state.all.filter(r=>{const d=String(r.inspection_date||'').slice(0,10),hay=[r.customer,r.part_no,r.part_name,r.lot_no].join(' ').toLowerCase(),res=String(r.result||'').toUpperCase();return d>=a&&d<=b&&(!term||hay.includes(term))&&(!rf||rf==='ALL'||/all|전체|tất cả/i.test(String(sel?.selectedOptions?.[0]?.textContent||''))||res===rf)});
+              state.page=1;render();
+            }
+            async function load(){
+              const S=client(); if(!S||state.loaded)return;
+              const q=await S.from('daily_inspections').select('*').order('inspection_date',{ascending:false});
+              if(q.error){console.error('SJIT V10',q.error);return}
+              state.all=q.data||[];state.loaded=true;apply();
+            }
+            function bind(){
+              if(!active())return; const c=setup();if(!c)return;
+              const b=$('v9Search'),all=$('v9All');
+              if(b&&!b.dataset.bound){b.dataset.bound=1;b.onclick=e=>{e.preventDefault();e.stopImmediatePropagation();apply()}}
+              if(all&&!all.dataset.bound){all.dataset.bound=1;all.onclick=e=>{e.preventDefault();e.stopImmediatePropagation();$('v9From').value='0000-01-01';$('v9To').value='9999-12-31';apply()}}
+              c.c.querySelectorAll('[data-v9-range]').forEach(z=>{if(z.dataset.bound)return;z.dataset.bound=1;z.onclick=e=>{e.preventDefault();e.stopPropagation();const d=new Date(),k=z.dataset.v9Range;if(k==='today')$('v9From').value=$('v9To').value=d.toISOString().slice(0,10);else if(k==='7'){const q=new Date(d);q.setDate(d.getDate()-6);$('v9From').value=q.toISOString().slice(0,10);$('v9To').value=d.toISOString().slice(0,10)}else if(k==='month'){$('v9From').value=new Date(d.getFullYear(),d.getMonth(),1).toISOString().slice(0,10);$('v9To').value=d.toISOString().slice(0,10)}else{$('v9From').value=new Date(d.getFullYear(),d.getMonth()-1,1).toISOString().slice(0,10);$('v9To').value=new Date(d.getFullYear(),d.getMonth(),0).toISOString().slice(0,10)}apply()}});
+              [$('v9From'),$('v9To')].forEach(z=>{if(z&&!z.dataset.bound){z.dataset.bound=1;z.onchange=apply}});
+            }
+            function tick(){if(active()){bind();if(!state.loaded)load();else render()}}
+            document.addEventListener('click',e=>{if(e.target.closest?.('[data-page="history"]'))setTimeout(tick,250)});
+            setInterval(tick,1000);setTimeout(tick,800);
           })();</script>'''
           s=s.replace('</body></html>',js+'</body></html>')
           p.write_text(s,encoding='utf-8')
@@ -43,10 +102,10 @@ jobs:
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add daily-inspection/index.html
           git diff --cached --quiet && exit 0
-          git commit -m 'Finalize inspection history query controller' || true
+          git commit -m 'Harden history renderer against legacy overwrite' || true
           for i in 1 2 3 4 5 6 7 8 9 10; do
             git fetch origin main
-            git rebase origin/main || { git rebase --abort || true; git reset --soft origin/main; git add daily-inspection/index.html; git commit -m 'Finalize inspection history query controller' || true; }
+            git rebase origin/main || { git rebase --abort || true; git reset --soft origin/main; git add daily-inspection/index.html; git commit -m 'Harden history renderer against legacy overwrite' || true; }
             git push origin HEAD:main && exit 0
             sleep 5
           done
