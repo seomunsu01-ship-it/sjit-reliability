@@ -1,11 +1,9 @@
-# Repair trigger 2026-09-12
+# Repair trigger 2026-09-12 v2
 name: Fix inspection history search and Vietnamese UI
 
 on:
   push:
     branches: [main]
-    paths:
-      - '.github/workflows/repair-history-query-vn.yml'
 
 permissions:
   contents: write
@@ -33,38 +31,11 @@ jobs:
                 const resultSelect=()=>[...document.querySelectorAll('#history select')].find(x=>[...x.options].some(o=>/PASS|FAIL|All Result|전체/.test(o.textContent||'')));
                 const table=()=>[...document.querySelectorAll('#history table')].find(t=>/Maker/i.test(t.innerText||'')&&/Inspector/i.test(t.innerText||''));
                 const searchButton=()=>[...document.querySelectorAll('#history button')].find(b=>/조회|검색|Search|Tìm kiếm/.test((b.innerText||'').trim())&&!/Excel|CSV|초기화|Xóa/.test(b.innerText||''));
-                function vals(){
-                  const d=dates(); const a=d[0]?.value||'0000-01-01', b=d[1]?.value||'9999-12-31';
-                  const q=(searchInput()?.value||'').trim().toLowerCase(); const rs=resultSelect();
-                  let result=rs?.value||''; if(/all|전체|tất cả/i.test(result)||!result)result='';
-                  return {a,b,q,result};
-                }
-                async function load(){
-                  if(busy)return; const S=window.sb;if(!S)return;
-                  busy=true; try{
-                    const v=vals();
-                    const r=await S.from('daily_inspections').select('inspection_date,customer,part_no,part_name,lot_no,in_qty,test_qty,bad_qty,result,inspector').gte('inspection_date',v.a).lte('inspection_date',v.b).order('inspection_date',{ascending:false});
-                    if(r.error)throw r.error;
-                    state.rows=(r.data||[]).filter(x=>{const hay=[x.customer,x.part_no,x.part_name,x.lot_no].map(z=>String(z??'').toLowerCase()).join(' ');return (!v.q||hay.includes(v.q))&&(!v.result||String(x.result||'').toUpperCase()===String(v.result).toUpperCase())});
-                    state.page=1; render();
-                  }catch(e){console.error('history query',e)} finally{busy=false}
-                }
-                function render(){
-                  const t=table(); if(!t)return; const b=t.tBodies[0]; if(!b)return;
-                  const rows=state.rows,total=rows.length,pages=Math.max(1,Math.ceil(total/state.size));if(state.page>pages)state.page=pages;
-                  const start=(state.page-1)*state.size,end=Math.min(start+state.size,total);
-                  b.innerHTML=rows.slice(start,end).map(x=>`<tr><td>${esc(x.inspection_date)}</td><td>${esc(x.customer)}</td><td>${esc(x.part_no)}</td><td>${esc(x.part_name)}</td><td>${esc(x.lot_no)}</td><td>${Number(x.in_qty||0).toLocaleString()}</td><td>${Number(x.test_qty||0).toLocaleString()}</td><td>${Number(x.bad_qty||0).toLocaleString()}</td><td>${x.test_qty?((Number(x.bad_qty||0)/Number(x.test_qty||0))*100).toFixed(2):'0.00'}%</td><td><span class="badge ${String(x.result||'PASS').toUpperCase()==='FAIL'?'fail':'pass'}">${String(x.result||'PASS').toUpperCase()==='FAIL'?'FAIL':'PASS'}</span></td><td>${esc(x.inspector||'-')}</td></tr>`).join('')||'<tr><td colspan="11" class="empty">검색된 검사 이력이 없습니다.</td></tr>';
-                  let nav=t.parentElement.querySelector('.history-pagination');if(!nav){nav=document.createElement('div');nav.className='history-pagination';t.parentElement.appendChild(nav)}
-                  nav.innerHTML='';const info=document.createElement('div');info.className='history-pagination-info';info.textContent=`${total?start+1:0}-${end} / ${total}건`;
-                  const box=document.createElement('div');box.className='history-pagination-pages';const add=(txt,p,dis,act)=>{const z=document.createElement('button');z.type='button';z.textContent=txt;z.disabled=dis;if(act)z.className='active';z.onclick=()=>{state.page=p;render()};box.appendChild(z)};add('‹',Math.max(1,state.page-1),state.page===1,false);const list=pages<=7?Array.from({length:pages},(_,i)=>i+1):[1,...(state.page>4?['…']:[]),...Array.from({length:Math.max(0,Math.min(pages-1,state.page+1)-Math.max(2,state.page-1)+1)},(_,i)=>Math.max(2,state.page-1)+i),...(state.page<pages-3?['…']:[]),pages];list.forEach(x=>x==='…'?box.insertAdjacentHTML('beforeend','<span class="dots">…</span>'):add(String(x),x,false,x===state.page));add('›',Math.min(pages,state.page+1),state.page===pages,false);
-                  const size=document.createElement('div');size.className='history-pagination-size';size.innerHTML='페이지당 <select><option>20</option><option>50</option><option>100</option></select>건';const sel=size.querySelector('select');sel.value=String(state.size);sel.onchange=()=>{state.size=Number(sel.value);state.page=1;render()};nav.append(info,box,size);
-                  const vals=[...document.querySelectorAll('#history .history-period-summary .hstat-value')];if(vals.length>=4){vals[1].innerHTML=`${total.toLocaleString()} <small>LOT</small>`;vals[2].innerHTML=`${rows.reduce((a,x)=>a+Number(x.test_qty||0),0).toLocaleString()} <small>pcs</small>`;vals[3].innerHTML=`${rows.reduce((a,x)=>a+Number(x.bad_qty||0),0).toLocaleString()} <small>pcs</small>`}
-                }
+                function vals(){const d=dates();const a=d[0]?.value||'0000-01-01',b=d[1]?.value||'9999-12-31';const q=(searchInput()?.value||'').trim().toLowerCase();const rs=resultSelect();let result=rs?.value||'';if(/all|전체|tất cả/i.test(result)||!result)result='';return{a,b,q,result}}
+                async function load(){if(busy)return;const S=window.sb;if(!S)return;busy=true;try{const v=vals();const r=await S.from('daily_inspections').select('inspection_date,customer,part_no,part_name,lot_no,in_qty,test_qty,bad_qty,result,inspector').gte('inspection_date',v.a).lte('inspection_date',v.b).order('inspection_date',{ascending:false});if(r.error)throw r.error;state.rows=(r.data||[]).filter(x=>{const hay=[x.customer,x.part_no,x.part_name,x.lot_no].map(z=>String(z??'').toLowerCase()).join(' ');return(!v.q||hay.includes(v.q))&&(!v.result||String(x.result||'').toUpperCase()===String(v.result).toUpperCase())});state.page=1;render()}catch(e){console.error('history query',e)}finally{busy=false}}
+                function render(){const t=table();if(!t)return;const b=t.tBodies[0];if(!b)return;const rows=state.rows,total=rows.length,pages=Math.max(1,Math.ceil(total/state.size));if(state.page>pages)state.page=pages;const start=(state.page-1)*state.size,end=Math.min(start+state.size,total);b.innerHTML=rows.slice(start,end).map(x=>`<tr><td>${esc(x.inspection_date)}</td><td>${esc(x.customer)}</td><td>${esc(x.part_no)}</td><td>${esc(x.part_name)}</td><td>${esc(x.lot_no)}</td><td>${Number(x.in_qty||0).toLocaleString()}</td><td>${Number(x.test_qty||0).toLocaleString()}</td><td>${Number(x.bad_qty||0).toLocaleString()}</td><td>${x.test_qty?((Number(x.bad_qty||0)/Number(x.test_qty||0))*100).toFixed(2):'0.00'}%</td><td><span class="badge ${String(x.result||'PASS').toUpperCase()==='FAIL'?'fail':'pass'}">${String(x.result||'PASS').toUpperCase()==='FAIL'?'FAIL':'PASS'}</span></td><td>${esc(x.inspector||'-')}</td></tr>`).join('')||'<tr><td colspan="11" class="empty">검색된 검사 이력이 없습니다.</td></tr>';let nav=t.parentElement.querySelector('.history-pagination');if(!nav){nav=document.createElement('div');nav.className='history-pagination';t.parentElement.appendChild(nav)}nav.innerHTML='';const info=document.createElement('div');info.className='history-pagination-info';info.textContent=`${total?start+1:0}-${end} / ${total}건`;const box=document.createElement('div');box.className='history-pagination-pages';const add=(txt,p,dis,act)=>{const z=document.createElement('button');z.type='button';z.textContent=txt;z.disabled=dis;if(act)z.className='active';z.onclick=()=>{state.page=p;render()};box.appendChild(z)};add('‹',Math.max(1,state.page-1),state.page===1,false);const list=pages<=7?Array.from({length:pages},(_,i)=>i+1):[1,...(state.page>4?['…']:[]),...Array.from({length:Math.max(0,Math.min(pages-1,state.page+1)-Math.max(2,state.page-1)+1)},(_,i)=>Math.max(2,state.page-1)+i),...(state.page<pages-3?['…']:[]),pages];list.forEach(x=>x==='…'?box.insertAdjacentHTML('beforeend','<span class="dots">…</span>'):add(String(x),x,false,x===state.page));add('›',Math.min(pages,state.page+1),state.page===pages,false);const size=document.createElement('div');size.className='history-pagination-size';size.innerHTML='페이지당 <select><option>20</option><option>50</option><option>100</option></select>건';const sel=size.querySelector('select');sel.value=String(state.size);sel.onchange=()=>{state.size=Number(sel.value);state.page=1;render()};nav.append(info,box,size);const vals=[...document.querySelectorAll('#history .history-period-summary .hstat-value')];if(vals.length>=4){vals[1].innerHTML=`${total.toLocaleString()} <small>LOT</small>`;vals[2].innerHTML=`${rows.reduce((a,x)=>a+Number(x.test_qty||0),0).toLocaleString()} <small>pcs</small>`;vals[3].innerHTML=`${rows.reduce((a,x)=>a+Number(x.bad_qty||0),0).toLocaleString()} <small>pcs</small>`}}
                 function bind(){const h=hist();if(!h)return;const sb=searchButton();if(sb&&!sb.dataset.historyFixed){sb.dataset.historyFixed='1';sb.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();load()},{capture:true})}const d=dates();d.forEach(x=>{if(!x.dataset.historyFixed){x.dataset.historyFixed='1';x.addEventListener('change',()=>{clearTimeout(timer);timer=setTimeout(load,60)})}});const si=searchInput();if(si&&!si.dataset.historyFixed){si.dataset.historyFixed='1';si.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();load()}})}}
-                function later(){clearTimeout(timer);timer=setTimeout(bind,100)}
-                new MutationObserver(later).observe(document.body,{subtree:true,childList:true});
-                document.addEventListener('click',e=>{if(e.target.closest('.nav button')&&e.target.closest('.nav button').dataset.page==='history'){setTimeout(()=>{bind();load()},250)}});
-                setTimeout(()=>{bind();load()},700);setTimeout(()=>{bind();load()},1600);
+                function later(){clearTimeout(timer);timer=setTimeout(bind,100)}new MutationObserver(later).observe(document.body,{subtree:true,childList:true});document.addEventListener('click',e=>{const n=e.target.closest('.nav button');if(n&&n.dataset.page==='history')setTimeout(()=>{bind();load()},250)});setTimeout(()=>{bind();load()},700);setTimeout(()=>{bind();load()},1600);
               })();</script>'''
               s=s.replace('</body></html>',js+'</body></html>')
               p.write_text(s,encoding='utf-8')
@@ -79,7 +50,7 @@ jobs:
               js=r'''<script>/* SJIT_VI_EXTRA_V2 */
               (()=>{
                 const M={'Inspection History':'Lịch sử kiểm tra','검사 이력 조회 · Excel 일괄 업로드':'Tra cứu lịch sử kiểm tra · Tải Excel hàng loạt','Maker / Part / LOT':'Nhà cung cấp / Mã Part / Số LOT','All Result':'Tất cả kết quả','Excel 업로드':'Tải Excel','기간 조회':'Tra cứu theo thời gian','오늘':'Hôm nay','최근 7일':'7 ngày gần nhất','이번 달':'Tháng này','지난 달':'Tháng trước','조회':'Tra cứu','CSV':'CSV','페이지당':'Mục mỗi trang','건':'mục','검색된 검사 이력이 없습니다.':'Không tìm thấy lịch sử kiểm tra.','조회된 검사 이력이 없습니다.':'Không có lịch sử kiểm tra được tìm thấy.','조회 기간':'Khoảng thời gian','DB connected · 314 cases':'Đã kết nối DB · 314 trường hợp','DB connected':'Đã kết nối DB','Quality Management':'Quản lý chất lượng','Daily Inspection Dashboard':'Bảng điều khiển kiểm tra hàng ngày','월별 품질 현황':'Tình hình chất lượng theo tháng','검사 이력 조회':'Tra cứu lịch sử kiểm tra','검사 이력 · Excel 일괄 업로드':'Lịch sử kiểm tra · Tải Excel hàng loạt','초기화':'Đặt lại','전체':'Tất cả','PASS':'ĐẠT (PASS)','FAIL':'KHÔNG ĐẠT (FAIL)'};
-                const f=document.getElementById('appFrame');let lock=false,t=0;
+                const f=document.getElementById('appFrame');let lock=false;
                 function go(){if(lock)return;const d=f.contentDocument;if(!d?.body)return;lock=true;try{const w=d.createTreeWalker(d.body,NodeFilter.SHOW_TEXT);const a=[];let n;while(n=w.nextNode()){const p=n.parentElement;if(!p||p.tagName==='SCRIPT'||p.tagName==='STYLE')continue;const raw=n.nodeValue.trim();if(!raw)continue;let out=M[raw];if(out===undefined&&/^\d+-\d+ \/ \d+건$/.test(raw))out=raw.replace(/건$/,'mục');if(out&&out!==raw)a.push([n,raw,out])}a.forEach(([n,raw,out])=>n.nodeValue=n.nodeValue.replace(raw,out));d.querySelectorAll('input,button,select').forEach(e=>['placeholder','title','aria-label'].forEach(k=>{const v=e.getAttribute(k);if(v&&M[v])e.setAttribute(k,M[v])}));d.documentElement.lang='vi';const b=d.getElementById('langBtn');if(b)b.textContent='🇰🇷 한국어';if(b)b.onclick=()=>window.top.location.href='./index.html';}finally{lock=false}}
                 f.addEventListener('load',()=>{go();setTimeout(go,300);setTimeout(go,1000)});setInterval(go,1500);
               })();</script>'''
