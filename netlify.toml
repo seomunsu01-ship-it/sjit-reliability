@@ -5,3 +5,8 @@
   from = "/"
   to = "/daily-inspection/"
   status = 200
+
+[[redirects]]
+  from = "/daily-inspection/"
+  to = "/daily-inspection/vi.html"
+  status = 200
