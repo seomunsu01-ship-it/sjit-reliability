@@ -1,0 +1,28 @@
+name: Finalize inspection history period filter
+
+on:
+  push:
+    branches: [history-period-final]
+    paths:
+      - '.github/workflows/history-period-finalize.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Patch history page
+        shell: bash
+        run: |
+          python -c 'from pathlib import Path; import re; wf=Path(".github/workflows/apply-history-period-filter.yml").read_text(encoding="utf-8"); target=Path("daily-inspection/index.html"); text=target.read_text(encoding="utf-8"); style=re.search(r"style = r\x27\x27\x27(.*?)\x27\x27\x27",wf,re.S).group(1); script=re.search(r"script = r\x27\x27\x27(.*?)\x27\x27\x27",wf,re.S).group(1); target.write_text(text.replace("</head>","<style>"+style+"</style></head>",1).replace("</body>","<script>"+script+"</script></body>",1),encoding="utf-8")'
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add daily-inspection/index.html
+          git commit -m "Add inspection history period filter"
+          git push origin history-period-final
