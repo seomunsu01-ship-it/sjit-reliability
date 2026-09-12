@@ -1,6 +1,6 @@
 [build]
   publish = "."
-  command = "python scripts/fix_pagination_ui.py && python scripts/repair_history_ui.py"
+  command = "python scripts/repair_history_ui.py"
 
 [[redirects]]
   from = "/"
