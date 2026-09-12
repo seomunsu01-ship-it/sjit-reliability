@@ -1,0 +1,41 @@
+name: Patch Statistics Supplier Click
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch statistics supplier click list
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re, subprocess
+          p=Path('daily-inspection/index.html')
+          s=p.read_text(encoding='utf-8')
+          old="""function renderStats(){const bad=rows.reduce((s,x)=>s+x.badQty,0),test=rows.reduce((s,x)=>s+x.testQty,0);$('sCount').textContent=rows.length.toLocaleString();$('sBad').textContent=bad.toLocaleString();$('sRate').textContent=(test?bad/test*100:0).toFixed(2)+'%';const m={};rows.forEach(x=>{if(x.customer)m[x.customer]=(m[x.customer]||0)+1});$('customerStats').innerHTML=Object.entries(m).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div class=\"mini-row\"><span>${esc(k)}</span><b>${v} LOT</b></div>`).join('')||'<div class=\"empty\">No data</div>'}"""
+          new="""function renderStats(){const bad=rows.reduce((s,x)=>s+x.badQty,0),test=rows.reduce((s,x)=>s+x.testQty,0);$('sCount').textContent=rows.length.toLocaleString();$('sBad').textContent=bad.toLocaleString();$('sRate').textContent=(test?bad/test*100:0).toFixed(2)+'%';const m={};rows.forEach(x=>{if(x.customer)m[x.customer]=(m[x.customer]||0)+1});$('customerStats').innerHTML=Object.entries(m).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<button class=\"mini-row supplier-click\" data-supplier=\"${esc(k)}\"><span>${esc(k)}</span><b>${v} LOT</b></button>`).join('')||'<div class=\"empty\">No data</div>';document.querySelectorAll('#customerStats .supplier-click').forEach(b=>b.onclick=()=>showSupplierStats(b.dataset.supplier))}"""
+          if old in s:
+              s=s.replace(old,new,1)
+          css=""".supplier-click{width:100%;border:0;text-align:left;cursor:pointer;font:inherit;color:inherit}.supplier-click:hover{background:#eef6ff;box-shadow:inset 0 0 0 1px #bfdbfe}.supplier-modal-title{font-size:18px;font-weight:800}.supplier-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:12px 0}.supplier-summary .card{box-shadow:none;background:#f8fafc}.supplier-table{width:100%;border-collapse:collapse;font-size:12px}.supplier-table th,.supplier-table td{padding:9px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}.supplier-table th{background:#f8fafc;color:var(--muted)}"""
+          s=s.replace('</style></head><body>',css+'</style></head><body>',1)
+          modal='''<div id="supplierModal" class="modal hidden"><div class="modal-card"><div class="toolbar"><div><div id="supplierModalTitle" class="supplier-modal-title">공급업체 검사 목록</div><div id="supplierModalSub" class="muted"></div></div><button class="btn" id="closeSupplierModal">닫기</button></div><div id="supplierSummary" class="supplier-summary"></div><div class="table-wrap"><table class="supplier-table"><thead><tr><th>Date</th><th>Maker</th><th>Part No.</th><th>Part Name</th><th>LOT</th><th>In</th><th>Test</th><th>Defect</th><th>Rate</th><th>Result</th><th>Inspector</th></tr></thead><tbody id="supplierBody"></tbody></table></div></div></div>'''
+          if 'id="supplierModal"' not in s:
+              s=s.replace('<div class="toast" id="toast"></div>', '<div class="toast" id="toast"></div>'+modal,1)
+          js="""function showSupplierStats(supplier){const d=rows.filter(x=>x.customer===supplier).sort((a,b)=>b.date.localeCompare(a.date)||b.id-a.id),test=d.reduce((s,x)=>s+x.testQty,0),bad=d.reduce((s,x)=>s+x.badQty,0);$('supplierModalTitle').textContent=supplier+' · 검사 목록';$('supplierModalSub').textContent='총 '+d.length.toLocaleString()+' LOT';$('supplierSummary').innerHTML='<div class=\"card\"><div class=\"label\">검사 LOT</div><div class=\"num\">'+d.length.toLocaleString()+'</div></div><div class=\"card\"><div class=\"label\">검사 수량</div><div class=\"num\">'+test.toLocaleString()+'</div></div><div class=\"card\"><div class=\"label\">불량 수량</div><div class=\"num danger-text\">'+bad.toLocaleString()+'</div></div><div class=\"card\"><div class=\"label\">불량률</div><div class=\"num danger-text\">'+(test?bad/test*100:0).toFixed(2)+'%</div></div>';$('supplierBody').innerHTML=d.map(x=>'<tr><td>'+esc(x.date)+'</td><td>'+esc(x.customer)+'</td><td>'+esc(x.part)+'</td><td>'+esc(x.name)+'</td><td>'+esc(x.lot)+'</td><td>'+x.inQty.toLocaleString()+'</td><td>'+x.testQty.toLocaleString()+'</td><td>'+x.badQty.toLocaleString()+'</td><td>'+(x.testQty?x.badQty/x.testQty*100:0).toFixed(2)+'%</td><td><span class=\"badge '+(x.result==='FAIL'?'fail':'pass')+'\">'+x.result+'</span></td><td>'+esc(x.inspector)+'</td></tr>').join('')||'<tr><td colspan=\"11\" class=\"empty\">No data</td></tr>';$('supplierModal').classList.remove('hidden')}$('closeSupplierModal').onclick=()=>$('supplierModal').classList.add('hidden');$('supplierModal').onclick=e=>{if(e.target===$('supplierModal'))$('supplierModal').classList.add('hidden')};"""
+          marker="function fillCustomers(){"
+          if 'function showSupplierStats(supplier)' not in s:
+              s=s.replace(marker,js+marker,1)
+          p.write_text(s,encoding='utf-8')
+          subprocess.run(['git','config','user.name','github-actions[bot]'],check=True)
+          subprocess.run(['git','config','user.email','41898282+github-actions[bot]@users.noreply.github.com'],check=True)
+          subprocess.run(['git','add','daily-inspection/index.html'],check=True)
+          r=subprocess.run(['git','diff','--cached','--quiet'])
+          if r.returncode!=0:
+              subprocess.run(['git','commit','-m','Make supplier statistics clickable'],check=True)
+              subprocess.run(['git','push'],check=True)
+          PY
