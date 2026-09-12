@@ -1,5 +1,6 @@
 /* SJIT_HISTORY_FIX_V4
    Single source of truth for inspection-history filters, summary, table and pagination.
+   FINAL PRODUCTION REFRESH: deploy the corrected LOT count and query controller.
 */
 (()=>{
   'use strict';
@@ -29,8 +30,8 @@
     });
   }
   async function fetchRows(c){
-    const S=window.sb;
-    if(!S) throw new Error('Supabase client window.sb not found');
+    const S=window.sb || (typeof sb!=='undefined'?sb:null);
+    if(!S) throw new Error('Supabase client not found');
     const from=normDate(c.dates[0]?.value)||'0000-01-01';
     const to=normDate(c.dates[1]?.value)||'9999-12-31';
     const q=await S.from('daily_inspections')
@@ -45,9 +46,6 @@
     const box=c.h.querySelector('.history-period-summary');
     if(!box)return;
     const vals=[...box.querySelectorAll('.hstat-value')];
-    // One daily_inspections row represents one inspection LOT. Keep this
-    // consistent with the dashboard's inspection LOT count; do not collapse
-    // rows by lot_no because duplicate/blank LOT labels are still inspections.
     const lots=totalRows.length;
     const test=totalRows.reduce((s,r)=>s+Number(r.test_qty||0),0);
     const bad=totalRows.reduce((s,r)=>s+Number(r.bad_qty||0),0);
