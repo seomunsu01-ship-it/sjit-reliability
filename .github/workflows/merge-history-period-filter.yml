@@ -18,8 +18,6 @@ jobs:
           fetch-depth: 0
 
       - name: Apply patch with retry
-        env:
-          PATCH_COMMIT: cd36364
         shell: bash
         run: |
           set -e
@@ -33,9 +31,7 @@ jobs:
               exit 0
             fi
 
-            git show "$PATCH_COMMIT:daily-inspection/index.html" > /tmp/patched.html
-
-            python -c 'from pathlib import Path; import re; target=Path("daily-inspection/index.html"); source=Path("/tmp/patched.html").read_text(encoding="utf-8"); text=target.read_text(encoding="utf-8"); style=re.search(r"<style>\\s*\\.history-period-tools.*?</style>",source,re.S); script=re.search(r"<script>\\s*/\\* SJIT_HISTORY_PERIOD_FILTER_V1 \\*/.*?</script>",source,re.S); assert style and script, "Could not extract history filter patch"; target.write_text(text.replace("</head>",style.group(0)+"</head>",1).replace("</body>",script.group(0)+"</body>",1),encoding="utf-8")'
+            python -c 'from pathlib import Path; import re; wf=Path(".github/workflows/apply-history-period-filter.yml").read_text(encoding="utf-8"); target=Path("daily-inspection/index.html"); text=target.read_text(encoding="utf-8"); style=re.search(r"style = r\x27\x27\x27(.*?)\x27\x27\x27",wf,re.S).group(1); script=re.search(r"script = r\x27\x27\x27(.*?)\x27\x27\x27",wf,re.S).group(1); target.write_text(text.replace("</head>","<style>"+style+"</style></head>",1).replace("</body>","<script>"+script+"</script></body>",1),encoding="utf-8")'
 
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
