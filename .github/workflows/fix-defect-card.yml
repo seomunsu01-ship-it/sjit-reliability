@@ -10,13 +10,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Add defect detail click handler
+      - name: Repair JavaScript and defect detail
         shell: bash
         run: |
           python - <<'PY'
           from pathlib import Path
           p=Path('daily-inspection/index.html')
           s=p.read_text(encoding='utf-8')
+          bad='function renderStatsfunction renderStatsfunction renderStats(){'
+          if bad in s:
+              s=s.replace(bad,'function renderStats(){')
           marker='id="DEFECT-CARD-DETAIL-V2"'
           if marker not in s:
               js=r'''<script id="DEFECT-CARD-DETAIL-V2">(function(){
@@ -43,7 +46,7 @@ jobs:
           var t=setInterval(function(){if(bind())clearInterval(t)},500);setTimeout(function(){clearInterval(t);bind()},15000);
           })();</script>'''
               s=s.replace('</body></html>',js+'</body></html>',1)
-              p.write_text(s,encoding='utf-8')
+          p.write_text(s,encoding='utf-8')
           PY
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
