@@ -92,6 +92,36 @@ async function bootSupabase(){
   display:none !important;
 }
 </style>
+
+<style id="force-remove-legacy-menus">
+/* Legacy menu cleanup */
+nav a, nav button, .nav-item, .menu-item, .sidebar a, .sidebar button {
+  /* keep normal layout; JS below removes only matching items */
+}
+</style>
+<script id="force-remove-legacy-menus-js">
+(function(){
+  const legacy = ['시험 데이터','자재별 분석','Test Data','Material Analysis',
+                  'Dữ liệu kiểm tra','Phân tích vật liệu'];
+  function removeLegacyMenus(){
+    const nodes = document.querySelectorAll('nav a, nav button, .nav-item, .menu-item, .sidebar a, .sidebar button');
+    nodes.forEach(el => {
+      const text = (el.textContent || '').replace(/\s+/g,' ').trim();
+      if (legacy.some(x => text === x || text.includes(x))) {
+        el.remove();
+      }
+    });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', removeLegacyMenus);
+  } else {
+    removeLegacyMenus();
+  }
+  setTimeout(removeLegacyMenus, 300);
+  setTimeout(removeLegacyMenus, 1000);
+})();
+</script>
+
 </head><body>
 <div id="loginScreen">
   <div class="login-card">
@@ -317,7 +347,12 @@ function mk(id,type,labels,datasets,opts={}){destroy(id);charts[id]=new Chart(do
 function renderCharts(){let months=Array.from({length:12},(_,i)=>i+1), counts=months.map(m=>filtered.filter(x=>Number(x.Month)===m).length), passes=months.map(m=>filtered.filter(x=>Number(x.Month)===m&&x['Reliability Test Result']==='Pass').length), fails=months.map(m=>filtered.filter(x=>Number(x.Month)===m&&['Fail','NG'].includes(x['Reliability Test Result'])).length);mk('monthlyChart','bar',months.map(m=>m+'월'),[{label:lang==='ko'?'시험 건수':lang==='en'?'Test Cases':'Số ca kiểm tra',data:counts,backgroundColor:'#5b9bd5'},{label:lang==='ko'?'합격':lang==='en'?'Pass':'Đạt',data:passes,type:'line',borderColor:'#27a966',backgroundColor:'#27a966',tension:.3,yAxisID:'y1'},{label:lang==='ko'?'불합격':lang==='en'?'Fail':'Không đạt',data:fails,type:'line',borderColor:'#e5534b',backgroundColor:'#e5534b',tension:.3,yAxisID:'y1'}],{scales:{y:{beginAtZero:true},y1:{position:'right',beginAtZero:true,grid:{drawOnChartArea:false}}}});let statuses=[['Finished',t('finished')],['Not tested',t('notTested')],['Other',t('other')]], sv=statuses.map(([k])=>k==='Finished'?filtered.filter(x=>x['Reliability Test Status']==='Finished').length:k==='Not tested'?filtered.filter(x=>x['Reliability Test Status']==='Not tested').length:filtered.filter(x=>!['Finished','Not tested'].includes(x['Reliability Test Status']||'')).length);mk('statusChart','doughnut',statuses.map(x=>x[1]),[{data:sv,backgroundColor:['#1f6fb2','#6ea6df','#a7b0bb'],borderWidth:1}]);let cs=[...new Set(filtered.map(x=>cleanCond(x['Test Condition'])))];mk('conditionChart','bar',cs,[{label:t('total'),data:cs.map(c=>filtered.filter(x=>cleanCond(x['Test Condition'])===c).length),backgroundColor:'#5b9bd5'}],{indexAxis:'y',plugins:{legend:{display:false}}});let mats={};filtered.forEach(x=>{let m=cleanMaterial(x.Material);mats[m]=(mats[m]||0)+1});let ml=Object.entries(mats).sort((a,b)=>b[1]-a[1]).slice(0,10);mk('materialChart','bar',ml.map(x=>x[0]),[{label:t('total'),data:ml.map(x=>x[1]),backgroundColor:'#2ead68'}],{indexAxis:'y',plugins:{legend:{display:false}}});let models={};filtered.forEach(x=>{let m=(x.Model||'미입력').toString().trim();models[m]=(models[m]||0)+1});let mdl=Object.entries(models).sort((a,b)=>b[1]-a[1]).slice(0,10);mk('modelChart','bar',mdl.map(x=>x[0]),[{label:t('total'),data:mdl.map(x=>x[1]),backgroundColor:'#5b9bd5'}],{indexAxis:'y',plugins:{legend:{display:false}}});let issueMap={'Report 미발행':filtered.filter(x=>!x['Report No']).length,'시험 미실시':filtered.filter(x=>x['Reliability Test Status']==='Not tested').length,'CPK 관련 이슈':filtered.filter(x=>(x['Result before reliability test']||'').toString().includes('CPK FAIL')||(x['Result after reliability test']||'').toString().includes('CPK FAIL')).length,'Remark 미확인':filtered.filter(x=>!x.Remark).length,'시험 결과 미입력':filtered.filter(x=>!x['Reliability Test Result']).length};document.getElementById('issues').innerHTML=Object.entries(issueMap).sort((a,b)=>b[1]-a[1]).slice(0,5).map(x=>'<div style="display:flex;justify-content:space-between;padding:11px;border-bottom:1px solid var(--line)"><b>'+escapeHtml(x[0])+'</b><strong style="color:#e5534b;font-size:20px">'+x[1]+'</strong></div>').join('')}
 function renderTable(){let arr=[...filtered].sort((a,b)=>String(b['Requested Date by Planning team']||'').localeCompare(String(a['Requested Date by Planning team']||''))).slice(0,15);let body=document.getElementById('recentBody');body.innerHTML=arr.length?arr.map((x,i)=>{let res=x['Reliability Test Result']||'-',st=x['Reliability Test Status']||'-',cls=res==='Pass'?'pass':res==='Fail'||res==='NG'?'fail':'pending';return '<tr><td>'+(i+1)+'</td><td>'+escapeHtml(x['Requested Date by Planning team']||'-')+'</td><td>'+escapeHtml(x.Model||'-')+'</td><td>'+escapeHtml(cleanMaterial(x.Material))+'</td><td>'+escapeHtml(cleanCond(x['Test Condition']))+'</td><td><span class="badge '+cls+'">'+escapeHtml(res)+'</span></td><td>'+escapeHtml(st)+'</td><td>'+escapeHtml(x['Report No']||'-')+'</td><td>'+escapeHtml(x.PIC||'-')+'</td></tr>'}).join(''):'<tr><td colspan="9" class="empty">'+t('noData')+'</td></tr>'}
 function renderAttention(){let a=[['Report 미발행',filtered.filter(x=>!x['Report No']).length],['시험 미실시',filtered.filter(x=>x['Reliability Test Status']==='Not tested').length],['CPK 관련 이슈',filtered.filter(x=>(x['Result before reliability test']||'').toString().includes('CPK FAIL')||(x['Result after reliability test']||'').toString().includes('CPK FAIL')).length],['결과 미입력',filtered.filter(x=>!x['Reliability Test Result']).length]];document.getElementById('attention').innerHTML=a.map(x=>'<div class="notice"><b>'+x[0]+'</b><span>'+x[1]+' '+(lang==='ko'?'건':lang==='en'?'cases':'ca')+'</span></div>').join('')}
-function setLang(l){lang=l;document.documentElement.lang=l==='ko'?'ko':l==='en'?'en':'vi';document.querySelectorAll('[data-k]').forEach(e=>e.textContent=t(e.dataset.k));document.querySelectorAll('.langs button').forEach(b=>b.classList.toggle('active',b.dataset.lang===l));document.getElementById('condition').options[0].text=t('all');document.getElementById('model').options[0].text=t('all');document.getElementById('material').options[0].text=t('all');document.getElementById('status').options[0].text=t('all');document.getElementById('resultFilter').options[0].text=t('all');render()}
+function setLang(l){lang=l;document.documentElement.lang=l==='ko'?'ko':l==='en'?'en':'vi';document.querySelectorAll('[data-k]').forEach(e=>e.textContent=t(e.dataset.k));document.querySelectorAll('.langs button').forEach(b=>b.classList.toggle('active',b.dataset.lang===l));document.getElementById('condition').options[0].text=t('all');document.getElementById('model').options[0].text=t('all');document.getElementById('material').options[0].text=t('all');document.getElementById('status').options[0].text=t('all');document.getElementById('resultFilter').options[0].text=t('all');
+const reportState=document.getElementById('reportState');
+if(reportState){reportState.options[0].text=t('all');reportState.options[1].text=lang==='en'?'Issued':lang==='vi'?'Đã phát hành':'발행';reportState.options[2].text=lang==='en'?'Not Issued':lang==='vi'?'Chưa phát hành':'미발행';}
+render();
+if(document.getElementById('viewReport')?.classList.contains('active')) renderReport();
+}
 document.querySelectorAll('.langs button').forEach(b=>b.onclick=()=>setLang(b.dataset.lang));
 const navButtons=document.querySelectorAll('.nav button[data-view]');
 function showView(v){
@@ -390,7 +425,8 @@ function renderReport(){
  document.getElementById('reportBody').innerHTML=arr.length?arr.map((x,i)=>{
   const report=(x['Report No']||'').toString().trim(),rv=(x['Reliability Test Result']||'').toString().trim();
   const reportCell=report?`<button class="report-link" data-report="${escapeHtml(report)}" data-no="${escapeHtml(x.No)}">${escapeHtml(report)}</button>`:`<button class="smallbtn report-register" data-no="${escapeHtml(x.No)}">Report 등록</button>`;
-return `<tr><td>${i+1}</td><td>${escapeHtml(x['Requested Date by Planning team']||'-')}</td><td>${escapeHtml(x.Model||'-')}</td><td>${escapeHtml(cleanMaterial(x.Material))}</td><td>${escapeHtml(cleanCond(x['Test Condition']))}</td><td>${escapeHtml(rv||'-')}</td><td>${reportCell}</td><td><span class="report-status ${report?'ok':'missing'}">${report?'발행':'미발행'}</span></td><td>${escapeHtml(x.PIC||'-')}</td><td>${escapeHtml(x['CR No']||'-')}</td><td><button class="smallbtn edit-report-item" type="button" data-no="${escapeHtml(x.No)}">수정</button></td></tr>`;
+const reportStatusLabel=report?(lang==='en'?'Issued':lang==='vi'?'Đã phát hành':'발행'):(lang==='en'?'Not Issued':lang==='vi'?'Chưa phát hành':'미발행');
+return `<tr><td>${i+1}</td><td>${escapeHtml(x['Requested Date by Planning team']||'-')}</td><td>${escapeHtml(x.Model||'-')}</td><td>${escapeHtml(cleanMaterial(x.Material))}</td><td>${escapeHtml(cleanCond(x['Test Condition']))}</td><td>${escapeHtml(rv||'-')}</td><td>${reportCell}</td><td><span class="report-status ${report?'ok':'missing'}">${reportStatusLabel}</span></td><td>${escapeHtml(x.PIC||'-')}</td><td>${escapeHtml(x['CR No']||'-')}</td><td><button class="smallbtn edit-report-item" type="button" data-no="${escapeHtml(x.No)}">수정</button></td></tr>`;
  }).join(''):`<tr><td colspan="11" class="empty">${t('noData')}</td></tr>`;
  refreshReportLinks();
 }
