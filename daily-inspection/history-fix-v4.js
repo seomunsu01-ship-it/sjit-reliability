@@ -33,8 +33,6 @@
     if(!S) throw new Error('Supabase client window.sb not found');
     const from=normDate(c.dates[0]?.value)||'0000-01-01';
     const to=normDate(c.dates[1]?.value)||'9999-12-31';
-    // Fetch only columns known to exist. No date predicate here: filtering locally
-    // avoids type/format differences between date and timestamp deployments.
     const q=await S.from('daily_inspections')
       .select('inspection_date,customer,part_no,part_name,lot_no,in_qty,test_qty,bad_qty,result,inspector')
       .order('inspection_date',{ascending:false});
@@ -47,7 +45,10 @@
     const box=c.h.querySelector('.history-period-summary');
     if(!box)return;
     const vals=[...box.querySelectorAll('.hstat-value')];
-    const lots=new Set(totalRows.map(r=>String(r.lot_no||'').trim()).filter(Boolean)).size;
+    // One daily_inspections row represents one inspection LOT. Keep this
+    // consistent with the dashboard's inspection LOT count; do not collapse
+    // rows by lot_no because duplicate/blank LOT labels are still inspections.
+    const lots=totalRows.length;
     const test=totalRows.reduce((s,r)=>s+Number(r.test_qty||0),0);
     const bad=totalRows.reduce((s,r)=>s+Number(r.bad_qty||0),0);
     if(vals[0]) vals[0].textContent=`${state.from||''} ~ ${state.to||''}`;
