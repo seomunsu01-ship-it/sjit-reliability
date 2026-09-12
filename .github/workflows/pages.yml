@@ -3,7 +3,7 @@ on:
   push:
     branches: [main]
 permissions:
-  contents: write
+  contents: read
   pages: write
   id-token: write
 jobs:
@@ -14,33 +14,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Patch Excel upload button
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          p = Path('daily-inspection/index.html')
-          s = p.read_text(encoding='utf-8')
-          old = '<input id="search" placeholder="Maker / Part / LOT"><select id="filterResult"><option value="">All Result</option><option>PASS</option><option>FAIL</option><option value="_excel">📥 Excel 업로드</option></select>'
-          new = '<input id="search" placeholder="Maker / Part / LOT"><select id="filterResult"><option value="">All Result</option><option>PASS</option><option>FAIL</option></select><button class="btn primary" id="excelBtn">📥 Excel 업로드</button>'
-          old2 = "$('excelBtn')&&($('excelBtn').onclick=()=>{$('excelInput').value='';$('excelInput').click()});$('filterResult').onchange=()=>{if($('filterResult').value==='_excel'){$('filterResult').value='';$('excelInput').value='';$('excelInput').click()}else renderHistory()};"
-          new2 = "$('excelBtn').onclick=()=>{$('excelInput').value='';$('excelInput').click()};$('filterResult').onchange=renderHistory;"
-          changed = False
-          if old in s:
-              s = s.replace(old, new, 1)
-              changed = True
-          if old2 in s:
-              s = s.replace(old2, new2, 1)
-              changed = True
-          if changed:
-              p.write_text(s, encoding='utf-8')
-              import subprocess
-              subprocess.run(['git','config','user.name','github-actions[bot]'], check=True)
-              subprocess.run(['git','config','user.email','41898282+github-actions[bot]@users.noreply.github.com'], check=True)
-              subprocess.run(['git','add','daily-inspection/index.html'], check=True)
-              subprocess.run(['git','commit','-m','Add standalone Excel upload button'], check=True)
-              subprocess.run(['git','push'], check=True)
-          else:
-              print('Excel upload button already patched')
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
