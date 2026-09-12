@@ -1,0 +1,32 @@
+name: Add Language Button
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  patch:
+    if: ${{ !startsWith(github.event.head_commit.message, 'Add visible Vietnamese language button') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add language button
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('daily-inspection/index.html')
+          s=p.read_text(encoding='utf-8')
+          old='<div class="userbox"><span class="status" id="dbStatus">'
+          new='<div class="userbox"><button class="lang-btn" id="langBtn" onclick="location.href=\'./vi.html\'">🇻🇳 Tiếng Việt</button><span class="status" id="dbStatus">'
+          if 'id="langBtn"' not in s:
+              s=s.replace(old,new,1)
+          css='.lang-btn{border:1px solid #d7dce5;background:#fff;color:#172033;padding:7px 10px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer}.lang-btn:hover{background:#eff6ff;border-color:#93c5fd}'
+          s=s.replace('</style></head><body>',css+'</style></head><body>',1)
+          p.write_text(s,encoding='utf-8')
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add daily-inspection/index.html
+          git commit -m 'Add visible Vietnamese language button'
+          git push
