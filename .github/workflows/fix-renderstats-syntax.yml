@@ -1,0 +1,33 @@
+name: Fix renderStats syntax error
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fix duplicated function token
+        shell: python
+        run: |
+          from pathlib import Path
+          p=Path('daily-inspection/index.html')
+          s=p.read_text(encoding='utf-8')
+          old='function renderStatsfunction renderStatsfunction renderStats(){'
+          new='function renderStats(){'
+          if old not in s:
+              print('Target syntax error not found')
+              raise SystemExit(0)
+          s=s.replace(old,new)
+          p.write_text(s,encoding='utf-8')
+      - name: Commit fix
+        shell: bash
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add daily-inspection/index.html
+          git diff --cached --quiet && exit 0
+          git commit -m 'Fix renderStats JavaScript syntax error'
+          git push origin HEAD:main
