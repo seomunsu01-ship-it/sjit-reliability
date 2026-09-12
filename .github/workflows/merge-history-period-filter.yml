@@ -1,0 +1,65 @@
+name: Merge inspection history period filter
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/merge-history-period-filter.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  merge-patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply patch with retry
+        env:
+          PATCH_COMMIT: cd36364
+        shell: bash
+        run: |
+          set -e
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            echo "Attempt $attempt"
+            git fetch origin main
+            git reset --hard origin/main
+
+            if grep -q 'SJIT_HISTORY_PERIOD_FILTER_V1' daily-inspection/index.html; then
+              echo 'Patch already present.'
+              exit 0
+            fi
+
+            git show "$PATCH_COMMIT:daily-inspection/index.html" > /tmp/patched.html
+
+            python - <<'PY'
+            from pathlib import Path
+            import re
+            target=Path('daily-inspection/index.html')
+            source=Path('/tmp/patched.html').read_text(encoding='utf-8')
+            text=target.read_text(encoding='utf-8')
+            style=re.search(r'<style>\s*\.history-period-tools.*?</style>', source, re.S)
+            script=re.search(r'<script>\s*/\* SJIT_HISTORY_PERIOD_FILTER_V1 \*/.*?</script>', source, re.S)
+            if not style or not script:
+                raise SystemExit('Could not extract history filter patch from source commit')
+            text=text.replace('</head>', style.group(0)+'</head>', 1)
+            text=text.replace('</body>', script.group(0)+'</body>', 1)
+            target.write_text(text, encoding='utf-8')
+            PY
+
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add daily-inspection/index.html
+            git commit -m "Add inspection history period filter"
+            if git push origin HEAD:main; then
+              echo 'Patch pushed successfully.'
+              exit 0
+            fi
+            git reset --hard origin/main
+            sleep 3
+          done
+          echo 'Unable to push after retries.'
+          exit 1
