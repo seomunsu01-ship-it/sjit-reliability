@@ -2,6 +2,7 @@
   publish = "."
 
 # Clean static deploy: history query fix is embedded in the HTML.
+# Final history controller deployment trigger.
 
 [[redirects]]
   from = "/"
