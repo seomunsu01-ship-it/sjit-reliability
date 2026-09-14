@@ -1272,4 +1272,31 @@ document.addEventListener('DOMContentLoaded',()=>{
 
 
 
+
+<script>
+/* FINAL SAVE BUTTON FIX 2026-09-14 */
+(function(){
+  function wireSaveButtons(){
+    const save=document.getElementById('manualSave');
+    const cont=document.getElementById('manualSaveContinue');
+    if(save){
+      save.type='button'; save.onclick=null;
+      save.addEventListener('click',async function(e){
+        e.preventDefault(); e.stopPropagation();
+        try{ if(typeof saveManualV16==='function') await saveManualV16(true); else if(typeof saveManual==='function') await saveManual(true); else alert('저장 기능을 불러오지 못했습니다. 페이지를 새로고침해 주세요.'); }
+        catch(err){ console.error('manualSave click error',err); alert('저장 처리 중 오류: '+(err?.message||err)); }
+      });
+    }
+    if(cont){
+      cont.type='button'; cont.onclick=null;
+      cont.addEventListener('click',async function(e){
+        e.preventDefault(); e.stopPropagation();
+        try{ if(typeof saveManualV16==='function') await saveManualV16(false); else if(typeof saveManual==='function') await saveManual(false); else alert('저장 기능을 불러오지 못했습니다. 페이지를 새로고침해 주세요.'); }
+        catch(err){ console.error('manualSaveContinue click error',err); alert('저장 처리 중 오류: '+(err?.message||err)); }
+      });
+    }
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',wireSaveButtons,{once:true}); else wireSaveButtons();
+})();
+</script>
 </body></html>
