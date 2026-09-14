@@ -48,9 +48,63 @@ jobs:
               s=s.replace('</body></html>',js+'</body></html>',1)
           p.write_text(s,encoding='utf-8')
           PY
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add daily-inspection/index.html
-          git diff --cached --quiet || git commit -m 'Defect detail applied'
-          git pull --rebase origin main
-          git push
+      - name: Repair root reliability dashboard auth deadlock
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          old="""async function startAuthenticated(session){
+ LOGIN_SCREEN.style.display='none';
+ document.getElementById('appShell').style.display='flex';
+ document.getElementById('userEmail').textContent=session?.user?.email||'';
+ try{await bootSupabase();}
+ catch(e){
+   console.error(e);
+   const badge=document.getElementById('dbStatus'); badge.textContent='DB 오류'; badge.style.background='#fff1e4'; badge.style.color='#b42318';
+   alert('DB를 불러오지 못했습니다. RLS 정책과 로그인 권한을 확인하세요.');
+ }
+}
+"""
+          new="""let authStarted=false;
+async function startAuthenticated(session){
+ if(authStarted)return;
+ authStarted=true;
+ LOGIN_SCREEN.style.display='none';
+ document.getElementById('appShell').style.display='flex';
+ document.getElementById('userEmail').textContent=session?.user?.email||'';
+ try{await bootSupabase();}
+ catch(e){
+   console.error(e);
+   authStarted=false;
+   const badge=document.getElementById('dbStatus'); badge.textContent='DB 오류'; badge.style.background='#fff1e4'; badge.style.color='#b42318';
+   alert('DB를 불러오지 못했습니다. RLS 정책과 로그인 권한을 확인하세요.');
+ }
+}
+"""
+          old2="""supabaseClient.auth.onAuthStateChange((event,session)=>{
+ if(event==='SIGNED_OUT'){location.reload();}
+ else if(session && !document.getElementById('appShell').style.display){startAuthenticated(session);}
+});
+"""
+          new2="""supabaseClient.auth.onAuthStateChange((event,session)=>{
+ if(event==='SIGNED_OUT'){location.reload();}
+ // Defer initialization until the auth callback releases Supabase's internal auth lock.
+ else if(session && !authStarted){setTimeout(()=>startAuthenticated(session),0);}
+});
+"""
+          if old not in s or old2 not in s:
+              raise SystemExit('Expected root authentication blocks were not found; aborting.')
+          s=s.replace(old,new,1).replace(old2,new2,1)
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit repair
+        shell: bash
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add index.html daily-inspection/index.html
+          git diff --cached --quiet && exit 0
+          git commit -m 'Defect detail applied'
+          git push origin HEAD:main
