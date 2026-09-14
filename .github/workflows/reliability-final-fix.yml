@@ -9,9 +9,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Wait for legacy repair workflows
-        run: sleep 45
+        run: sleep 30
       - name: Patch index
         run: |
+          git fetch origin main
+          git reset --hard origin/main
           python - <<'PY'
           from pathlib import Path
           p=Path('index.html')
