@@ -938,7 +938,7 @@ async function saveManualV16(closeAfter){
     material:document.getElementById('mMaterial').value.trim()||null,
     test_condition:document.getElementById('mCondition').value,
     test_result:document.getElementById('mResult').value||null,
-    result_before:document.getElementById('mResultBefore').value||old['Result before reliability test']||null,
+    result_before:(document.getElementById('mResultBefore')?.value)||old['Result before reliability test']||null,
     result_after:document.getElementById('mResultAfter').value||old['Result after reliability test']||null,
     test_status:document.getElementById('mStatus').value||null,
     reliability_start_date:document.getElementById('mReliabilityStartDate').value||null,
