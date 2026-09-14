@@ -29,9 +29,29 @@ jobs:
           s=s.replace('</body>',tag+'</body>',1)
           p.write_text(s,encoding='utf-8')
           PY
+      - name: Repair reliability report save button
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          marker='FINAL SAVE BUTTON FIX 2026-09-14'
+          if marker not in s:
+              fix='''\n<script>\n/* FINAL SAVE BUTTON FIX 2026-09-14 */\n(function(){\n  function wireSaveButtons(){\n    const save=document.getElementById('manualSave');\n    const cont=document.getElementById('manualSaveContinue');\n    if(save){\n      save.type='button'; save.onclick=null;\n      save.addEventListener('click',async function(e){\n        e.preventDefault(); e.stopPropagation();\n        try{ if(typeof saveManualV16==='function') await saveManualV16(true); else if(typeof saveManual==='function') await saveManual(true); else alert('저장 기능을 불러오지 못했습니다. 페이지를 새로고침해 주세요.'); }\n        catch(err){ console.error('manualSave click error',err); alert('저장 처리 중 오류: '+(err?.message||err)); }\n      });\n    }\n    if(cont){\n      cont.type='button'; cont.onclick=null;\n      cont.addEventListener('click',async function(e){\n        e.preventDefault(); e.stopPropagation();\n        try{ if(typeof saveManualV16==='function') await saveManualV16(false); else if(typeof saveManual==='function') await saveManual(false); else alert('저장 기능을 불러오지 못했습니다. 페이지를 새로고침해 주세요.'); }\n        catch(err){ console.error('manualSaveContinue click error',err); alert('저장 처리 중 오류: '+(err?.message||err)); }\n      });\n    }\n  }\n  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',wireSaveButtons,{once:true}); else wireSaveButtons();\n})();\n</script>\n'''
+              s=s.replace('</body>',fix+'</body>',1)
+          if "cpk_review_result:document.getElementById('mCpkBefore').value||null" not in s:
+              needle="request_date:document.getElementById('mDate').value||null,"
+              if needle in s:
+                  s=s.replace(needle,needle+"\n         cpk_review_result:document.getElementById('mCpkBefore').value||null,",1)
+          p.write_text(s,encoding='utf-8')
+          print('reliability save repair applied')
+          PY
+      - name: Commit final changes
+        run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add daily-inspection/index.html daily-inspection/history-fix-v5.js
+          git add daily-inspection/index.html daily-inspection/history-fix-v5.js index.html
           git commit -m 'Finalize inspection history logic [skip ci]' || exit 0
           git pull --rebase origin main
           git push origin HEAD:main
