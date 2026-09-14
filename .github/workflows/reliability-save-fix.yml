@@ -1,0 +1,38 @@
+name: Reliability save fix
+on:
+  push:
+    paths:
+      - '.reliability-save-fix-trigger'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Patch active save handler
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          old="result_before:document.getElementById('mResultBefore').value||old['Result before reliability test']||null,"
+          new="result_before:(document.getElementById('mResultBefore')?.value)||old['Result before reliability test']||null,"
+          if old in s:
+              s=s.replace(old,new,1)
+          else:
+              print('legacy field expression already fixed or not present')
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit and push
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add index.html
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Fix reliability save legacy field'
+          git pull --rebase origin main
+          git push origin HEAD:main
