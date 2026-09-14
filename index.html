@@ -1,0 +1,1275 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>신뢰성 관리 대시보드</title><script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script><style>
+:root{--navy:#10385f;--blue:#2377bd;--sky:#eaf3fb;--green:#27a966;--red:#e5534b;--orange:#f2a23a;--ink:#172b40;--muted:#718096;--line:#d9e3ec;--bg:#f4f7fa}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Arial,'Noto Sans KR',sans-serif}.app{display:flex;min-height:100vh}.side{width:250px;position:fixed;inset:0 auto 0 0;background:linear-gradient(180deg,#0c3158,#174f82);color:#fff;padding:24px 14px}.brand{font-size:27px;font-weight:800;padding:0 12px 25px}.brand small{display:block;font-size:11px;font-weight:400;opacity:.8;margin-top:4px}.nav{display:grid;gap:6px}.nav button{border:0;background:transparent;color:#fff;text-align:left;padding:14px 12px;border-radius:10px;font-size:15px;cursor:pointer}.nav button.active,.nav button:hover{background:#2279c3}.tag{position:absolute;left:30px;bottom:26px;opacity:.5;line-height:1.55}.main{margin-left:250px;padding:18px 24px;width:calc(100% - 250px)}.top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}.title{font-size:34px;font-weight:800;color:var(--navy)}.sub{font-size:13px;color:var(--muted);margin-top:4px}.langs{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:#fff}.langs button{border:0;background:#fff;padding:10px 16px;font-weight:600;cursor:pointer}.langs button.active{background:var(--blue);color:#fff}.panel{background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 2px 8px #123b6810}.filters{display:grid;grid-template-columns:1.35fr 1fr 1.05fr 1.05fr 1fr 1fr auto auto;gap:10px;padding:14px;margin-bottom:12px}.field label{display:block;font-size:12px;font-weight:700;margin-bottom:5px}.field select,.field input{width:100%;height:40px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fff}.btn{height:40px;border:0;border-radius:8px;padding:0 18px;font-weight:700;cursor:pointer}.primary{background:var(--blue);color:#fff}.ghost{background:#edf4fb;color:var(--navy)}.kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:12px}.kpi{padding:15px 16px;background:#fff;border:1px solid var(--line);border-radius:11px}.kpi .label{font-size:13px;font-weight:700}.kpi .num{font-size:31px;font-weight:800;margin-top:7px}.kpi .rate{font-size:11px;color:var(--muted);margin-top:2px}.grid{display:grid;grid-template-columns:1.45fr 1fr 1fr;gap:12px;margin-bottom:12px}.card{background:#fff;border:1px solid var(--line);border-radius:11px;padding:13px;min-height:310px}.card h3{margin:0 0 7px;color:var(--navy);font-size:17px}.chartbox{height:255px}.bottom{display:grid;grid-template-columns:2fr 1fr;gap:12px}.table-card,.notice-card{background:#fff;border:1px solid var(--line);border-radius:11px;padding:13px}.table-card h3,.notice-card h3{margin:0 0 9px;color:var(--navy);font-size:17px}.tablewrap{overflow:auto;max-height:320px}.tbl{width:100%;border-collapse:collapse;font-size:12px}.tbl th{background:var(--sky);color:var(--navy);position:sticky;top:0}.tbl th,.tbl td{padding:8px;border:1px solid var(--line);white-space:nowrap}.badge{padding:3px 7px;border-radius:10px;font-size:11px;font-weight:700}.pass{background:#e7f7ed;color:#168a4c}.fail{background:#fde9e8;color:#c93a31}.pending{background:#fff3dd;color:#a56a00}.notice{padding:10px 5px;border-bottom:1px solid var(--line);font-size:12px}.notice:last-child{border-bottom:0}.notice b{display:block;margin-bottom:3px}.footer{text-align:center;color:#8b98a5;font-size:11px;padding:12px}.empty{padding:25px;text-align:center;color:var(--muted)}@media(max-width:1200px){.side{width:200px}.main{margin-left:200px;width:calc(100% - 200px)}.kpis{grid-template-columns:repeat(3,1fr)}.filters{grid-template-columns:repeat(3,1fr)}.grid{grid-template-columns:1fr}.bottom{grid-template-columns:1fr}}
+
+.view{display:none}.view.active{display:block}
+.detailbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.smallbtn{border:0;border-radius:7px;padding:7px 11px;background:#edf4fb;color:var(--navy);font-weight:700;cursor:pointer}
+.detail-table .tbl td{cursor:pointer}.detail-table .tbl tr:hover td{background:#f7fbff}
+.modal{position:fixed;inset:0;background:#0a274566;display:none;align-items:center;justify-content:center;padding:24px;z-index:30}
+.modal.show{display:flex}.modalbox{width:min(900px,96vw);max-height:90vh;overflow:auto;background:#fff;border-radius:14px;border:1px solid var(--line);box-shadow:0 12px 40px #123b6830;padding:20px}
+.modalhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}.modalhead h2{margin:0;color:var(--navy)}
+.detailgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px 14px}
+.detailitem{padding:10px;border:1px solid var(--line);border-radius:8px;background:#fbfdff}.detailitem b{display:block;font-size:11px;color:var(--muted);margin-bottom:4px}
+.detailitem.full{grid-column:1/-1}.longtext{white-space:pre-wrap;line-height:1.45}
+
+.report-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:12px}
+.report-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px}.report-card .n{font-size:27px;font-weight:800;color:var(--navy);margin-top:4px}.report-card .l{font-size:12px;color:var(--muted)}
+.report-search{display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr auto;gap:10px;margin-bottom:10px}
+.report-status{display:inline-flex;align-items:center;gap:5px;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:700}
+.report-status.ok{background:#e7f7ee;color:#18844c}.report-status.missing{background:#fff1e4;color:#b76500}.cpk-status,.test-status{display:inline-flex;align-items:center;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:800}.cpk-good{background:#e7f7ee;color:#18844c}.cpk-improve{background:#fde9e8;color:#c93a31}.cpk-review{background:#eef1f4;color:#667085}.test-wait{background:#eef1f4;color:#667085}.test-run{background:#e8f1ff;color:#2167c7}.test-done{background:#e7f7ee;color:#18844c}
+@media(max-width:1100px){.report-grid{grid-template-columns:repeat(2,1fr)}.report-search{grid-template-columns:1fr 1fr}}
+
+.report-link{border:0;background:transparent;color:var(--blue);font-weight:800;cursor:pointer;text-decoration:underline;padding:0}
+.uploadbox{border:2px dashed #b9d1e7;border-radius:10px;padding:18px;text-align:center;background:#f8fbfe}
+.uploadbox input{display:none}.uploadlabel{display:inline-block;padding:9px 14px;border-radius:8px;background:var(--blue);color:#fff;font-weight:700;cursor:pointer}
+.file-note{font-size:11px;color:var(--muted);margin-top:8px}
+
+.manual-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px 14px}
+.manual-field{display:flex;flex-direction:column;gap:5px}.manual-field label{font-size:11px;color:var(--muted);font-weight:700}
+.manual-field input,.manual-field select,.manual-field textarea{border:1px solid var(--line);border-radius:8px;padding:9px 10px;font:inherit;background:#fff}
+.manual-field textarea{min-height:82px;resize:vertical}.manual-field.full{grid-column:1/-1}
+.addbtn{background:#0d7a4b!important;color:#fff!important}
+
+.manual-list{margin-top:12px}.manual-list .mini-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.mini-count{font-size:12px;color:var(--muted)}
+.manual-table{width:100%;border-collapse:collapse;font-size:12px}.manual-table th{background:#edf4fb;color:var(--navy);padding:8px;border:1px solid var(--line);text-align:center}.manual-table td{padding:8px;border:1px solid var(--line)}
+
+#appShell{display:none}#loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#eef5fb,#f8fbfe);padding:20px}
+.login-card{width:min(430px,92vw);background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 16px 50px rgba(18,59,104,.12);padding:30px}
+.login-logo{font-size:26px;font-weight:900;color:var(--navy);margin-bottom:4px}.login-sub{font-size:12px;color:var(--muted);margin-bottom:22px}.login-field{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}.login-field label{font-size:12px;font-weight:700;color:var(--navy)}.login-field input{border:1px solid var(--line);border-radius:9px;padding:11px 12px;font:inherit}.login-btn{width:100%;padding:11px;border:0;border-radius:9px;background:var(--blue);color:#fff;font-size:14px;font-weight:800;cursor:pointer}.login-error{min-height:18px;margin:10px 0;color:#b42318;font-size:12px}.userbox{display:flex;align-items:center;gap:8px;margin-right:8px;font-size:11px;color:var(--muted)}.logout{border:0;border-radius:7px;padding:5px 9px;background:#edf4fb;color:var(--navy);font-weight:700;cursor:pointer}
+
+.storage-path{font-size:11px;color:var(--muted);margin-top:5px;word-break:break-all}
+.btn.danger{background:#fff1f1;border:1px solid #e05a5a;color:#b42318}.btn.danger:hover{background:#ffe5e5}
+.notice-page{display:grid;grid-template-columns:1.2fr .8fr;gap:14px}
+.notice-panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px}
+.notice-toolbar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
+.notice-list{max-height:60vh;overflow:auto}
+.notice-row{border:1px solid var(--line);border-radius:10px;padding:13px;margin-bottom:9px;background:#fff;cursor:pointer}
+.notice-row.active{border-color:#86b9e7;box-shadow:0 0 0 2px #eaf3fb inset}
+.notice-row .ntitle{font-size:15px;font-weight:800;color:var(--navy);display:flex;align-items:center;gap:7px}
+.notice-row .nmeta{font-size:11px;color:var(--muted);margin-top:5px}
+.notice-row .ncontent{font-size:12px;line-height:1.55;color:#415466;margin-top:8px;white-space:pre-wrap}
+.notice-badge{display:inline-block;padding:3px 7px;border-radius:999px;font-size:10px;font-weight:800}
+.notice-pin{background:#fff1d6;color:#9c6400}
+.notice-important{background:#fde9e8;color:#c43d33}
+.notice-normal{background:#edf4fb;color:#2a5f8f}
+.notice-form{display:grid;gap:10px}
+.notice-form label{font-size:12px;font-weight:700;color:var(--navy)}
+.notice-form input,.notice-form textarea,.notice-form select{width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:#fff;font:inherit}
+.notice-form textarea{min-height:180px;resize:vertical}
+.notice-checks{display:flex;gap:18px;flex-wrap:wrap;font-size:12px}
+.notice-checks label{display:flex;align-items:center;gap:6px;font-weight:600}
+.notice-actions{display:flex;gap:8px;justify-content:flex-end}
+.btn.red{background:#fff0f0;color:#b42318;border:1px solid #efb0ad}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL='https://heaouuczehysapjhoslv.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY='sb_publishable_ijtjC3p8aHEhrczByMuODg_lPtVKxkk';
+const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
+function mapDbRow(r){
+ return {No:r.id,"Test Condition":r.test_condition||"",Month:r.request_date?Number(String(r.request_date).slice(5,7)):null,
+ "Requested Date by Planning team":r.request_date||"","CR No":r.cr_no||null,Model:r.model||"",Material:r.material||"-",
+ "Test Qty":r.test_qty||0,"Production Date":r.production_date||"-","Reason for Running Sample":r.reason||"-","Lot No":r.lot_no||"-",
+ "Test Start Time":"-","Test End Time":"-","Reliability Test Status":r.test_status||"","Reliability Test Result":r.test_result||"","CPK Review Result":r.cpk_review_result||"",
+ "Result before reliability test":r.result_before||"-","Result after reliability test":r.result_after||"-","Reliability Test Start Date":r.reliability_start_date||"","Reliability Test Expected End Date":r.reliability_expected_end_date||"","Report No":r.report_no||"",
+ PIC:r.pic||"",Remark:r.remark||"",Status:r.test_status||"",__report_filename:r.report_filename||"",__report_path:r.report_path||"",__report_mime:r.report_mime||"",__db:true};
+}
+async function bootSupabase(){
+ const badge=document.getElementById('dbStatus');
+ const {data,error}=await supabaseClient.from('reliability_tests').select('*').order('request_date',{ascending:true}).order('id',{ascending:true});
+ if(error) throw error;
+ DATA=(data||[]).map(mapDbRow); filtered=[...DATA];
+ badge.textContent='SUPABASE DB 연결됨 · '+DATA.length+'건'; badge.style.background='#e7f7ee'; badge.style.color='#18844c';
+ initFilters(); render(); initReportModels(); renderReport(); renderManualList();
+}
+</script>
+
+<style>
+.nav button[data-view="system"],
+.nav button[data-view="settings"],
+.nav button span[data-k="system"],
+.nav button span[data-k="settings"]{
+  display:none !important;
+}
+</style>
+</head><body>
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">SJIT VINA</div>
+    <div style="font-size:21px;font-weight:900;color:var(--navy);margin-bottom:5px">신뢰성 관리 시스템</div>
+    <div class="login-sub">Reliability Management System · Bảng quản lý độ tin cậy</div>
+    <div class="login-field"><label>Email</label><input id="loginEmail" type="email" autocomplete="username" placeholder="회사 이메일"></div>
+    <div class="login-field"><label>Password</label><input id="loginPassword" type="password" autocomplete="current-password" placeholder="비밀번호"></div>
+    <div id="loginError" class="login-error"></div>
+    <button id="loginBtn" class="login-btn">로그인</button>
+  </div>
+</div>
+<script>
+const LOGIN_SCREEN=document.getElementById('loginScreen');
+</script>
+<div class="app"><div id="appShell"><aside class="side"><div class="brand">SJIT VINA<small>Smart Connection, Better Tomorrow</small></div><div class="nav"><button class="active" data-view="dashboard">⌂ <span data-k="dashboard">대시보드</span></button><button data-view="overview">✓ <span data-k="overview">신뢰성 시험 현황</span></button><button data-view="data">▧ <span data-k="data">시험 데이터</span></button><button data-view="material">♙ <span data-k="material">자재별 분석</span></button><button data-view="report">▤ <span data-k="report">보고서 관리</span></button><button data-view="notice">♧ <span data-k="notice">알림 / 공지</span></button></div><div class="tag">Good<br>Quality<br>Better<br>Tomorrow<br><br><small>© 2026 SJIT VINA</small></div></aside><main class="main"><div class="top"><div><div class="title" data-k="title">신뢰성 관리 대시보드</div><div class="sub" data-k="subtitle">신뢰성 시험 통합 현황</div><div style="font-size:11px;color:#8a98a7;margin-top:3px">※ 현재 원본 데이터에는 거래처(Customer) 컬럼이 없어, 거래처 필터는 다음 단계에서 데이터 항목 추가 후 연결</div></div><div id="dbStatus" style="display:inline-block;margin-right:8px;padding:6px 10px;border-radius:999px;background:#eef3f8;color:#6b7280;font-size:11px;font-weight:700">SUPABASE DB 연결 확인 중...</div><div class="userbox"><span id="userEmail"></span><button id="logoutBtn" class="logout">로그아웃</button></div><div class="langs"><button class="active" data-lang="ko">한국어</button><button data-lang="en">English</button><button data-lang="vi">Tiếng Việt</button></div></div><div id="viewDashboard" class="view active"><section class="panel filters">
+<div class="field"><label data-k="date">기간</label><div style="display:grid;grid-template-columns:1fr 1fr;gap:5px"><input id="dateFrom" type="date" value="2026-01-01"><input id="dateTo" type="date" value="2026-09-10"></div></div>
+<div class="field"><label data-k="condition">시험항목</label><select id="condition"><option value="">전체</option></select></div>
+<div class="field"><label data-k="model">제품명</label><select id="model"><option value="">전체</option></select></div>
+<div class="field"><label data-k="material">자재</label><select id="material"><option value="">전체</option></select></div>
+<div class="field"><label data-k="status">진행상태</label><select id="status"><option value="">전체</option><option value="Finished">Finished</option><option value="Not tested">Not tested</option><option value="blank">미입력</option></select></div>
+<div class="field"><label data-k="resultFilter">시험결과</label><select id="resultFilter"><option value="">전체</option><option value="Pass">Pass</option><option value="Fail">Fail</option><option value="blank">미입력</option></select></div>
+<button class="btn primary" id="apply">⌕ <span data-k="search">조회</span></button><button class="btn ghost" id="reset">↻ <span data-k="reset">초기화</span></button>
+</section><section class="kpis"><div class="kpi"><div class="label" data-k="total">전체 시험 건수</div><div class="num" id="kTotal">0</div><div class="rate">2026 YTD</div></div><div class="kpi"><div class="label" data-k="finished">완료</div><div class="num" id="kFinished">0</div><div class="rate" id="kFinishedRate">0%</div></div><div class="kpi"><div class="label" data-k="pending">진행/대기</div><div class="num" id="kPending">0</div><div class="rate" id="kPendingRate">0%</div></div><div class="kpi"><div class="label" data-k="fail">기준 불만족</div><div class="num" id="kFail">0</div><div class="rate" id="kFailRate">0%</div></div><div class="kpi"><div class="label" data-k="pass">기준 만족</div><div class="num" id="kPass">0</div><div class="rate" id="kPassRate">0%</div></div><div class="kpi"><div class="label" data-k="reportMissing">Report 미발행</div><div class="num" id="kReport">0</div><div class="rate" id="kReportRate">0%</div></div></section><section class="grid"><div class="card"><h3 data-k="monthly">월별 신뢰성 시험 현황</h3><div class="chartbox"><canvas id="monthlyChart"></canvas></div></div><div class="card"><h3 data-k="statusChart">시험 상태별 현황</h3><div class="chartbox"><canvas id="statusChart"></canvas></div></div><div class="card"><h3 data-k="conditionChart">시험항목별 현황</h3><div class="chartbox"><canvas id="conditionChart"></canvas></div></div></section><section class="grid"><div class="card"><h3 data-k="materialChart">자재별 시험 현황 TOP 10</h3><div class="chartbox"><canvas id="materialChart"></canvas></div></div><div class="card"><h3 data-k="modelChart">제품별 시험 현황 TOP 10</h3><div class="chartbox"><canvas id="modelChart"></canvas></div></div><div class="card"><h3 data-k="issueChart">주요 관리 이슈 TOP 5</h3><div id="issues" class="empty"></div></div></section><section class="bottom"><div class="table-card"><h3 data-k="recent">최근 신뢰성 시험 내역</h3><div class="tablewrap"><table class="tbl"><thead><tr><th>No.</th><th data-k="requestDate">요청일</th><th data-k="model">제품명</th><th data-k="material">자재</th><th data-k="condition">시험항목</th><th data-k="result">시험결과</th><th data-k="status">진행상태</th><th data-k="reportNo">Report No.</th><th data-k="pic">PIC</th></tr></thead><tbody id="recentBody"></tbody></table></div></div><div class="notice-card"><h3 data-k="attention">⚠ 관리 필요 항목</h3><div id="attention"></div></div></section></div>
+<div id="viewOverview" class="view">
+<section class="panel" style="padding:14px;margin-bottom:12px">
+<div class="detailbar"><div><h2 data-k="overviewTitle" style="margin:0;color:var(--navy);font-size:22px">신뢰성 시험 현황</h2><div data-k="overviewDesc" style="font-size:12px;color:var(--muted);margin-top:4px">시험 건별 상세 조회 및 상태 관리</div></div><button class="smallbtn" id="backDashboard">← <span data-k="dashboard">대시보드</span></button></div>
+<div class="filters" style="box-shadow:none;margin:0;padding:0">
+<div class="field"><label data-k="status">진행상태</label><select id="detailStatus"><option value="">전체</option><option value="Finished">Finished</option><option value="Not tested">Not tested</option><option value="blank">미입력</option></select></div>
+<div class="field"><label data-k="resultFilter">시험결과</label><select id="detailResult"><option value="">전체</option><option value="Pass">Pass</option><option value="Fail">Fail</option><option value="blank">미입력</option></select></div>
+<div class="field"><label data-k="model">제품명</label><input id="detailSearchModel" placeholder="Model"></div>
+<div class="field"><label data-k="search">검색</label><input id="detailSearch" placeholder="Model / Material / Report / PIC"></div>
+<button class="btn ghost" id="detailClear">↻ <span data-k="reset">초기화</span></button>
+</div></section>
+<div class="table-card detail-table"><div class="detailbar"><h3 data-k="detailListTitle">시험 목록</h3><span id="detailCount"></span></div>
+<div class="tablewrap" style="max-height:56vh"><table class="tbl"><thead><tr><th>No.</th><th data-k="requestDate">요청일</th><th>Model</th><th data-k="material">자재</th><th data-k="condition">시험항목</th><th data-k="result">시험결과</th><th data-k="status">진행상태</th><th data-k="reportNo">Report No.</th><th data-k="pic">PIC</th></tr></thead><tbody id="detailBody"></tbody></table></div></div>
+</div>
+
+<div id="viewReport" class="view">
+<section class="panel" style="padding:14px;margin-bottom:12px">
+<div class="detailbar">
+<div><h2 data-k="reportTitle" style="margin:0;color:var(--navy);font-size:22px">보고서 관리</h2>
+<div data-k="reportDesc" style="font-size:12px;color:var(--muted);margin-top:4px">신뢰성 시험 Report 발행 및 미발행 현황</div></div>
+<div style="display:flex;gap:8px"><button class="btn ghost" id="refreshDbBtn">↻ DB 새로고침</button><button class="btn primary addbtn" id="newReportBtn">＋ <span data-k="newReport">새 시험/Report 등록</span></button><button class="smallbtn" id="reportBack">← <span data-k="dashboard">대시보드</span></button></div>
+</div>
+</section>
+
+<div class="report-grid">
+<div class="report-card"><div class="l" data-k="total">전체 시험 건수</div><div class="n" id="rTotal">0</div></div>
+<div class="report-card"><div class="l" data-k="reportIssued">Report 발행</div><div class="n" id="rIssued">0</div></div>
+<div class="report-card"><div class="l" data-k="reportMissing">Report 미발행</div><div class="n" id="rMissing">0</div></div>
+<div class="report-card"><div class="l" data-k="completion_rate">완료율</div><div class="n" id="rRate">0%</div></div>
+</div>
+
+
+<section class="panel manual-list" style="padding:14px">
+  <div class="mini-head">
+    <h3 style="margin:0;color:var(--navy)" data-k="manualRecordsTitle">수동 등록 항목</h3>
+    <span id="manualCount" class="mini-count"></span>
+  </div>
+  <div class="tablewrap" style="max-height:220px">
+    <table class="manual-table"><thead><tr>
+      <th>No.</th><th data-k="cpkBefore">신뢰성 전 CPK 검토결과</th><th data-k="reliabilityTestStatus">신뢰성 TEST 상태</th><th data-k="requestDate">요청일</th><th>Model</th><th data-k="condition">시험항목</th><th data-k="result">시험결과</th><th data-k="reportNo">Report No.</th><th data-k="manage">관리</th>
+    </tr></thead><tbody id="manualBody"></tbody></table>
+  </div>
+</section>
+<section class="panel" style="padding:14px">
+<div class="report-search">
+<input id="reportQ" placeholder="Report No. / Model / CR No. / PIC">
+<select id="reportState"><option value="">전체</option><option value="issued">발행</option><option value="missing">미발행</option></select>
+<select id="reportResult"><option value="">전체</option><option value="Pass">Pass</option><option value="Fail">Fail</option><option value="blank">미입력</option></select>
+<select id="reportModel"><option value="">전체 Model</option></select>
+<button class="btn ghost" id="reportClear">↻ <span data-k="reset">초기화</span></button>
+</div>
+<div class="tablewrap" style="max-height:60vh">
+<table class="tbl"><thead><tr>
+<th>No.</th><th data-k="cpkBefore">신뢰성 전 CPK 검토결과</th><th data-k="reliabilityTestStatus">신뢰성 TEST 상태</th><th data-k="requestDate">요청일</th><th>Model</th><th data-k="material">자재</th><th data-k="condition">시험항목</th><th data-k="result">시험결과</th><th data-k="reportNo">Report No.</th><th data-k="status">상태</th><th data-k="pic">PIC</th><th data-k="crNo">CR No.</th><th data-k="manage">관리</th>
+</tr></thead><tbody id="reportBody"></tbody></table>
+</div>
+</section>
+</div>
+<div class="footer">SJIT VINA　|　Reliability Management Dashboard　|　2026</div>
+<div class="modal" id="detailModal"><div class="modalbox"><div class="modalhead"><h2 data-k="detailTitle">시험 상세정보</h2><button class="smallbtn" id="closeModal">✕</button></div><div id="detailContent" class="detailgrid"></div></div></div>
+
+<div class="modal" id="reportModal">
+<div class="modalbox">
+<div class="modalhead"><h2 data-k="reportViewerTitle">Report 연결</h2><button class="smallbtn" id="closeReportModal">✕</button></div>
+<div id="reportMeta" style="font-size:13px;color:var(--muted);margin-bottom:12px"></div>
+<div class="uploadbox">
+<div style="font-size:16px;font-weight:800;color:var(--navy);margin-bottom:6px" data-k="reportUploadTitle">Report 파일 등록</div>
+<div style="font-size:12px;color:var(--muted);margin-bottom:10px" data-k="reportUploadDesc">PDF 또는 Excel Report 파일을 선택하면 Supabase의 공용 저장소에 업로드하고 시험 데이터와 연결합니다.</div>
+<label class="uploadlabel" for="reportFile" data-k="chooseFile">파일 선택</label>
+<input id="reportFile" type="file" accept=".pdf,.xlsx,.xls,.csv">
+<div id="chosenFile" class="file-note">선택된 파일 없음</div><div id="uploadProgress" class="upload-progress" style="display:none"><div></div></div>
+</div>
+<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px">
+<button class="btn danger" id="deleteReportLink" type="button" onclick="window.deleteReportFileNow()">Report 삭제</button>
+<button class="btn danger" id="deleteTestItemLink" type="button" onclick="window.deleteTestItemNow()" style="background:#fff4e5;border-color:#e59a3a;color:#9a5b00;cursor:pointer">시험 항목 삭제</button>
+<button class="btn ghost" id="openReportFile" style="display:none" type="button">Report 열기</button>
+<button class="btn ghost" id="downloadReportLink" style="display:none" type="button">Report 다운로드</button>
+<button class="btn primary" id="saveReportLink" type="button">연결 저장</button>
+</div>
+<div id="reportHelp" class="file-note" style="margin-top:12px"></div><div id="reportStoragePath" class="storage-path"></div>
+</div>
+</div>
+
+<div class="modal" id="manualModal">
+ <div class="modalbox">
+  <div class="modalhead"><h2 data-k="newReportTitle">새 시험/Report 등록</h2><button class="smallbtn" id="closeManual">✕</button></div>
+  <div class="manual-grid">
+   <div class="manual-field"><label data-k="requestDate">요청일</label><input id="mDate" type="date"></div>
+   <div class="manual-field"><label>Model</label><input id="mModel"></div>
+   <div class="manual-field"><label data-k="material">자재</label><input id="mMaterial"></div>
+   <div class="manual-field"><label data-k="condition">시험항목</label><select id="mCondition"><option value="">선택</option><option>VD</option><option>DA</option><option>HP</option><option>Other</option></select></div>
+   <div class="manual-field"><label data-k="result">시험결과</label><select id="mResult"><option value="">미입력</option><option>Pass</option><option>Fail</option></select></div>
+   <div class="manual-field"><label data-k="cpkBefore">신뢰성 전 CPK 검토결과</label><select id="mCpkBefore"><option value="">미검토</option><option value="양호">양호</option><option value="보완필요">보완필요</option><option value="미검토">미검토</option></select></div>
+   <div class="manual-field"><label data-k="resultAfter">신뢰성 시험 후</label><select id="mResultAfter"><option value="">미입력</option><option>Pass</option><option>Fail</option></select></div>
+   <div class="manual-field"><label data-k="reliabilityTestStatus">신뢰성 TEST 상태</label><select id="mStatus"><option value="Not tested">대기</option><option value="신뢰성 진행 중">TEST 중</option><option value="Finished">완료</option></select></div>
+   <div class="manual-field"><label data-k="reliabilityStartDate">신뢰성 TEST 시작 일자</label><input id="mReliabilityStartDate" type="date"></div>
+   <div class="manual-field"><label data-k="reliabilityExpectedEndDate">신뢰성 TEST 종료 예상 일자</label><input id="mReliabilityExpectedEndDate" type="date"></div>
+   <div class="manual-field"><label data-k="reportNo">Report No.</label><input id="mReportNo"></div>
+   <div class="manual-field"><label data-k="reportSent">Report 발송 여부</label><select id="mReportSent"><option value="미발송">미발송</option><option value="발송">발송</option></select></div>
+   <div class="manual-field"><label data-k="pic">PIC</label><input id="mPIC"></div>
+   <div class="manual-field"><label>CR No.</label><input id="mCR"></div>
+   <div class="manual-field"><label>Test Qty</label><input id="mQty" type="number" min="0"></div>
+   <div class="manual-field"><label>생산일</label><input id="mProdDate"></div>
+   <div class="manual-field"><label>Lot No.</label><input id="mLot"></div>
+   <div class="manual-field full"><label data-k="reason">시험 사유</label><textarea id="mReason"></textarea></div>
+   <div class="manual-field full"><label data-k="remark">비고</label><textarea id="mRemark"></textarea></div>
+   <div class="manual-field full">
+     <label data-k="reportFile">Report 파일</label>
+     <input id="mFile" type="file" accept=".pdf,.xlsx,.xls,.csv">
+     <div id="mFileName" class="file-note">선택된 파일 없음</div>
+   </div>
+  </div>
+  <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px">
+    <button class="btn ghost" id="manualCancel">취소</button>
+    <button class="btn ghost" id="manualSaveContinue">저장 후 계속 등록</button>
+    <button class="btn primary" id="manualSave">저장 후 닫기</button>
+  </div>
+  <div class="file-note" data-k="manualNote">시험 데이터와 Report 파일은 공용 Supabase 서버에 저장되어 다른 로그인 사용자도 확인할 수 있습니다.</div>
+ </div>
+</div>
+
+<div id="viewNotice" class="view">
+  <section class="panel" style="padding:14px;margin-bottom:12px">
+    <div class="detailbar">
+      <div>
+        <h2 data-k="noticeTitle" style="margin:0;color:var(--navy);font-size:22px">알림 / 공지</h2>
+        <div data-k="noticeDesc" style="font-size:12px;color:var(--muted);margin-top:4px">사내 공지사항 및 중요 알림을 등록하고 관리합니다.</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn ghost" id="noticeRefresh">↻ DB 새로고침</button>
+        <button class="btn primary" id="noticeNew">＋ <span data-k="newNotice">공지 등록</span></button>
+      </div>
+    </div>
+  </section>
+
+  <div class="notice-page">
+    <section class="notice-panel">
+      <div class="notice-toolbar">
+        <h3 data-k="noticeList" style="margin:0;color:var(--navy)">공지 목록</h3>
+        <span id="noticeCount" style="font-size:11px;color:var(--muted)">0건</span>
+      </div>
+      <div id="noticeList" class="notice-list"></div>
+    </section>
+
+    <section class="notice-panel">
+      <h3 id="noticeFormHeading" data-k="newNotice" style="margin:0 0 12px;color:var(--navy)">공지 등록</h3>
+      <div class="notice-form">
+        <input type="hidden" id="noticeId">
+        <div>
+          <label data-k="noticeTitleLabel">제목</label>
+          <input id="noticeTitleInput" placeholder="공지 제목">
+        </div>
+        <div>
+          <label data-k="noticeContentLabel">내용</label>
+          <textarea id="noticeContentInput" placeholder="공지 내용을 입력하세요."></textarea>
+        </div>
+        <div>
+          <label data-k="noticePriority">중요도</label>
+          <select id="noticePriorityInput">
+            <option value="normal">일반</option>
+            <option value="important">중요</option>
+          </select>
+        </div>
+        <div class="notice-checks">
+          <label><input type="checkbox" id="noticePinnedInput"> <span data-k="noticePinned">상단 고정</span></label>
+          <label><input type="checkbox" id="noticeActiveInput" checked> <span data-k="noticeActive">게시</span></label>
+        </div>
+        <div class="notice-actions">
+          <button class="btn ghost" id="noticeCancel"><span data-k="noticeCancel">취소</span></button>
+          <button class="btn red" id="noticeDelete" style="display:none"><span data-k="noticeDelete">삭제</span></button>
+          <button class="btn primary" id="noticeSave"><span data-k="noticeSave">저장</span></button>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+</main></div></div><script>
+const FALLBACK_DATA=[{"Plan' No ":null,"No":1,"Test Condition":"VD","Month":1,"Requested Date by Planning team":"2026-01-09","CR No":null,"Model":"WSZGM502E00","Material":"- 52-03000021 (Silicon laboratories_ MCU)\n- 52-00000280 ( HF_ IC)","Test Qty":30,"Production Date":"2026-01-07","Reason for Running Sample":"Material from other supplier.\n이원화 부품 검토","Lot No":"VNSZCMA70000","Test Start Time":"2026-01-09","Test End Time":"2026-01-16","Reliability Test Status":"Finished","Reliability Test Result":"Pass","Result before reliability test":"- CPK FAIL: \n  + Power (RMS no Gap)\n  + CPK for Per could not be calculated due to insufficient data variation.","Result after reliability test":"- CPK FAIL: \n  + Power (RMS no Gap)\n  + CPK for Per could not be calculated due to insufficient data variation.","Report No":"PCN 26-01-001","Report date":"2026-01-19","PIC":"Linh","Status":"Closed","Remark":"- CPK below 1.33 before reliability test.\n--> Mr Han Suk Jin requested to test reliability. "},{"Plan' No ":null,"No":2,"Test Condition":"DA","Month":1,"Requested Date by Planning team":"2026-01-09","CR No":null,"Model":"WSWIT900A30","Material":"- 57-00000602 (ZBX PCB)","Test Qty":30,"Production Date":"2026-01-10","Reason for Running Sample":"Material from other supplier.\n이원화 부품 검토","Lot No":"VNMACMAA0480","Test Start Time":"2026-01-16","Test End Time":"2026-01-20","Reliability Test Status":"Finished","Reliability Test Result":"Pass","Result before reliability test":"Pass","Result after reliability test":"Pass","Report No":"PCN 26-01-002","Report date":"2026-01-23","PIC":"Quỳnh","Status":"Closed","Remark":null},{"Plan' No ":null,"No":3,"Test Condition":"DA\nLưu ý mục Drop Test : Không đóng thùng mà cầm thả trần \nThả 20 lần xuống sàn thép:\n- 10 lần ở 1.2m\n- 10 lần ở 1.52m\n*Lưu ý khi thả Drop test thì xoay đủ mặt thả ,sau đó kiểm tra ngoại quan lại xem có vấn đề gì không ","Month":3,"Requested Date by Planning team":"2026-03-17","CR No":null,"Model":"WSWHM210A01","Material":null,"Test Qty":30,"Production Date":"2026-03-18","Reason for Running Sample":"New model","Lot No":"VNMWCMCI0000","Test Start Time":"2026-03-27","Test End Time":"2026-03-31","Reliability Test Status":"Finished","Reliability Test Result":null,"Result before reliability test":"- CPK FAIL:\n  + EVM 903.5","Result after reliability test":"- CPK FAIL","Report No":null,"Report date":null,"PIC":"Linh","Status":"Pending","Remark":"- CPK below 1.33 before reliability test.\n--> 27.03 Mr Han Suk Jin requested to test reliability. \n-  Power Level Spec is different: \n   + Before reliability test: Power Level = 11 ~ 13 dBm\n   + After reliability test : Power Level = 10 ~ 12 dBm\n--> Pending confirmation from the technical team.\n-->Mr. Kil refused to retest and requested an explanation from the technical team."},{"Plan' No ":null,"No":4,"Test Condition":"DA","Month":4,"Requested Date by Planning team":"2026-04-13","CR No":null,"Model":"WSWIT600A00","Material":"- 55-00000369H1 (P-IND)\n- 55-00000365H1 (P-IND)","Test Qty":30,"Production Date":"2026-04-14","Reason for Running Sample":"Material from other supplier.\n이원화 부품 검토","Lot No":"VNSACMDE0000","Test Start Time":"2026-04-15","Test End Time":"2026-04-19","Reliability Test Status":"Finished","Reliability Test Result":"Pass","Result before reliability test":"- CPK FAIL:\n  + Power 2412","Result after reliability test":"- CPK FAIL: \n    + Power 2412","Report No":"PCN 26-04-001","Report date":"2026-04-22","PIC":"Linh","Status":"Closed","Remark":"- 21.04:Retest RF 2nd. "},{"Plan' No ":null,"No":5,"Test Condition":"HP","Month":4,"Requested Date by Planning team":"2026-04-22","CR No":null,"Model":"WSWLM300A00","Material":"- 57-00000441 (PCB- Winghinglung)","Test Qty":30,"Production Date":"2026-04-22","Reason for Running Sample":"Material from other supplier.\n이원화 부품 검토","Lot No":"VNSWCMDM0000","Test Start Time":"2026-05-11","Test End Time":"2026-05-15","Reliability Test Status":"Finished","Reliability Test Result":"Pass","Result before reliability test":"- CPK FAIL:\n  + Power 2422\n  + EVM 2422\n  + EVM 2462","Result after reliability test":"1st Test Result: \n- CPK FAIL:\n  + EVM 2412\n  + EVM 2472\n  + EVM 2422\n  + Power 2462\n  + EVM 2462\n\n2nd Retest Result: \n- CPK FAIL: \n  + EVM 2412\n  + Power 2472\n  + EVM 2472\n  + EVM 2422\n  + EVM 2462","Report No":"PCN 26-04-002","Report date":"2026-05-15","PIC":"Linh","Status":"Closed","Remark":"- The Korea technical team said the CPK is OK. Mr. Seo requested to test reliability.\n- Samples were in the reliability test process. However, Mr. Lim Sung Jae requested early removal in order to obtain results after the reliability test.\n- 19/05/2026 Retest.\n "},{"Plan' No ":null,"No":6,"Test Condition":"HP","Month":4,"Requested Date by Planning team":"2026-04-22","CR No":null,"Model":"WSWLM310A00","Material":"- 57-00000443 (PCB- Winghinglung)","Test Qty":30,"Production Date":"2026-04-22","Reason for Running Sample":"Material from other supplier.\n이원화 부품 검토","Lot No":"VNSWCMDM0020","Test Start Time":"2026-05-11","Test End Time":"2026-05-15","Reliability Test Status":"Finished","Reliability Test Result":"Pass","Result before reliability test":"- CPK FAIL:\n  + EVM 2462","Result after reliability test":"1st Test Result:\n- CPK FAIL:\n  + EVM 2462\n\n2nd Retest Result: \n- CPK PASS","Report No":"PCN 26-04-003","Report date":"2026-05-15","PIC":"Linh","Status":"Closed","Remark":"- The Korea technical team said the CPK is OK. Mr. Seo requested to test reliability.\n- Samples were in the reliability test process. However, Mr. Lim Sung Jae requested early removal in order to obtain results after the reliability test.\n- 20/05/2026 Retest."},{"Plan' No ":null,"No":7,"Test Condition":"DA","Month":5,"Requested Date by Planning team":"2026-05-08","CR No":"CR-260130-007","Model":"WSWIT900A01","Material":"- 57-00000602 (PCB- Winghinglung)","Test Qty":30,"Production Date":"2026-05-11","Reason for Running Sample":"Material from other supplier.\n이원화 부품 검토","Lot No":"VNSACMEB0000","Test Start Time":"2026-05-18","Test End Time":"2026-05-22","Reliability Test Status":"Finished","Reliability Test Result":"Pass","Result before reliability test":"Pass","Result after reliability test":"Pass","Report No":"PCN 26-05-001","Report date":"2026-05-25","PIC":"Linh","Status":"Closed","Remark":null},{"Plan' No ":null,"No":8,"Test Condition":"DA","Month":5,"Requested Date by Planning team":"2026-05-19","CR No":"CR-260507-003","Model":"SPWIT900C00","Material":"- 52-02000094 (Memory)","Test Qty":30,"Production Date":"2026-05-22","Reason for Running Sample":"Material from other supplier.\n이원화 부품 검토","Lot No":"VNSACMEM0000","Test Start Time":"2026-05-28","Test End Time":"2026-06-01","Reliability Test Status":"Finished","Reliability Test Result":"Pass","Result before reliability test":"Pass","Result after reliability test":"- CPK FAIL:\n  + Power 2412\n  + Power 2472","Report No":"PCN 26-05-002","Report date":"2026-06-02","PIC":"Linh","Status":"Closed","Remark":null},{"Plan' No ":null,"No":9,"Test Condition":"DA","Month":5,"Requested Date by Planning team":"2026-05-18","CR No":null,"Model":"WSZGM502D00","Material":null,"Test Qty":30,"Production Date":"2026-05-18","Reason for Running Sample":"New manufacturer assessment\n(SJVS)","Lot No":"VNMZCMEI0030","Test Start Time":"2026-06-24","Test End Time":"2026-06-28","Reliability Test Status":"Finished","Reliability Test Result":null,"Result before reliability test":"- CPK FAIL:\n  + Power 2410","Result after reliability test":"RF process: 3 pcs NG, CPK not calculated yet.","Report No":null,"Report date":null,"PIC":"Linh","Status":"Pending","Remark":"- CPK below 1.33 before reliability test.\n- After reliability test, RF test on 29/06/2026.\n--> 3ea NG, CPK not calculated yet. Pending production for retest."},{"Plan' No ":null,"No":10,"Test Condition":"VD","Month":5,"Requested Date by Planning team":"2026-05-18","CR No":null,"Model":"WSZGM502E00","Material":null,"Test Qty":30,"Production Date":"2026-05-19","Reason for Running Sample":"New manufacturer assessment\n(SJVS)","Lot No":"VNMZCMEJ00D0","Test Start Time":"2026-06-08","Test End Time":"2026-06-15","Reliability Test Status":"Finished","Reliability Test Result":null,"Result before reliability test":"- CPK FAIL:\n  + Power 2410\n  + Power 2465","Result after reliability test":"- CPK FAIL:\n  + Power 2410\n  + Power 2465","Report No":"PCN 26-05-004","Report date":"2026-06-16","PIC":"Linh","Status":"Closed","Remark":"- CPK below 1.33 before/after reliability test."},{"Plan' No ":null,"No":11,"Test Condition":"DA","Month":5,"Requested Date by Planning team":"2026-05-20","CR No":"CR-260507-001","Model":"WSWIT600A00","Material":"- 57-00000476 (PCB- Winghinglung)","Test Qty":30,"Production Date":"2026-05-28","Reason for Running Sample":"Material from other supplier.\n이원화 부품 검토","Lot No":"VNSACMES0000","Test Start Time":"2026-06-01","Test End Time":"2026-06-05","Reliability Test Status":"Finished","Reliability Test Result":null,"Result before reliability test":"- CPK FAIL:\n  + Power 2472","Result after reliability test":"Pass","Report No":"PCN 26-05-003","Report date":"2026-06-06","PIC":"Linh","Status":"Closed","Remark":"- CPK below 1.33 before reliability test.\n--> Awaiting confirmation from the Korea technical team.    \n--> Mr Seo requested to test reliability."},{"Plan' No ":null,"No":12,"Test Condition":"DA","Month":5,"Requested Date by Planning team":"2026-05-20","CR No":null,"Model":"WSWLM850B00","Material":null,"Test Qty":30,"Production Date":"2026-05-21","Reason for Running Sample":"New manufacturer assessment\n(SJVS)","Lot No":"VNSWCMEL0000","Test Start Time":"2026-06-24","Test End Time":"2026-06-28","Reliability Test Status":"Finished","Reliability Test Result":"Pass","Result before reliability test":"- CPK FAIL:\n  + Power 2472\n  + Power 5775","Result after reliability test":"- CPK FAIL:\n  + Power 5560\n  + Power 5775","Report No":"PCN 26-05-005","Report date":"2026-06-30","PIC":"Linh","Status":"Closed","Remark":"- CPK below 1.33 before/after reliability test."},{"Plan' No ":null,"No":13,"Test Condition":"VD","Month":6,"Requested Date by Planning team":"2026-06-09","CR No":"CR-260507-002","Model":"WSCFRU80H0B","Material":"- 57-00000730 (PCB)","Test Qty":30,"Production Date":"2026-06-16","Reason for Running Sample":"Material from other supplier.\n이원화 부품 검토","Lot No":"VNSCCMFG0020","Test Start Time":null,"Test End Time":null,"Reliability Test Status":"Not tested","Reliability Test Result":null,"Result before reliability test":"- CPK FAIL:\n  + Power 5560\n  + Power 5755\n  + AVG Power 2407","Result after reliability test":null,"Report No":null,"Report date":null,"PIC":"Linh","Status":"Pending","Remark":"- CPK below 1.33 before reliability test.\n--> Awaiting confirmation from the Korea technical team."},{"Plan' No ":null,"No":14,"Test Condition":"VD","Month":6,"Requested Date by Planning team":"2026-06-09","CR No":"CR-260507-002","Model":"WSCFMQ80HMB","Material":"- 57-00000732 (PCB)","Test Qty":30,"Production Date":"2026-08-17","Reason for Running Sample":"26년 VD 통합모듈 PCB 검토 (11품목)\nZBX - WHL\n(PCB thay đổi nhà cung cấp)","Lot No":"VNMCCMHB0490","Test Start Time":null,"Test End Time":null,"Reliability Test Status":"Not tested","Reliability Test Result":null,"Result before reliability test":"- CPK FAIL:\n  + Power 2412\n  + Power 5755\n  + AVG 2402\n  + LED","Result after reliability test":null,"Report No":null,"Report date":null,"PIC":"Quỳnh","Status":"Pending","Remark":"- No production plan at PBA due to NO JIG."},{"Plan' No ":null,"No":15,"Test Condition":"VD","Month":6,"Requested Date by Planning team":"2026-06-09","CR No":"CR-260507-002","Model":"WSCFMM70H0B","Material":"- 57-00000733 (PCB)","Test Qty":30,"Production Date":"2026-06-18","Reason for Running Sample":"Material from other supplier.\n이원화 부품 검토","Lot No":"VNMCCMFI00A0","Test Start Time":null,"Test End Time":null,"Reliability Test Status":"Not tested","Reliability Test Result":null,"Result before reliability test":"- CPK FAIL:\n  + EVM 2472\n  + Power 2412\n  + AVG 2407","Result after reliability test":null,"Report No":null,"Report date":null,"PIC":"Linh","Status":"Pending","Remark":"- CPK below 1.33 before reliability test.\n-->  Awaiting confirmation from the Korea technical team. "},{"Plan' No ":null,"No":16,"Test Condition":"VD","Month":6,"Requested Date by Planning team":"2026-06-09","CR No":"CR-260507-002","Model":"WSCFMQ70HMS","Material":"- 57-00000731 (PCB)","Test Qty":30,"Production Date":"2026-06-16","Reason for Running Sample":"Material from other supplier.\n이원화 부품 검토","Lot No":"VNSCCMFG0000","Test Start Time":null,"Test End Time":null,"Reliability Test Status":"Not tested","Reliability Test Result":null,"Result before reliability test":"- CPK FAIL:\n  + AVG Power 2407\n  + Blue\n  + IR","Result after reliability test":null,"Report No":null,"Report date":null,"PIC":"Quỳnh","Status":"Pending","Remark":"- CPK below 1.33 before reliability test.\n-->  Awaiting confirmation from the Korea technical team. "},{"Plan' No ":null,"No":17,"Test Condition":"DA","Month":6,"Requested Date by Planning team":"2026-06-12","CR No":"CR-260507-001","Model":"WSWIT600A00","Material":"- 57-00000476 (PCB- Winghinglung)","Test Qty":12,"Production Date":"2026-05-28","Reason for Running Sample":"Material from other supplier.\n이원화 부품 검토","Lot No":"VNSAXXYS0000","Test Start Time":"2026-06-15","Test End Time":"2026-06-18","Reliability Test Status":"Finished","Reliability Test Result":"Pass","Result before reliability test":"Pass","Result after reliability test":"Pass","Report No":"PCN 26-06-001","Report date":"2026-06-19","PIC":"Linh","Status":"Closed","Remark":"As requested by the parent company’s QC team, conduct High Temperature & Humidity Storage Test and Thermal Shock Test under the following conditions:\n- Thermal Shock Test: 30min. at -40℃, 30min. at 85℃, 100Cycles, Recovery Time 2 hours.\n- High Temperature & Humidity Storage Test: 85℃±2℃ & 85%RH±2%RH , 172 hours, Recovery 2 hours.\n- Mr Lee Mi Hee mentioned that the samples can be taken out earlier than scheduled because there is an urgent need to submit data to the customer."},{"Plan' No ":null,"No":18,"Test Condition":"HP","Month":6,"Requested Date by Planning team":"2026-06-20","CR No":null,"Model":"WSWLM310A00","Material":null,"Test Qty":30,"Production Date":"2026-06-20","Reason for Running Sample":"New manufacturer assessment\n(SJVS)","Lot No":"VNSWCMFK0000","Test Start Time":null,"Test End Time":null,"Reliability Test Status":"Not tested","Reliability Test Result":null,"Result before reliability test":"Pass","Result after reliability test":null,"Report No":null,"Report date":null,"PIC":"Linh","Status":"Pending","Remark":null},{"Plan' No ":null,"No":19,"Test Condition":"Xem Approval sheet, mục Reliability test, test theo điều kiện này.","Month":6,"Requested Date by Planning team":"2026-06-23","CR No":null,"Model":"WSWIT601A00","Material":null,"Test Qty":30,"Production Date":"2026-06-23","Reason for Running Sample":"New manufacturer assessment\n(CS Tech)","Lot No":"VNSACMFN0020","Test Start Time":"2026-06-24","Test End Time":"2026-06-28","Reliability Test Status":"Finished","Reliability Test Result":"Pass","Result before reliability test":"- CPK FAIL:\n  + Power 2412","Result after reliability test":"- CPK FAIL:\n  + Power 2472","Report No":"PCN 26-06-002","Report date":"2026-06-30","PIC":"Linh","Status":"Closed","Remark":null},{"Plan' No ":null,"No":20,"Test Condition":"DA","Month":6,"Requested Date by Planning team":"2026-06-23","CR No":null,"Model":"WSWIT700A00","Material":null,"Test Qty":30,"Production Date":"2026-06-23","Reason for Running Sample":"New manufacturer assessment\n(CS Tech)","Lot No":"VNSACMFN0000","Test Start Time":null,"Test End Time":null,"Reliability Test Status":"Not tested","Reliability Test Result":null,"Result before reliability test":"- CPK FAIL:\n  + Power 2472\n  + Power 5825\n  + AVG power 2402","Result after reliability test":null,"Report No":null,"Report date":null,"PIC":"Quỳnh","Status":"Pending","Remark":null},{"Plan' No ":null,"No":21,"Test Condition":"VD","Month":6,"Requested Date by Planning team":"2026-06-29","CR No":"CR-260507-004","Model":"WSCFMM70H0B","Material":"- 51-02000007 (IR LED)","Test Qty":30,"Production Date":"2026-07-07","Reason for Running Sample":"Additional Production Site for \nVD Integrated Module IR LED","Lot No":"VNMCCMG60300","Test Start Time":"2026-07-10","Test End Time":"2026-07-17","Reliability Test Status":"Finished","Reliability Test Result":null,"Result before reliability test":"- CPK FAIL:\n  + Power 5775\n  + AVG 2407\n  + LED","Result after reliability test":"- CPK FAIL:\n  + Power 2472\n  + AVG 2407\n  + RED\n  + GREEN\n  + BLUE\n  + IR\n  + WHITE","Report No":null,"Report date":null,"PIC":"Quỳnh","Status":"Pending","Remark":"- ENG SJIT confirmed with Mr. Han Suk Jin to proceed with the reliability test despite the CPK before FAIL result."},{"Plan' No ":null,"No":22,"Test Condition":"VD","Month":6,"Requested Date by Planning team":"2026-06-29","CR No":null,"Model":"WSZGM502A00","Material":"- 52-00000280 (IC)","Test Qty":30,"Production Date":"2026-06-30","Reason for Running Sample":"Process assessment for\nMarket Purchase Items","Lot No":"- VNSZCMFU0000\n- VNMZCMFU0060\n- VNSZCMFU0060\n- VNSZCMFU0070\n- VNSZCMFU0040\n- VNSZCMFU0020","Test Start Time":"2026-07-01","Test End Time":"2026-07-08","Reliability Test Status":"Finished","Reliability Test Result":"Pass","Result before reliability test":"Pass","Result after reliability test":"- CPK Fail:\n+ Power 2465","Report No":"PCN 26-06-003","Report date":"2026-07-08","PIC":"Quỳnh","Status":"Closed","Remark":"- IC_2613A02WFX: 5ea\n- IC_2607A02WOV: 5ea\n- IC_2606A02WOS: 5ea\n- IC_2607A02WOT: 5ea\n- IC_2606A02VYC: 5ea\n- IC_2611A02W8W: 5ea\n- Because of the compressed air system leak frequently recently, the machine will be shut down on Sunday morning and restarted on Monday morning to continue testing, as instructed by Mr. Seo and Mr. Hai.\n- Mr. Seo said that because shipment WSZGM502A00 needs to be delivered to the customer urgently, the model should be taken out at 12:00 PM on 08.07.2026 and will be retested at 3:00 PM. The report must be submitted to the headquarters by 5:00 PM."},{"Plan' No ":null,"No":23,"Test Condition":"DA","Month":7,"Requested Date by Planning team":"2026-07-01","CR No":"CR-260305-011","Model":"SPWIT600A00","Material":"- 51-06000061 (Level shift)\n- 51-06000031 (Level shift)","Test Qty":30,"Production Date":"2026-07-08","Reason for Running Sample":"Level Shift and PCB Material Change for Wifi Series Material Cost Reduction.","Lot No":"VNSACMG80000","Test Start Time":"2026-08-18","Test End Time":"2026-08-22","Reliability Test Status":"Finished","Reliability Test Result":"Pass","Result before reliability test":"Pass","Result after reliability test":"- CPK FAIL:\n+ Power 2412\n+ Power 2472","Report No":"PCN 26-07-010","Report date":"2026-08-25","PIC":"Quỳnh","Status":"Closed","Remark":"• 30ea reliability test units using code 51-06000061.\n• 28-Jul-2026: All units re-tested → CPK Before PASS.\n• 26/08/2026: CPK re-test results were resent to the headquarters."},{"Plan' No ":null,"No":24,"Test Condition":"DA","Month":7,"Requested Date by Planning team":"2026-07-01","CR No":"CR-260129-002","Model":"SPWIT600C00","Material":"- 56-00000438 (CNT)","Test Qty":30,"Production Date":"2026-07-08","Reason for Running Sample":"Material from other supplier.\n이원화 부품 검토","Lot No":"VNMACMG703T0","Test Start Time":"2026-07-20","Test End Time":"2026-07-24","Reliability Test Status":"Finished","Reliability Test Result":"Pass","Result before reliability test":"Pass","Result after reliability test":"Pass","Report No":"PCN 26-07-002","Report date":"2026-07-30","PIC":"Linh","Status":"Closed","Remark":"• Use PF1 at item 21 (Code: 51-06000031) to run PF3."},{"Plan' No ":null,"No":25,"Test Condition":"VD","Month":7,"Requested Date by Planning team":"2026-07-01","CR No":null,"Model":"WSWLM900A00","Material":null,"Test Qty":null,"Production Date":"2026-06-30","Reason for Running Sample":"New manufacturer assessment\n(SJVS)","Lot No":"VNMWCMFT0010","Test Start Time":null,"Test End Time":null,"Reliability Test Status":"Not tested","Reliability Test Result":null,"Result before reliability test":"- CPK FAIL:\n  + Power 2412\n  + Power 2442\n  + EVM 2442","Result after reliability test":null,"Report No":null,"Report date":null,"PIC":null,"Status":"Pending","Remark":null},{"Plan' No ":null,"No":26,"Test Condition":"VD","Month":7,"Requested Date by Planning team":"2026-07-03","CR No":null,"Model":"WSCOM701A00","Material":null,"Test Qty":30,"Production Date":"2026-07-02","Reason for Running Sample":"New manufacturer assessment\n(SJVS)","Lot No":"VNSCCMG20020","Test Start Time":null,"Test End Time":null,"Reliability Test Status":"Not tested","Reliability Test Result":null,"Result before reliability test":"- CPK FAIL:\n  + Power 5560\n  + AVG Power 2407 ","Result after reliability test":null,"Report No":null,"Report date":null,"PIC":"Quỳnh","Status":"Pending","Remark":null},{"Plan' No ":null,"No":27,"Test Condition":"DA","Month":7,"Requested Date by Planning team":"2026-07-03","CR No":null,"Model":"WSCOM700F00","Material":null,"Test Qty":30,"Production Date":"2026-07-02","Reason for Running Sample":"New manufacturer assessment\n(SJVS)","Lot No":"VNSCCMG20000","Test Start Time":null,"Test End Time":null,"Reliability Test Status":"Not tested","Reliability Test Result":null,"Result before reliability test":"Pass","Result after reliability test":null,"Report No":null,"Report date":null,"PIC":"Quỳnh","Status":"Pending","Remark":null},{"Plan' No ":null,"No":28,"Test Condition":"VD","Month":7,"Requested Date by Planning team":"2026-07-08","CR No":null,"Model":"WSCOM701H00","Material":null,"Test Qty":30,"Production Date":"2026-07-06","Reason for Running Sample":"New manufacturer assessment\n(SJVS)","Lot No":"VNSCCMG60000","Test Start Time":null,"Test End Time":null,"Reliability Test Status":"Not tested","Reliability Test Result":null,"Result before reliability test":"- CPK FAIL:\n  + Power 2472\n  + Power 2412\n  + Power 5775","Result after reliability test":null,"Report No":null,"Report date":null,"PIC":"Quỳnh","Status":"Pending","Remark":null},{"Plan' No ":null,"No":29,"Test Condition":"VD","Month":7,"Requested Date by Planning team":"2026-07-08","CR No":"CR-260629-004","Model":"WSCFML03F00","Material":"- 52-00000322 (DC-DC)","Test Qty":30,"Production Date":"Pending","Reason for Running Sample":"Dual-sourcing transition from DIOD to Joulwatt DC-DC for integrated modules.","Lot No":null,"Test Start Time":null,"Test End Time":null,"Reliability Test Status":"Not tested","Reliability Test Result":null,"Result before reliability test":null,"Result after reliability test":null,"Report No":null,"Report date":null,"PIC":null,"Status":"Pending","Remark":null},{"Plan' No ":null,"No":30,"Test Condition":"VD","Month":7,"Requested Date by Planning team":"2026-07-08","CR No":"CR-260629-005","Model":"SPCFRU80H0B","Material":"- 52-05000046 (DC-DC)","Test Qty":30,"Production Date":"2026-07-29","Reason for Running Sample":"Resolving TI supply issues and reducing cost by dual-sourcing Joulwatt DC-DC ICs.","Lot No":"VNMCCMGT0420","Test Start Time":null,"Test End Time":null,"Reliability Test Status":"Not tested","Reliability Test Result":null,"Result before reliability test":"- CPK FAIL:\n  + 2472_54M: Power\n  + 2472_MCS7: Power & EVM\n  +2412_MCS7: Power\n  + 5560_MCS7:Power\n  + 5755_MCS7: Power\n  + AVG Power\n  + LED","Result after reliability test":null,"Report No":null,"Report date":null,"PIC":"Quỳnh","Status":"Pending","Remark":null},{"Plan' No ":null,"No":31,"Test Condition":"DA","Month":7,"Requested Date by Planning team":"2026-07-08","CR No":"CR-260623-003","Model":"SPWIT900A00","Material":"- 57-00000602 (PCB NANNYAN)","Test Qty":30,"Production Date":"2026-07-21","Reason for Running Sample":"Dual-sourcing PCB raw materials by changing to Nanya substrate boards","Lot No":"VNMACMGL02F0","Test Start Time":"2026-08-18","Test End Time":"2026-08-22","Reliability Test Status":"Finished","Reliability Test Result":"Pass","Result before reliability test":"Pass","Result after reliability test":"Pass","Report No":"PCN 26-07-007","Report date":"2026-08-24","PIC":"Quỳnh","Status":"Closed","Remark":null},{"Plan' No ":null,"No":32,"Test Condition":"DA","Month":7,"Requested Date by Planning team":"2026-07-09","CR No":null,"Model":"WSCOM703A00","Material":null,"Test Qty":30,"Production Date":"2026-07-09","Reason for Running Sample":"New manufacturer assessment\n(SJVS)","Lot No":"VNMCCMG80330","Test Start Time":null,"Test End Time":null,"Reliability Test Status":"Not tested","Reliability Test Result":null,"Result before reliability test":"- CPK FAIL:\n  + Power 2412\n  + Power 5775","Result after reliability test":null,"Report No":null,"Report date":null,"PIC":"Quỳnh","Status":"Pending","Remark":null},{"Plan' No ":null,"No":33,"Test Condition":"DA","Month":7,"Requested Date by Planning team":"2026-07-13","CR No":"CR-260305-011\nCR-260130-007","Model":"SPWIT900A00","Material":"- 51-06000055 (Level shift)","Test Qty":30,"Production Date":"2026-07-15","Reason for Running Sample":"Level Shift and PCB Material Change for Wifi Series Material Cost Reduction.","Lot No":"VNSACMGF0000","Test Start Time":"2026-07-20","Test End Time":"2026-07-24","Reliability Test Status":"Finished","Reliability Test Result":"Pass","Result before reliability test":"Pass","Result after reliability test":"Pass","Report No":"PCN 26-07-001","Report date":"2026-07-25","PIC":"Quỳnh","Status":"Closed","Remark":"- CS-TECH\n• CPK Before: (AVG FAIL) Re-tested all -2.00 calipers. CPK: Pass.\n• CPK After: (AVG FAIL) Re-tested all -1.50 calipers. CPK: Pass.\n* Update the EVM 2472 email according to the approved specification sheet."},{"Plan' No ":null,"No":34,"Test Condition":"VD","Month":7,"Requested Date by Planning team":"2026-07-14","CR No":"CR-260507-004","Model":"WSCFMS85HT00","Material":"- 51-02000009 (IR LED)","Test Qty":30,"Production Date":"Pending","Reason for Running Sample":"Additional Production Site for \nVD Integrated Module IR LED","Lot No":null,"Test Start Time":null,"Test End Time":null,"Reliability Test Status":null,"Reliability Test Result":null,"Result before reliability test":null,"Result after reliability test":null,"Report No":null,"Report date":null,"PIC":null,"Status":"Pending","Remark":null},{"Plan' No ":null,"No":35,"Test Condition":"VD","Month":7,"Requested Date by Planning team":"2026-07-14","CR No":"CR-260507-002","Model":"WSCFMS90HMB","Material":"- 57-00000739 (PCB WHL)","Test Qty":30,"Production Date":"2026-07-28","Reason for Running Sample":"Material from other supplier.\n이원화 부품 검토","Lot No":"VNMCCMGS01K0","Test Start Time":null,"Test End Time":null,"Reliability Test Status":"Not tested","Reliability Test Result":null,"Result before reliability test":"-CPK FAIL:\n  + Power 6555\n  + LED","Result after reliability test":null,"Report No":null,"Report date":null,"PIC":"Quỳnh","Status":"Pending","Remark":null},{"Plan' No ":null,"No":36,"Test Condition":"VD","Month":7,"Requested Date by Planning team":"2026-07-14","CR No":"CR-260507-002","Model":"WSCFMM7CH00","Material":"- 57-00000736 (PCB)","Test Qty":"?","Production Date":"Pending","Reason for Running Sample":"Material from other supplier.\n이원화 부품 검토","Lot No":null,"Test Start Time":null,"Test End Time":null,"Reliability Test Status":null,"Reliability Test Result":null,"Result before reliability test":null,"Result after reliability test":null,"Report No":null,"Report date":null,"PIC":null,"Status":"Pending","Remark":null},{"Plan' No ":153,"No":37,"Test Condition":"VD","Month":7,"Requested Date by Planning team":"2026-07-14","CR No":"CR-260507-002","Model":"WSCFMS9DHTL","Material":"- 57-00000728 (PCB) ZBX-WHL","Test Qty":30,"Production Date":"09/08/2026(plan)","Reason for Running Sample":"Material from other supplier.\n이원화 부품 검토","Lot No":null,"Test Start Time":null,"Test End Time":null,"Reliability Test Status":null,"Reliability Test Result":null,"Result before reliability test":null,"Result after reliability test":null,"Report No":null,"Report date":null,"PIC":null,"Status":"Pending","Remark":"*Mark \"S\" on Shiedcan\n• 신청 재고 기별 · 투입대기\n• 50ea 분사 7/21발송"},{"Plan' No ":155,"No":38,"Test Condition":"VD","Month":7,"Requested Date by Planning team":"2026-07-14","CR No":"CR-260507-002","Model":"WSCFMS9CHML","Material":"- 57-00000729 (PCB) ZBX-WHL","Test Qty":30,"Production Date":"09/08/2026(plan)","Reason for Running Sample":"Material from other supplier.\n이원화 부품 검토","Lot No":null,"Test Start Time":null,"Test End Time":null,"Reliability Test Status":null,"Reliability Test Result":null,"Result before reliability test":null,"Result after reliability test":null,"Report No":null,"Report date":null,"PIC":null,"Status":"Pending","Remark":"*Mark \"S\" on Shiedcan\n• 후공정 검토 GUP 없음 (미승인품목)"},{"Plan' No ":158,"No":39,"Test Condition":"VD","Month":7,"Requested Date by Planning team":"2026-07-14","CR No":"CR-260507-002","Model":"WSCFMS95HTL","Material":"- 57-00000734 (PCB) ZBX-WHL","Test Qty":30,"Production Date":"09/08/2026(plan)","Reason for Running Sample":"Material from other supplier.\n이원화 부품 검토","Lot No":null,"Test Start Time":null,"Test End Time":null,"Reliability Test Status":null,"Reliability Test Result":null,"Result before reliability test":null,"Result after reliability test":null,"Report No":null,"Report date":null,"PIC":null,"Status":"Pending","Remark":"*Mark \"S\" on Shiedcan\n'• 신청 재고 기별 · 투입대기\n• 50ea 분사 7/21발송"},{"Plan' No ":159,"No":40,"Test Condition":"VD","Month":7,"Requested Date by Planning team":"2026-07-14","CR No":"CR-260507-002","Model":"WSCFMS85HTB","Material":"- 57-00000735 (PCB) ZBX-WHL","Test Qty":30,"Production Date":"2026-09-08","Reason for Running Sample":"Material from other supplier.\n이원화 부품 검토","Lot No":"VNSCCMI80020","Test Start Time":null,"Test End Time":null,"Reliability Test Status":null,"Reliability Test Result":null,"Result before reliability test":null,"Result after reliability test":null,"Report No":null,"Report date":null,"PIC":"Thien","Status":"Pending","Remark":"*Mark \"S\" on Shiedcan\n'• 신청 재고 기별 · 투입대기"},{"Plan' No ":161,"No":41,"Test Condition":"VD","Month":7,"Requested Date by Planning team":"2026-07-14","CR No":"CR-260507-002","Model":"WSCFMS8DHTB","Material":"- 57-00000737 (PCB) ZBX-WHL","Test Qty":30,"Production Date":"09/08/2026(plan)","Reason for Running Sample":"Material from other supplier.\n이원화 부품 검토","Lot No":null,"Test Start Time":null,"Test End Time":null,"Reliability Test Status":null,"Reliability Test Result":null,"Result before reliability test":null,"Result after reliability test":null,"Report No":null,"Report date":null,"PIC":null,"Status":"Pending","Remark":"*Mark \"S\" on Shiedcan\n'• 신청 재고 기별 · 투입대기"},{"Plan' No ":null,"No":42,"Test Condition":"VD","Month":7,"Requested Date by Planning team":"2026-07-14","CR No":"CR-260623-002","Model":"WSCFRU80H0B","Material":"- 57-00000730 (PCB 생익)","Test Qty":30,"Production Date":"2026-07-25","Reason for Running Sample":"Review of CCL Brand Change for 12 Types of VD Integrated Modules (From Shengyi, Nanya -> Hwajeong, DEKAI)\nVD 통합모듈 12종 원판 변경 검토 (생익, 난아 -> 화정, DEKAI 변경)","Lot No":"VNMCCMGP0260","Test Start Time":"2026-08-11","Test End Time":"2026-08-18","Reliability Test Status":"Finished","Reliability Test Result":"Pass","Result before reliability test":"- CPK FAIL:\n  + Power 5560\n  + Power 5755\n  + Per 2442_54M\n  + Per 2442_MCS7\n  + AVG Power","Result after reliability test":"- CPK FAIL:\n  + Power 2412\n  + Power 5560\n  + Power 5755\n  + Per 2442_54M\n  + Per 2442_MCS7\n  + AVG Power\n  + RED\n  + GREEN","Report No":"PCN 26-07-006","Report date":"2026-08-20","PIC":"Quỳnh","Status":"Closed","Remark":"• CPK Before FAIL: however, Mr. Han Suk Jin confirmed and requested to proceed with the Reliability Test."},{"Plan' No ":null,"No":43,"Test Condition":"VD","Month":7,"Requested Date by Planning team":"2026-07-14","CR No":"CR-260623-002","Model":"WSCFMQ70HMS","Material":"- 57-00000731 (PCB Dekai)","Test Qty":30,"Production Date":"2026-07-27","Reason for Running Sample":"Review of CCL Brand Change for 12 Types of VD Integrated Modules (From Shengyi, Nanya -> Hwajeong, DEKAI)\nVD 통합모듈 12종 원판 변경 검토 (생익, 난아 -> 화정, DEKAI 변경)","Lot No":"VNMCCMGR0190","Test Start Time":null,"Test End Time":null,"Reliability Test Status":"Not tested","Reliability Test Result":null,"Result before reliability test":"- CPK FAIL:\n  + LED\n \n","Result after reliability test":null,"Report No":null,"Report date":null,"PIC":"Quỳnh","Status":"Pending","Remark":null},{"Plan' No ":null,"No":44,"Test Condition":"VD","Month":7,"Requested Date by Planning team":"2026-07-14","CR No":"CR-260623-002","Model":"WSCFMM70H0B","Material":"- 57-00000733 (PCB Dekai)","Test Qty":30,"Production Date":"2026-07-24","Reason for Running Sample":"Review of CCL Brand Change for 12 Types of VD Integrated Modules (From Shengyi, Nanya -> Hwajeong, DEKAI)\nVD 통합모듈 12종 원판 변경 검토 (생익, 난아 -> 화정, DEKAI 변경)","Lot No":"VNMCCMGO03B0","Test Start Time":null,"Test End Time":null,"Reliability Test Status":"Not tested","Reliability Test Result":null,"Result before reliability test":"- CPK FAIL:\n  + AVG Power\n  + LED","Result after reliability test":null,"Report No":null,"Report date":null,"PIC":"Quỳnh","Status":"Pending","Remark":"• 특이 사항 없음 (Không có vấn đề bất thường)"},{"Plan' No ":null,"No":45,"Test Condition":"VD","Month":7,"Requested Date by Planning team":"2026-07-14","CR No":"CR-260623-002","Model":"WSCOM801A00","Material":"- 57-00000740 (PCB Dekai)","Test Qty":30,"Production Date":"Pending\n(23.07.2026)","Reason for Running Sample":"Review of CCL Brand Change for 12 Types of VD Integrated Modules (From Shengyi, Nanya -> Hwajeong, DEKAI)\nVD 통합모듈 12종 원판 변경 검토 (생익, 난아 -> 화정, DEKAI 변경)","Lot No":null,"Test Start Time":null,"Test End Time":null,"Reliability Test Status":"Not tested","Reliability Test Result":null,"Result before reliability test":null,"Result after reliability test":null,"Report No":null,"Report date":null,"PIC":null,"Status":"Pending","Remark":"• 23ea 양품 (59-03000119 같이 진행 ) [23 sản phẩm OK (xử lý/chạy cùng với mã 59-03000119)]"},{"Plan' No ":null,"No":46,"Test Condition":"VD","Month":7,"Requested Date by Planning team":"2026-07-14","CR No":"CR-260623-002","Model":"WSCFMS90HMB","Material":"- 57-00000739 (PCB Dekai)","Test Qty":30,"Production Date":"2026-07-24","Reason for Running Sample":"Review of CCL Brand Change for 12 Types of VD Integrated Modules (From Shengyi, Nanya -> Hwajeong, DEKAI)\nVD 통합모듈 12종 원판 변경 검토 (생익, 난아 -> 화정, DEKAI 변경)","Lot No":"VNMCCMGK02N0","Test Start Time":null,"Test End Time":null,"Reliability Test Status":"Not tested","Reliability Test Result":null,"Result before reliability test":"-CPK FAIL:\n  + Power 2412\n  + Power 6555\n  + Power 6945\n  + LED","Result after reliability test":null,"Report No":null,"Report date":null,"PIC":"Quỳnh","Status":"Pending","Remark":null},{"Plan' No ":null,"No":47,"Test Condition":"VD","Month":7,"Requested Date by Planning team":"2026-07-14","CR No":"CR-260623-002","Model":"WSCFMM7CH0B","Material":"- 57-00000736 (PCB Dekai)","Test Qty":30,"Production Date":"2026-08-18","Reason for Running Sample":"Review of CCL Brand Change for 12 Types of VD Integrated Modules (From Shengyi, Nanya -> Hwajeong, DEKAI)\nVD 통합모듈 12종 원판 변경 검토 (생익, 난아 -> 화정, DEKAI 변경)","Lot No":"VNMCCMHC0150","Test Start Time":"2026-08-22","Test End Time":"2026-08-29","Reliability Test Status":"Finished","Reliability Test Result":"Pass","Result before reliability test":"Pass","Result after reliability test":null,"Report No":null,"Report date":null,"PIC":"Thien","Status":"Pending","Remark":"• Chờ xác nhận chương trình test\n(고색미승인 기종)\n-sample mau PCB( Dekai)\n-Máy LTS bị hư nên không test\n"},{"Plan' No ":null,"No":48,"Test Condition":"VD","Month":7,"Requested Date by Planning team":"2026-07-14","CR No":"CR-260623-002","Model":"WSCFMS95HTB","Material":"- 57-00000734  (PCB Dekai)","Test Qty":"?","Production Date":"Pending","Reason for Running Sample":"Review of CCL Brand Change for 12 Types of VD Integrated Modules (From Shengyi, Nanya -> Hwajeong, DEKAI)\nVD 통합모듈 12종 원판 변경 검토 (생익, 난아 -> 화정, DEKAI 변경)","Lot No":null,"Test Start Time":null,"Test End Time":null,"Reliability Test Status":"Not tested","Reliability Test Result":null,"Result before reliability test":null,"Result after reliability test":null,"Report No":null,"Report date":null,"PIC":null,"Status":"Pending","Remark":"• Chờ xác nhận chương trình test\n(고색미승인 기종)"},{"Plan' No ":null,"No":49,"Test Condition":"VD","Month":8,"Requested Date by Planning team":"2026-08-19","CR No":"CR-260623-002","Model":"WSCFMS85HTB","Material":"-51-02000009(WHL/SY/HJ/DK)","Test Qty":30,"Production Date":"2026-08-19","Reason for Running Sample":"IR supplier evaluation","Lot No":"VNMCCMHC01C0","Test Start Time":null,"Test End Time":null,"Reliability Test Status":"Not tested","Reliability Test Result":null,"Result before reliability test":null,"Result after reliability test":null,"Report No":null,"Report date":null,"PIC":"Thien","Status":"Pending","Remark":"• Chờ xác nhận chương trình test\n(고색미승인 기종)\n-Mẫu 51-02000009(WHL/SY/HJ/DK)\n-chưa test IR, mr.Kim báo chờ"},{"Plan' No ":166,"No":50,"Test Condition":"VD","Month":7,"Requested Date by Planning team":"2026-07-14","CR No":"CR-260623-002","Model":"WSCFMS9CHML","Material":"- 57-00000729 (PCB Dekai)","Test Qty":30,"Production Date":"09/08/2026(plan)","Reason for Running Sample":"Review of CCL Brand Change for 12 Types of VD Integrated Modules (From Shengyi, Nanya -> Hwajeong, DEKAI)\nVD 통합모듈 12종 원판 변경 검토 (생익, 난아 -> 화정, DEKAI 변경)","Lot No":null,"Test Start Time":null,"Test End Time":null,"Reliability Test Status":"Not tested","Reliability Test Result":null,"Result before reliability test":null,"Result after reliability test":null,"Report No":null,"Report date":null,"PIC":null,"Status":"Pending","Remark":"*Mark \"S\" on Shiedcan\n'• Chờ xác nhận chương trình test\n(고색미승인 기종)"},{"Plan' No ":166,"No":51,"Test Condition":"VD","Month":7,"Requested Date by Planning team":"2026-07-14","CR No":"CR-260623-002","Model":"WSCFMS9DHTL","Material":"- 57-00000728 (PCB Dekai)","Test Qty":30,"Production Date":"09/08/2026(plan)","Reason for Running Sample":"Review of CCL Brand Change for 12 Types of VD Integrated Modules (From Shengyi, Nanya -> Hwajeong, DEKAI)\nVD 통합모듈 12종 원판 변경 검토 (생익, 난아 -> 화정, DEKAI 변경)","Lot No":null,"Test Start Time":null,"Test End Time":null,"Reliability Test Status":"Not tested","Reliability Test Result":null,"Result before reliability test":null,"Result after reliability test":null,"Report No":null,"Report date":null,"PIC":null,"Status":"Pending","Remark":"*Mark \"S\" on Shiedcan\n'• Chờ xác nhận chương trình test\n(고색미승인 기종)\n• 신청 재고 기별 · 투입대기"},{"Plan' No ":null,"No":52,"Test Condition":"VD","Month":7,"Requested Date by Planning team":"2026-07-14","CR No":"CR-260623-002","Model":"WSCFMQ80HMB","Material":"- 57-00000732 (PCB)","Test Qty":30,"Production Date":"2026-08-17","Reason for Running Sample":"Review of CCL Brand Change for 12 Types of VD Integrated Modules (From Shengyi, Nanya -> Hwajeong, DEKAI)\nVD 통합모듈 12종 원판 변경 검토 (생익, 난아 -> 화정, DEKAI 변경)","Lot No":"VNMCCMHFZZD0","Test Start Time":null,"Test End Time":null,"Reliability Test Status":"Not tested","Reliability Test Result":null,"Result before reliability test":"- CPK FAIL:\n  + Power 2412\n  + Power 5755\n  + AVG 2402","Result after reliability test":null,"Report No":null,"Report date":null,"PIC":"Quỳnh","Status":"Pending","Remark":"• Chờ xác nhận setup"},{"Plan' No ":166,"No":53,"Test Condition":"VD","Month":7,"Requested Date by Planning team":"2026-07-14","CR No":"CR-260623-002","Model":"WSCFMS8DHTB","Material":"- 57-00000737 (PCB Dekai)","Test Qty":30,"Production Date":"09/08/2026(plan)","Reason for Running Sample":"Review of CCL Brand Change for 12 Types of VD Integrated Modules (From Shengyi, Nanya -> Hwajeong, DEKAI)\nVD 통합모듈 12종 원판 변경 검토 (생익, 난아 -> 화정, DEKAI 변경)","Lot No":null,"Test Start Time":" ","Test End Time":null,"Reliability Test Status":"Not tested","Reliability Test Result":null,"Result before reliability test":null,"Result after reliability test":null,"Report No":null,"Report date":null,"PIC":null,"Status":"Pending","Remark":"• 신청 재고 기별 · 투입대기\n'• Chờ xác nhận chương trình test\n(고색미승인 기종)"},{"Plan' No ":null,"No":54,"Test Condition":"DA","Month":7,"Requested Date by Planning team":"2026-07-20","CR No":null,"Model":"SPWIT900C00","Material":"- 57-00000602 (PCB)","Test Qty":30,"Production Date":"2026-07-22","Reason for Running Sample":"OSP 처리 제품 ","Lot No":"VNMACMGM02L0","Test Start Time":null,"Test End Time":null,"Reliability Test Status":"Not tested","Reliability Test Result":null,"Result before reliability test":"- CPK FAIL:\n   + AVG Power","Result after reliability test":null,"Report No":null,"Report date":null,"PIC":"Quỳnh","Status":"Pending","Remark":"- Dùng PF1 mục 53 để sản xuất PF3 - SJVS"},{"Plan' No ":null,"No":55,"Test Condition":"VD","Month":7,"Requested Date by Planning team":"2026-07-21","CR No":"-","Model":"WSZGM502A00","Material":" 52-00000280 (IC)\n- 2547A02V79\n- 2603A02VRN\n- 2613A02WFY\n- 2603A02VRC","Test Qty":40,"Production Date":"2026-07-27","Reason for Running Sample":"ZGM502 적용 Silicon Labs IC 시장구매 (Áp dụng Silicon Labs IC mua ngoài thị trường cho model ZGM502)","Lot No":"VNMZCMGR0020\nVNSZCMGS0030\nVNSZCMGS0000\nVNSZCMGS0020","Test Start Time":"2026-07-28","Test End Time":"2026-08-04","Reliability Test Status":"Finished","Reliability Test Result":null,"Result before reliability test":"- CPK FAIL:\n   + Power 2465","Result after reliability test":"- CPK FAIL:\n   + Power 2465","Report No":null,"Report date":null,"PIC":"Quỳnh","Status":"Pending","Remark":"• Độ tin cậy 10ea\n* Mr. Hài reported the FAIL item to Mr. Seo. Since it does not affect the product, Mr. Seo approved proceeding with the reliability test."},{"Plan' No ":null,"No":56,"Test Condition":"VD","Month":7,"Requested Date by Planning team":"2026-07-24","CR No":"-","Model":"WSCOM801A00","Material":"- PCB WHL","Test Qty":30,"Production Date":"2026-07-16","Reason for Running Sample":"Evaluation of PCB WHL supplier change","Lot No":"VNSCCMGF0000","Test Start Time":"2026-07-23","Test End Time":"2026-07-30","Reliability Test Status":"Finished","Reliability Test Result":"Pass","Result before reliability test":"- CPK FAIL:\n   + Power 5775\n   + AVG 2477","Result after reliability test":"- CPK FAIL:\n   + Power 5775\n   + AVG 2477","Report No":"PCN 26-07-004","Report date":"2026-08-14","PIC":"Quỳnh","Status":"Closed","Remark":"• Select 30 PASS units from the test results for CPK calculation."},{"Plan' No ":null,"No":57,"Test Condition":"VD","Month":7,"Requested Date by Planning team":"2026-07-24","CR No":"-","Model":"WSCOM801A00","Material":"- 59-03000119 (PCB ZBX)","Test Qty":30,"Production Date":"2026-07-20","Reason for Running Sample":"Evaluation of PCB ZBX supplier change","Lot No":"VNMCCMGK00L0","Test Start Time":"2026-07-23","Test End Time":"2026-07-30","Reliability Test Status":"Finished","Reliability Test Result":"Pass","Result before reliability test":"Pass","Result after reliability test":"- CPK FAIL:\n   + Power 2412\n   + AVG 2477","Report No":"PCN 26-07-005","Report date":"2026-08-14","PIC":"Quỳnh","Status":"Closed","Remark":"• Select 30 PASS units from the test results for CPK calculation."},{"Plan' No ":null,"No":58,"Test Condition":"DA","Month":7,"Requested Date by Planning team":"2026-07-10","CR No":null,"Model":"ATKM005130MS","Material":null,"Test Qty":30,"Production Date":"2026-07-10","Reason for Running Sample":"New manufacturer assessment\n(SJVS)","Lot No":"VNSACMGA0000","Test Start Time":null,"Test End Time":null,"Reliability Test Status":"Not tested","Reliability Test Result":null,"Result before reliability test":"- CPK FAIL:\n  + Power 2412","Result after reliability test":null,"Report No":null,"Report date":null,"PIC":"Quỳnh","Status":"Pending","Remark":"• CPK Excel FAIL Power 2412 nhưng trên Minitab lại ĐẠT."},{"Plan' No ":null,"No":59,"Test Condition":"DA","Month":7,"Requested Date by Planning team":"2026-07-27","CR No":"CR-260623-003","Model":"SPWIT900A00","Material":"- 57-00000602 (ZBX - H150HF)","Test Qty":30,"Production Date":"2026-07-28","Reason for Running Sample":"원판 변경\nHalogen-Free\nHalogen-Lead-Free (무연(납 프리))","Lot No":"VNMACMGS01M0","Test Start Time":"2026-08-18","Test End Time":"2026-08-22","Reliability Test Status":"Finished","Reliability Test Result":"Pass","Result before reliability test":"Pass","Result after reliability test":"Pass","Report No":"PCN 26-07-008","Report date":"2026-08-24","PIC":"Quỳnh","Status":"Closed","Remark":"• 원판 차이 (유) 섞임안됨 (HF)\n(PCB KHÁC CHẤT LIỆU - CẤN THẬN NHẦM LẪN )\n• CS-TECH\n• Mark \"S-H\" on shieldcan"},{"Plan' No ":null,"No":60,"Test Condition":"DA","Month":7,"Requested Date by Planning team":"2026-07-27","CR No":"CR-260623-003","Model":"SPWIT900A00","Material":"- 57-00000602 (ZBX - H150LF)","Test Qty":30,"Production Date":"2026-07-28","Reason for Running Sample":"원판 변경\nHalogen-Free\nHalogen-Lead-Free (무연(납 프리))","Lot No":"VNMACMGS01K0","Test Start Time":"2026-08-18","Test End Time":"2026-08-22","Reliability Test Status":"Finished","Reliability Test Result":"Pass","Result before reliability test":"Pass","Result after reliability test":"Pass","Report No":"PCN 26-07-009","Report date":"2026-08-24","PIC":"Quỳnh","Status":"Closed","Remark":"• 원판 차이 (유) 섞임안됨 (HLF)\n(PCB KHÁC CHẤT LIỆU - CẤN THẬN LẪN NHẦM LẪN )\n• CS-TECH\n• Mark \"S-L\" on shieldcan"},{"Plan' No ":null,"No":61,"Test Condition":"VD","Month":7,"Requested Date by Planning team":"2026-07-30","CR No":"-","Model":"WSCOM801A00","Material":"- New metal mask 3 (CẢI TIẾN SHORT IC)","Test Qty":30,"Production Date":"2026-07-30","Reason for Running Sample":" New metal mask 3 (CẢI TIẾN SHORT IC)","Lot No":"VNMCCMGXXDK0","Test Start Time":"2026-07-30","Test End Time":"2026-08-05","Reliability Test Status":"Finished","Reliability Test Result":"Pass","Result before reliability test":"Pass","Result after reliability test":"- CPK FAIL:\n   + Power 2412\n   + Power 5775","Report No":"PCN 26-07-003","Report date":"2026-08-06","PIC":"Quỳnh","Status":"Closed","Remark":"• Select 30 PASS samples to calculate the Before CPK.\n"},{"Plan' No ":null,"No":62,"Test Condition":"VD","Month":8,"Requested Date by Planning team":"2026-08-14","CR No":"CR-260813-003","Model":"WSCFRU80H0B","Material":"54-00000698F2(CAPACITOR)","Test Qty":30,"Production Date":null,"Reason for Running Sample":"To validate the EYANG 0603 1uF capacitor as a replacement for FENGHUA (dual sourcing)","Lot No":null,"Test Start Time":null,"Test End Time":null,"Reliability Test Status":"Not tested","Reliability Test Result":null,"Result before reliability test":null,"Result after reliability test":null,"Report No":null,"Report date":null,"PIC":null,"Status":"Pending","Remark":"Mark \"C-E\" on Shiedcan\nWAITING COMPONENT\n"},{"Plan' No ":null,"No":63,"Test Condition":"DA","Month":8,"Requested Date by Planning team":"2026-08-18","CR No":"CR-260623-003","Model":"SPWIT900C00","Material":"- 57-00000604 PCB (키보드)","Test Qty":10,"Production Date":"2026-08-19","Reason for Running Sample":"Halogen-Lead-Free (무연/납 프리)\nPF3 C 키보드 적용","Lot No":"VNMACMHJ00Q0","Test Start Time":null,"Test End Time":null,"Reliability Test Status":"Not tested","Reliability Test Result":"Pass","Result before reliability test":null,"Result after reliability test":null,"Report No":null,"Report date":null,"PIC":"Quỳnh","Status":"Pending","Remark":"• Chờ PCB về để test độ tin cậy. (bù 20ea)"},{"Plan' No ":null,"No":64,"Test Condition":"DA","Month":8,"Requested Date by Planning team":"2026-08-18","CR No":"CR-260623-003","Model":"WSWIT900D00","Material":"- 57-00000700 PCB (키보드)","Test Qty":10,"Production Date":"2026-08-19","Reason for Running Sample":"Halogen-Lead-Free (무연/납 프리)\nPF3 D 키보드 적용","Lot No":"VNMACMHJ00O0","Test Start Time":null,"Test End Time":null,"Reliability Test Status":"Not tested","Reliability Test Result":"Pass","Result before reliability test":null,"Result after reliability test":null,"Report No":null,"Report date":null,"PIC":"Quỳnh","Status":"Pending","Remark":"• Chờ PCB về để test độ tin cậy. (bù 20ea)"},{"Plan' No ":null,"No":65,"Test Condition":"VD","Month":6,"Requested Date by Planning team":"2026-06-19","CR No":"CR-260623-002","Model":"WSCFMM7CH0B","Material":"- 57-00000736 (PCB)","Test Qty":30,"Production Date":"2026-08-18","Reason for Running Sample":"26년 VD 통합모듈 PCB 검토 (11품목)\nZBX - WHL\n(PCB thay đổi nhà cung cấp)","Lot No":"VNMCCMHC0170","Test Start Time":"2026-08-22","Test End Time":"2026-08-29","Reliability Test Status":"Finished","Reliability Test Result":"Pass","Result before reliability test":"- CPK FAIL: \n+ WHITE_Color sensor Before","Result after reliability test":null,"Report No":null,"Report date":null,"PIC":"Thien","Status":"Pending","Remark":"-sample mau PCB \"S\"\n-Máy LTS bị hư nên không test"},{"Plan' No ":null,"No":66,"Test Condition":"VD","Month":7,"Requested Date by Planning team":"2026-07-14","CR No":"CR-260623-002","Model":"WSCFMS85HTB","Material":"- 57-00000735 (PCB Dekai)","Test Qty":30,"Production Date":"2026-08-19","Reason for Running Sample":"Review of CCL Brand Change for 12 Types of VD Integrated Modules (From Shengyi, Nanya -> Hwajeong, DEKAI)\nVD 통합모듈 12종 원판 변경 검토 (생익, 난아 -> 화정, DEKAI 변경)","Lot No":"VNMCCMHC0190","Test Start Time":null,"Test End Time":null,"Reliability Test Status":"Not tested","Reliability Test Result":null,"Result before reliability test":null,"Result after reliability test":null,"Report No":null,"Report date":null,"PIC":"Thien","Status":"Pending","Remark":"• Chờ xác nhận chương trình test\n(고색미승인 기종)\n-Mẫu 51-02000009(WHL/SY/HJ/DK)\n-chưa test IR, mr.Kim báo chờ"},{"Plan' No ":null,"No":67,"Test Condition":"VD","Month":8,"Requested Date by Planning team":"2026-08-19","CR No":"CR-260714-003","Model":"WSCFMM70H0B","Material":"- 57-00000733 PCB (ASK/ACE)","Test Qty":30,"Production Date":"2026-08-20","Reason for Running Sample":"Evaluate the new PCB supplier for ASK PCB dual sourcing and verify compatibility/quality on two models before mass production.","Lot No":"VNMCCMHK00D0","Test Start Time":null,"Test End Time":null,"Reliability Test Status":"Not tested","Reliability Test Result":null,"Result before reliability test":"- CPK FAIL: \n+ WIFI/2472_MCS7_Power/Before\n+WIFI/2472_MCS7_EVM/Before\n+WIFI/5775_MCS9_Power/Before\n+BT/2407_Avg Power/Before\n+LED Before\n\n\n","Result after reliability test":null,"Report No":null,"Report date":null,"PIC":"Thien","Status":"Pending","Remark":"Mark \"S-A\" on Shieldcan"},{"Plan' No ":null,"No":68,"Test Condition":"VD","Month":8,"Requested Date by Planning team":"2026-08-19","CR No":"CR-260714-003","Model":"WSCFMQ80HMB","Material":"- 57-00000732 PCB (ASK/ACE)","Test Qty":30,"Production Date":"2026-08-21","Reason for Running Sample":"Evaluate the new PCB supplier for ASK PCB dual sourcing and verify compatibility/quality on two models before mass production.","Lot No":"VNMCCMHL0110","Test Start Time":null,"Test End Time":null,"Reliability Test Status":"Not tested","Reliability Test Result":null,"Result before reliability test":null,"Result after reliability test":null,"Report No":null,"Report date":null,"PIC":"Thien","Status":"Pending","Remark":"Mark \"S-A\" on Shieldcan"},{"Plan' No ":null,"No":69,"Test Condition":"VD","Month":8,"Requested Date by Planning team":"2026-08-20","CR No":null,"Model":"WSCFMS90HMB","Material":null,"Test Qty":30,"Production Date":"2026-08-20","Reason for Running Sample":"Sản xuất đại trà","Lot No":null,"Test Start Time":null,"Test End Time":null,"Reliability Test Status":"Not tested","Reliability Test Result":null,"Result before reliability test":"Pass","Result after reliability test":null,"Report No":null,"Report date":null,"PIC":"Quỳnh","Status":"Pending","Remark":"• Chọn 30ea/920ea để tính CPK"},{"Plan' No ":null,"No":70,"Test Condition":"VD","Month":8,"Requested Date by Planning team":"2026-08-21","CR No":null,"Model":"WSCOM801A00","Material":null,"Test Qty":30,"Production Date":"2026-08-21","Reason for Running Sample":"Sản xuất đại trà","Lot No":"VNMCCMHQO380","Test Start Time":"2026-08-22","Test End Time":"2026-08-27","Reliability Test Status":"Finished","Reliability Test Result":"Pass","Result before reliability test":"Pass","Result after reliability test":"-After 1(Nomarl) CPK FAIL:\n+WIFI_Power /54M 2412 \n+WIFI_Power /MCS7 2472 \n+WIFI_Power /MCS9 5775\n'-After 2(Skip ax 7G) CPK FAIL: \n+WIFI_Power /54M 2412 \n+WIFI_Power /MCS7 2472 \n+WIFI_Power /MCS9 5775\n\n\n","Report No":null,"Report date":null,"PIC":"Thien","Status":"Pending","Remark":"* Sản xuất test 2 điều kiện sau độ tin cậy"},{"Plan' No ":null,"No":71,"Test Condition":"VD","Month":8,"Requested Date by Planning team":"2026-08-21","CR No":null,"Model":"WSCFMM70H0B","Material":null,"Test Qty":30,"Production Date":"2026-08-21","Reason for Running Sample":"Sản xuất đại trà","Lot No":"VNMCCMHL01K0","Test Start Time":"2026-08-26","Test End Time":"2026-08-30","Reliability Test Status":"Finished","Reliability Test Result":"Pass","Result before reliability test":"-CPK FAIL:\n+WIFI/2472_54M_Power/Before\n+WIFI/2412_MCS7_Power/Before\n+WIFI/5560_MCS7_Power/Before\n+BT/2407_Avg Power/Before\n","Result after reliability test":"-CPK FAIL:\n+WIFI/2472_54M_Power\n+WIFI/5775_MCS9\n+BT/2407 1DH5_Avg Power\n+Led\n+Red\n+Green\n+Blu\n+IR\n+White\n\n","Report No":null,"Report date":null,"PIC":"Thien","Status":"Pending","Remark":"*Chọn 30ea để tính CPK\n*Mask Mới"},{"Plan' No ":null,"No":72,"Test Condition":0,"Month":9,"Requested Date by Planning team":"2026-09-03","CR No":"(CR-260827-006)","Model":"WST20W30004S","Material":null,"Test Qty":30,"Production Date":null,"Reason for Running Sample":"Change of raw material for IET20 Series injection molded parts (Case material change) IET20,21,30,31","Lot No":null,"Test Start Time":null,"Test End Time":null,"Reliability Test Status":"Not tested","Reliability Test Result":null,"Result before reliability test":null,"Result after reliability test":null,"Report No":null,"Report date":null,"PIC":null,"Status":"Pending","Remark":"*Code PBA sản xuất\n• Chờ Pur HQ phản hồi lịch ship linh kiện"},{"Plan' No ":null,"No":73,"Test Condition":"VD","Month":9,"Requested Date by Planning team":"2026-09-03","CR No":"(CR-260827-007)","Model":"WSCFMWOCF00","Material":"59-03000115\n59-03000116","Test Qty":30,"Production Date":"09-10(plan)","Reason for Running Sample":"Internal review of dual-sourced Crystal for integrated module","Lot No":null,"Test Start Time":null,"Test End Time":null,"Reliability Test Status":"Not tested","Reliability Test Result":null,"Result before reliability test":null,"Result after reliability test":null,"Report No":null,"Report date":null,"PIC":null,"Status":"Pending","Remark":"*Mark \"S7\" on Shiedcan\n• Chờ Pur HQ phản hồi lịch ship linh kiện"},{"Plan' No ":null,"No":74,"Test Condition":"VD","Month":9,"Requested Date by Planning team":"2026-09-03","CR No":"(CR-260827-008)","Model":"WSCFMQ80HMB","Material":"59-03000119\n59-03000118","Test Qty":30,"Production Date":"09-08(plan)","Reason for Running Sample":"Internal review of dual-sourced Crystal for integrated module","Lot No":null,"Test Start Time":null,"Test End Time":null,"Reliability Test Status":"Not tested","Reliability Test Result":null,"Result before reliability test":null,"Result after reliability test":null,"Report No":null,"Report date":null,"PIC":null,"Status":"Pending","Remark":"*Mark \"S8\" on Shiedcan\n• Chờ Pur HQ phản hồi lịch ship linh kiện"},{"Plan' No ":null,"No":75,"Test Condition":"VD","Month":9,"Requested Date by Planning team":"2026-09-03","CR No":"(CR-260827-009)","Model":"WSCFMS95HTL","Material":"59-03000140\n59-03000145","Test Qty":30,"Production Date":"09-09(plan)","Reason for Running Sample":"Internal review of dual-sourced Crystal for integrated module","Lot No":null,"Test Start Time":null,"Test End Time":null,"Reliability Test Status":"Not tested","Reliability Test Result":null,"Result before reliability test":null,"Result after reliability test":null,"Report No":null,"Report date":null,"PIC":null,"Status":"Pending","Remark":"*Mark \"S9\" on Shiedcan\n• Chờ Pur HQ phản hồi lịch ship linh kiện"},{"Plan' No ":null,"No":76,"Test Condition":"VD","Month":9,"Requested Date by Planning team":"2026-09-03","CR No":"CR-260507-003","Model":"WSAVM510A25","Material":"52-02000077\n52-02000069","Test Qty":30,"Production Date":"2026-09-08","Reason for Running Sample":"Review of mass production application for dual-sourced XMC Memory applied to AVM510","Lot No":"VNMACMI80160","Test Start Time":null,"Test End Time":null,"Reliability Test Status":"Not tested","Reliability Test Result":null,"Result before reliability test":null,"Result after reliability test":null,"Report No":null,"Report date":null,"PIC":null,"Status":"Pending","Remark":"*Mark \"S\" on Shiedcan\n• Chờ Pur HQ phản hồi lịch ship linh kiện"},{"Plan' No ":null,"No":77,"Test Condition":"DA","Month":9,"Requested Date by Planning team":"2026-09-03","CR No":"CR-260812-002","Model":"SPWIT900A00","Material":"52-01000039","Test Qty":30,"Production Date":"2026-09-04","Reason for Running Sample":"Addition of Assembly & Test Site for Realtek IC(SDA8700) applied to WIT900","Lot No":"VNMACMI401P0","Test Start Time":"2026-09-05","Test End Time":"2026-09-09","Reliability Test Status":"Finished","Reliability Test Result":"Pass","Result before reliability test":"Pass","Result after reliability test":"- CPK FAIL:\n+WIFI_Power /11M 2412\n+WIFI_Power /MCS7 2472\n","Report No":"PCN 26-09-001","Report date":"2026-09-10","PIC":"Thien","Status":"Closed","Remark":"*Mark \"S\" on Shiedcan\n• Chờ Pur HQ phản hồi lịch ship linh kiện\n*sample CS-Teach"},{"Plan' No ":null,"No":78,"Test Condition":"VD","Month":9,"Requested Date by Planning team":"2026-09-05","CR No":null,"Model":"WSCOM701F00","Material":"sample CS-Teach","Test Qty":30,"Production Date":"2026-09-05","Reason for Running Sample":"Sản xuất đại trà","Lot No":"VNMCCMI404B0","Test Start Time":null,"Test End Time":null,"Reliability Test Status":"Not tested","Reliability Test Result":null,"Result before reliability test":"- CPK FAIL:\n+ EVM 2472\n+ Power 2412\n+ Power 5560\n+ Power 5775","Result after reliability test":null,"Report No":null,"Report date":null,"PIC":"Quynh","Status":"Pending","Remark":"*sample CS-Teach"}];
+let DATA=[];
+const I18N={ko:{title:'신뢰성 관리 대시보드',subtitle:'신뢰성 시험 통합 현황',dashboard:'대시보드',overview:'신뢰성 시험 현황',overviewTitle:'신뢰성 시험 현황',overviewDesc:'시험 건별 상세 조회 및 상태 관리',detailListTitle:'시험 목록',detailTitle:'시험 상세정보',data:'시험 데이터',material:'자재별 분석',report:'보고서 관리',reportTitle:'보고서 관리',reportDesc:'신뢰성 시험 Report 발행 및 미발행 현황',reportIssued:'Report 발행',reportMissing:'Report 미발행',newReport:'새 시험/Report 등록',manualRecordsTitle:'수동 등록 항목',edit:'수정',editTitle:'시험/Report 수정',newReportTitle:'새 시험/Report 등록',reportFile:'Report 파일',manualNote:'저장한 항목은 이 PC의 브라우저에 계속 남아 있어 나중에 추가 Report를 계속 등록할 수 있습니다.',reportViewerTitle:'Report 연결',reportUploadTitle:'Report 파일 등록',reportUploadDesc:'PDF 또는 Excel Report 파일을 선택해 연결 정보를 저장합니다.',chooseFile:'파일 선택',notice:'알림 / 공지',date:'기간',condition:'시험항목',model:'제품명',material:'자재',status:'진행상태',resultFilter:'시험결과',resultBefore:'신뢰성 시험 전',cpkBefore:'신뢰성 전 CPK 검토결과',reliabilityTestStatus:'신뢰성 TEST 상태',crNo:'CR No.',manage:'관리',resultAfter:'신뢰성 시험 후',search:'조회',reset:'초기화',total:'전체 시험 건수',finished:'완료',pending:'진행/대기',fail:'기준 불만족',pass:'기준 만족',reportMissing:'Report 미발행',monthly:'월별 신뢰성 시험 현황',statusChart:'시험 상태별 현황',conditionChart:'시험항목별 현황',materialChart:'자재별 시험 현황 TOP 10',modelChart:'제품별 시험 현황 TOP 10',issueChart:'주요 관리 이슈 TOP 5',recent:'최근 신뢰성 시험 내역',requestDate:'요청일',result:'시험결과',reportNo:'Report No.',reportSent:'Report 발송 여부',reliabilityInProgress:'신뢰성 진행 중',reliabilityStartDate:'신뢰성 TEST 시작 일자',reliabilityExpectedEndDate:'신뢰성 TEST 종료 예상 일자',pic:'PIC',attention:'⚠ 관리 필요 항목',noticeTitle:'알림 / 공지',noticeDesc:'사내 공지사항 및 중요 알림을 등록하고 관리합니다.',newNotice:'공지 등록',noticeList:'공지 목록',noticeTitleLabel:'제목',noticeContentLabel:'내용',noticePriority:'중요도',noticeNormal:'일반',noticeImportant:'중요',noticePinned:'상단 고정',noticeActive:'게시',noticeSave:'저장',noticeCancel:'취소',noticeDelete:'삭제',noticeEdit:'수정',noticeEmpty:'등록된 공지사항이 없습니다.',noticeConfirmDelete:'이 공지사항을 삭제하시겠습니까?',all:'전체',passed:'만족',notTested:'미실시',other:'기타',noData:'데이터 없음'},en:{title:'Reliability Management Dashboard',subtitle:'Reliability Test Overview',dashboard:'Dashboard',overview:'Reliability Test Status',data:'Test Data',material:'Material Analysis',report:'Report Management',reportTitle:'Report Management',reportDesc:'Reliability test report issued and missing status',reportIssued:'Reports Issued',reportMissing:'Reports Missing',newReport:'Add Test/Report',manualRecordsTitle:'Manually Registered Records',edit:'Edit',editTitle:'Edit Test / Report',newReportTitle:'Add Test / Report',reportFile:'Report File',manualNote:'Saved entries remain in this browser so you can keep adding new test records and reports.',reportViewerTitle:'Report Link',reportUploadTitle:'Register Report File',reportUploadDesc:'Select a PDF or Excel report file to save a local link.',chooseFile:'Choose File',notice:'Notice',date:'Period',condition:'Test Item',model:'Model',material:'Material',status:'Status',resultFilter:'Result',resultBefore:'Before Reliability Test',cpkBefore:'CPK Review Before Reliability Test',reliabilityTestStatus:'Reliability TEST Status',crNo:'CR No.',manage:'Manage',resultAfter:'After Reliability Test',search:'Search',reset:'Reset',total:'Total Test Cases',finished:'Completed',pending:'In Progress / Pending',fail:'Fail',pass:'Pass',reportMissing:'Reports Missing',monthly:'Monthly Reliability Test Status',statusChart:'Test Status',conditionChart:'Test Item Status',materialChart:'Material Test TOP 10',modelChart:'Model Test TOP 10',issueChart:'Top 5 Management Issues',recent:'Recent Reliability Test Records',requestDate:'Request Date',result:'Test Result',reportNo:'Report No.',reliabilityStartDate:'Reliability TEST Start Date',reliabilityExpectedEndDate:'Reliability TEST Expected End Date',reportSent:'Report Sent',reliabilityInProgress:'Reliability In Progress',pic:'PIC',attention:'⚠ Items Requiring Attention',noticeTitle:'Notice',noticeDesc:'Manage internal announcements and important alerts.',newNotice:'New Notice',noticeList:'Notice List',noticeTitleLabel:'Title',noticeContentLabel:'Content',noticePriority:'Priority',noticeNormal:'Normal',noticeImportant:'Important',noticePinned:'Pinned',noticeActive:'Published',noticeSave:'Save',noticeCancel:'Cancel',noticeDelete:'Delete',noticeEdit:'Edit',noticeEmpty:'No notices registered.',noticeConfirmDelete:'Delete this notice?',all:'All',passed:'Pass',notTested:'Not Tested',other:'Other',noData:'No data'},vi:{title:'Bảng điều khiển quản lý độ tin cậy',subtitle:'Tổng quan kiểm tra độ tin cậy',dashboard:'Bảng điều khiển',overview:'Tình trạng kiểm tra độ tin cậy',overviewTitle:'Tình trạng kiểm tra độ tin cậy',overviewDesc:'Tra cứu chi tiết và quản lý trạng thái từng bài kiểm tra',detailListTitle:'Danh sách kiểm tra',detailTitle:'Chi tiết kiểm tra',data:'Dữ liệu kiểm tra',product:'Phân tích sản phẩm',material:'Phân tích vật liệu',report:'Quản lý báo cáo',reportTitle:'Quản lý báo cáo',reportDesc:'Tình trạng phát hành và chưa phát hành Report kiểm tra độ tin cậy',reportIssued:'Đã phát hành Report',reportMissing:'Chưa phát hành Report',newReport:'Thêm bài kiểm tra/Report',manualRecordsTitle:'Mục đã đăng ký thủ công',edit:'Sửa',editTitle:'Sửa bài kiểm tra / Report',newReportTitle:'Thêm bài kiểm tra / Report',reportFile:'Tệp Report',manualNote:'Các mục đã lưu sẽ được giữ trên trình duyệt của PC này để tiếp tục thêm bài kiểm tra và Report.',reportViewerTitle:'Liên kết Report',reportUploadTitle:'Đăng ký tệp Report',reportUploadDesc:'Chọn tệp PDF hoặc Excel Report để lưu liên kết cục bộ.',chooseFile:'Chọn tệp',notice:'Thông báo',date:'Thời gian',condition:'Hạng mục kiểm tra',model:'Model',material:'Vật liệu',status:'Trạng thái',resultFilter:'Kết quả',resultBefore:'Trước kiểm tra độ tin cậy',cpkBefore:'Kết quả đánh giá CPK trước kiểm tra độ tin cậy',reliabilityTestStatus:'Trạng thái TEST độ tin cậy',crNo:'CR No.',manage:'Quản lý',resultAfter:'Sau kiểm tra độ tin cậy',search:'Tìm kiếm',reset:'Đặt lại',total:'Tổng số hạng mục thử nghiệm',finished:'Đã hoàn thành',pending:'Đang thực hiện / Chờ',fail:'Không đạt',pass:'Đạt',reportMissing:'Chưa phát hành báo cáo',monthly:'Tình trạng kiểm tra theo tháng',statusChart:'Tình trạng kiểm tra',conditionChart:'Theo hạng mục kiểm tra',materialChart:'TOP 10 kiểm tra theo vật liệu',modelChart:'TOP 10 kiểm tra theo Model',issueChart:'TOP 5 vấn đề cần quản lý',recent:'Danh sách kiểm tra gần đây',requestDate:'Ngày yêu cầu',result:'Kết quả',reportNo:'Số báo cáo',reliabilityStartDate:'Ngày bắt đầu TEST độ tin cậy',reliabilityExpectedEndDate:'Ngày dự kiến kết thúc TEST độ tin cậy',reportSent:'Trạng thái gửi Report',reliabilityInProgress:'Đang kiểm tra độ tin cậy',pic:'Người phụ trách',attention:'⚠ Các hạng mục cần xử lý',noticeTitle:'Thông báo',noticeDesc:'Đăng ký và quản lý thông báo nội bộ, cảnh báo quan trọng.',newNotice:'Thêm thông báo',noticeList:'Danh sách thông báo',noticeTitleLabel:'Tiêu đề',noticeContentLabel:'Nội dung',noticePriority:'Mức độ',noticeNormal:'Bình thường',noticeImportant:'Quan trọng',noticePinned:'Ghim đầu trang',noticeActive:'Đang đăng',noticeSave:'Lưu',noticeCancel:'Hủy',noticeDelete:'Xóa',noticeEdit:'Sửa',noticeEmpty:'Chưa có thông báo.',noticeConfirmDelete:'Bạn có muốn xóa thông báo này không?',all:'Tất cả',passed:'Đạt',notTested:'Chưa thử nghiệm',other:'Khác',noData:'Không có dữ liệu'}};
+let lang='ko', filtered=[...DATA], charts={}; const t=k=>I18N[lang][k]||k;
+function cleanCond(v){v=(v||'').toString().replace(/\n/g,' ').trim(); if(v==='VD'||v.startsWith('VD '))return 'VD'; if(v==='DA'||v.startsWith('DA '))return 'DA'; if(v==='HP'||v.startsWith('HP '))return 'HP'; return v? '기타':'미입력'}
+function cleanMaterial(v){let s=(v||'').toString().replace(/\n/g,' ').replace(/-\s*/g,'').trim(); if(!s)return '미입력'; let m=s.match(/(\d{2}-\d{8})/); return m?m[1]:s.slice(0,28)}
+function pct(a,b){return b?Math.round(a/b*100):0}
+function fillSelect(id, values){const el=document.getElementById(id), cur=el.value; el.innerHTML='<option value="">'+t('all')+'</option>'+values.sort((a,b)=>a.localeCompare(b,'en')).map(v=>'<option>'+escapeHtml(v)+'</option>').join(''); if(values.includes(cur))el.value=cur}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function initFilters(){fillSelect('condition',[...new Set(DATA.map(x=>cleanCond(x['Test Condition'])))].filter(Boolean));fillSelect('model',[...new Set(DATA.map(x=>(x.Model||'').toString().trim()).filter(Boolean))]);fillSelect('material',[...new Set(DATA.map(x=>cleanMaterial(x.Material)).filter(Boolean))])}
+function apply(){
+let cond=document.getElementById('condition').value,model=document.getElementById('model').value,mat=document.getElementById('material').value,st=document.getElementById('status').value,res=document.getElementById('resultFilter').value,from=document.getElementById('dateFrom').value,to=document.getElementById('dateTo').value;
+filtered=DATA.filter(x=>{
+const dt=(x['Requested Date by Planning team']||'').toString().slice(0,10);
+const rv=(x['Reliability Test Result']||'').toString().trim();
+return (!from||dt>=from)&&(!to||dt<=to)&&(!cond||cleanCond(x['Test Condition'])===cond)&&(!model||(x.Model||'').toString().trim()===model)&&(!mat||cleanMaterial(x.Material)===mat)&&(!st||(st==='blank'?!x['Reliability Test Status']:x['Reliability Test Status']===st))&&(!res||(res==='blank'?!rv:rv===res));
+});
+render()}
+function render(){renderKPI();renderCharts();renderTable();renderAttention()}
+function renderKPI(){let total=filtered.length, fin=filtered.filter(x=>x['Reliability Test Status']==='Finished').length, not=filtered.filter(x=>x['Reliability Test Status']==='Not tested').length, blank=total-fin-not, pass=filtered.filter(x=>x['Reliability Test Result']==='Pass').length, fail=filtered.filter(x=>['Fail','NG'].includes(x['Reliability Test Result'])).length, rep=filtered.filter(x=>x['Report No']).length; document.getElementById('kTotal').textContent=total;document.getElementById('kFinished').textContent=fin;document.getElementById('kPending').textContent=not+blank;document.getElementById('kFail').textContent=fail;document.getElementById('kPass').textContent=pass;document.getElementById('kReport').textContent=total-rep;document.getElementById('kFinishedRate').textContent=pct(fin,total)+'%';document.getElementById('kPendingRate').textContent=pct(not+blank,total)+'%';document.getElementById('kFailRate').textContent=pct(fail,total)+'%';document.getElementById('kPassRate').textContent=pct(pass,total)+'%';document.getElementById('kReportRate').textContent=pct(total-rep,total)+'%'}
+function destroy(id){if(charts[id])charts[id].destroy()}
+function mk(id,type,labels,datasets,opts={}){destroy(id);charts[id]=new Chart(document.getElementById(id),{type,data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:12}}},scales:type==='doughnut'?{}:{x:{grid:{color:'#e5edf4'}},y:{beginAtZero:true,grid:{color:'#e5edf4'}}},...opts}})}
+function renderCharts(){let months=Array.from({length:12},(_,i)=>i+1), counts=months.map(m=>filtered.filter(x=>Number(x.Month)===m).length), passes=months.map(m=>filtered.filter(x=>Number(x.Month)===m&&x['Reliability Test Result']==='Pass').length), fails=months.map(m=>filtered.filter(x=>Number(x.Month)===m&&['Fail','NG'].includes(x['Reliability Test Result'])).length);mk('monthlyChart','bar',months.map(m=>m+'월'),[{label:lang==='ko'?'시험 건수':lang==='en'?'Test Cases':'Số ca kiểm tra',data:counts,backgroundColor:'#5b9bd5'},{label:lang==='ko'?'합격':lang==='en'?'Pass':'Đạt',data:passes,type:'line',borderColor:'#27a966',backgroundColor:'#27a966',tension:.3,yAxisID:'y1'},{label:lang==='ko'?'불합격':lang==='en'?'Fail':'Không đạt',data:fails,type:'line',borderColor:'#e5534b',backgroundColor:'#e5534b',tension:.3,yAxisID:'y1'}],{scales:{y:{beginAtZero:true},y1:{position:'right',beginAtZero:true,grid:{drawOnChartArea:false}}}});let statuses=[['Finished',t('finished')],['Not tested',t('notTested')],['Other',t('other')]], sv=statuses.map(([k])=>k==='Finished'?filtered.filter(x=>x['Reliability Test Status']==='Finished').length:k==='Not tested'?filtered.filter(x=>x['Reliability Test Status']==='Not tested').length:filtered.filter(x=>!['Finished','Not tested'].includes(x['Reliability Test Status']||'')).length);mk('statusChart','doughnut',statuses.map(x=>x[1]),[{data:sv,backgroundColor:['#1f6fb2','#6ea6df','#a7b0bb'],borderWidth:1}]);let cs=[...new Set(filtered.map(x=>cleanCond(x['Test Condition'])))];mk('conditionChart','bar',cs,[{label:t('total'),data:cs.map(c=>filtered.filter(x=>cleanCond(x['Test Condition'])===c).length),backgroundColor:'#5b9bd5'}],{indexAxis:'y',plugins:{legend:{display:false}}});let mats={};filtered.forEach(x=>{let m=cleanMaterial(x.Material);mats[m]=(mats[m]||0)+1});let ml=Object.entries(mats).sort((a,b)=>b[1]-a[1]).slice(0,10);mk('materialChart','bar',ml.map(x=>x[0]),[{label:t('total'),data:ml.map(x=>x[1]),backgroundColor:'#2ead68'}],{indexAxis:'y',plugins:{legend:{display:false}}});let models={};filtered.forEach(x=>{let m=(x.Model||'미입력').toString().trim();models[m]=(models[m]||0)+1});let mdl=Object.entries(models).sort((a,b)=>b[1]-a[1]).slice(0,10);mk('modelChart','bar',mdl.map(x=>x[0]),[{label:t('total'),data:mdl.map(x=>x[1]),backgroundColor:'#5b9bd5'}],{indexAxis:'y',plugins:{legend:{display:false}}});let issueMap={'Report 미발행':filtered.filter(x=>!x['Report No']).length,'시험 미실시':filtered.filter(x=>x['Reliability Test Status']==='Not tested').length,'CPK 관련 이슈':filtered.filter(x=>(x['Result before reliability test']||'').toString().includes('CPK FAIL')||(x['Result after reliability test']||'').toString().includes('CPK FAIL')).length,'Remark 미확인':filtered.filter(x=>!x.Remark).length,'시험 결과 미입력':filtered.filter(x=>!x['Reliability Test Result']).length};document.getElementById('issues').innerHTML=Object.entries(issueMap).sort((a,b)=>b[1]-a[1]).slice(0,5).map(x=>'<div style="display:flex;justify-content:space-between;padding:11px;border-bottom:1px solid var(--line)"><b>'+escapeHtml(x[0])+'</b><strong style="color:#e5534b;font-size:20px">'+x[1]+'</strong></div>').join('')}
+function renderTable(){let arr=[...filtered].sort((a,b)=>String(b['Requested Date by Planning team']||'').localeCompare(String(a['Requested Date by Planning team']||''))).slice(0,15);let body=document.getElementById('recentBody');body.innerHTML=arr.length?arr.map((x,i)=>{let res=x['Reliability Test Result']||'-',st=x['Reliability Test Status']||'-',cls=res==='Pass'?'pass':res==='Fail'||res==='NG'?'fail':'pending';return '<tr><td>'+(i+1)+'</td><td>'+escapeHtml(x['Requested Date by Planning team']||'-')+'</td><td>'+escapeHtml(x.Model||'-')+'</td><td>'+escapeHtml(cleanMaterial(x.Material))+'</td><td>'+escapeHtml(cleanCond(x['Test Condition']))+'</td><td><span class="badge '+cls+'">'+escapeHtml(res)+'</span></td><td>'+escapeHtml(st)+'</td><td>'+escapeHtml(x['Report No']||'-')+'</td><td>'+escapeHtml(x.PIC||'-')+'</td></tr>'}).join(''):'<tr><td colspan="9" class="empty">'+t('noData')+'</td></tr>'}
+function renderAttention(){let a=[['Report 미발행',filtered.filter(x=>!x['Report No']).length],['시험 미실시',filtered.filter(x=>x['Reliability Test Status']==='Not tested').length],['CPK 관련 이슈',filtered.filter(x=>(x['Result before reliability test']||'').toString().includes('CPK FAIL')||(x['Result after reliability test']||'').toString().includes('CPK FAIL')).length],['결과 미입력',filtered.filter(x=>!x['Reliability Test Result']).length]];document.getElementById('attention').innerHTML=a.map(x=>'<div class="notice"><b>'+x[0]+'</b><span>'+x[1]+' '+(lang==='ko'?'건':lang==='en'?'cases':'ca')+'</span></div>').join('')}
+function setLang(l){lang=l;document.documentElement.lang=l==='ko'?'ko':l==='en'?'en':'vi';document.querySelectorAll('[data-k]').forEach(e=>e.textContent=t(e.dataset.k));document.querySelectorAll('.langs button').forEach(b=>b.classList.toggle('active',b.dataset.lang===l));document.getElementById('condition').options[0].text=t('all');document.getElementById('model').options[0].text=t('all');document.getElementById('material').options[0].text=t('all');document.getElementById('status').options[0].text=t('all');document.getElementById('resultFilter').options[0].text=t('all');['mStatus','detailStatus'].forEach(id=>{const s=document.getElementById(id);if(!s)return;[...s.options].forEach(o=>{if(o.value==='신뢰성 진행 중')o.text=t('reliabilityInProgress');if(o.value==='Finished')o.text=t('finished');if(o.value==='Not tested')o.text=t('notTested');if(o.value===''||o.value==='blank')o.text=lang==='ko'?'미입력':lang==='en'?'Not Entered':'Chưa nhập';});});const rs=document.getElementById('mReportSent');if(rs)[...rs.options].forEach(o=>{if(o.value==='미발송')o.text=lang==='ko'?'미발송':lang==='en'?'Not Sent':'Chưa gửi';if(o.value==='발송')o.text=lang==='ko'?'발송':lang==='en'?'Sent':'Đã gửi';});render()}
+document.querySelectorAll('.langs button').forEach(b=>b.onclick=()=>setLang(b.dataset.lang));
+const navButtons=document.querySelectorAll('.nav button[data-view]');
+function showView(v){
+ document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+ const map={dashboard:'viewDashboard',overview:'viewOverview',report:'viewReport',notice:'viewNotice'};
+ const el=document.getElementById(map[v]||'viewDashboard');
+ if(el)el.classList.add('active');
+ navButtons.forEach(b=>b.classList.toggle('active',b.dataset.view===v));
+ if(v==='overview')renderDetailTable();
+ if(v==='report')renderReport();
+ if(v==='notice')loadNoticesV29();
+}
+navButtons.forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));
+document.getElementById('backDashboard').onclick=()=>showView('dashboard');
+
+function detailFiltered(){
+ const st=document.getElementById('detailStatus').value, rs=document.getElementById('detailResult').value;
+ const sm=(document.getElementById('detailSearchModel').value||'').toLowerCase().trim();
+ const q=(document.getElementById('detailSearch').value||'').toLowerCase().trim();
+ return DATA.filter(x=>{
+  const rv=(x['Reliability Test Result']||'').toString().trim(), sv=(x['Reliability Test Status']||'').toString().trim();
+  const hay=[x.Model,x.Material,x['Report No'],x.PIC,x['CR No'],x.Remark].map(v=>(v||'').toString().toLowerCase()).join(' ');
+  return (!st||(st==='blank'?!sv:sv===st))&&(!rs||(rs==='blank'?!rv:rv===rs))&&(!sm||(x.Model||'').toString().toLowerCase().includes(sm))&&(!q||hay.includes(q));
+ });
+}
+function renderDetailTable(){
+ const arr=detailFiltered().sort((a,b)=>String(b['Requested Date by Planning team']||'').localeCompare(String(a['Requested Date by Planning team']||'')));
+ document.getElementById('detailCount').textContent=arr.length+' '+(lang==='ko'?'건':lang==='en'?'cases':'ca');
+ document.getElementById('detailBody').innerHTML=arr.length?arr.map((x,i)=>{
+  const res=x['Reliability Test Result']||'-',st=x['Reliability Test Status']||'-',cls=res==='Pass'?'pass':(res==='Fail'||res==='NG')?'fail':'pending';
+  return `<tr data-no="${x.No}"><td>${i+1}</td><td>${escapeHtml(x['Requested Date by Planning team']||'-')}</td><td>${escapeHtml(x.Model||'-')}</td><td>${escapeHtml(cleanMaterial(x.Material))}</td><td>${escapeHtml(cleanCond(x['Test Condition']))}</td><td><span class="badge ${cls}">${escapeHtml(res)}</span></td><td>${escapeHtml(st)}</td><td>${escapeHtml(x['Report No']||'-')}</td><td>${escapeHtml(x.PIC||'-')}</td></tr>`;
+ }).join(''):`<tr><td colspan="9" class="empty">${t('noData')}</td></tr>`;
+ document.querySelectorAll('#detailBody tr[data-no]').forEach(tr=>tr.onclick=()=>openDetail(tr.dataset.no));
+}
+function openDetail(no){
+ const x=DATA.find(r=>String(r.No)===String(no)); if(!x)return;
+ const f=[['requestDate','요청일',x['Requested Date by Planning team']],['model','제품명',x.Model],['material','자재',cleanMaterial(x.Material)],['condition','시험항목',cleanCond(x['Test Condition'])],['status','진행상태',x['Reliability Test Status']],['result','시험결과',x['Reliability Test Result']],['reportNo','Report No.',x['Report No']],['pic','PIC',x.PIC],['CR No.','CR No.',x['CR No']],['Test Qty','Test Qty',x['Test Qty']],['Test Start Time','시험 시작',x['Test Start Time']],['Test End Time','시험 종료',x['Test End Time']],['Production Date','생산일',x['Production Date']],['Lot No','Lot No.',x['Lot No']],['reason','시험 사유',x['Reason for Running Sample']],['before','시험 전 결과',x['Result before reliability test']],['after','시험 후 결과',x['Result after reliability test']],['remark','비고',x.Remark]];
+ document.getElementById('detailContent').innerHTML=f.map(a=>`<div class="detailitem ${['reason','before','after','remark'].includes(a[0])?'full':''}"><b>${escapeHtml(lang==='ko'?a[1]:a[0])}</b><div class="longtext">${escapeHtml(a[2]??'-')}</div></div>`).join('');
+ document.getElementById('detailModal').classList.add('show');
+}
+document.getElementById('closeModal').onclick=()=>document.getElementById('detailModal').classList.remove('show');
+document.getElementById('detailModal').onclick=e=>{if(e.target.id==='detailModal')e.currentTarget.classList.remove('show')};
+['detailStatus','detailResult','detailSearchModel','detailSearch'].forEach(id=>document.getElementById(id).addEventListener('input',renderDetailTable));
+document.getElementById('detailClear').onclick=()=>{['detailStatus','detailResult','detailSearchModel','detailSearch'].forEach(id=>document.getElementById(id).value='');renderDetailTable()};
+
+
+function initReportModels(){
+ const sel=document.getElementById('reportModel');
+ const vals=[...new Set(DATA.map(x=>(x.Model||'').toString().trim()).filter(Boolean))].sort();
+ sel.innerHTML='<option value="">전체 Model</option>'+vals.map(v=>`<option>${escapeHtml(v)}</option>`).join('');
+}
+function filteredReport(){
+ const q=(document.getElementById('reportQ').value||'').toLowerCase().trim();
+ const st=document.getElementById('reportState').value, rs=document.getElementById('reportResult').value, md=document.getElementById('reportModel').value;
+ return DATA.filter(x=>{
+  const report=(x['Report No']||'').toString().trim();
+  const rv=(x['Reliability Test Result']||'').toString().trim();
+  const hay=[x['Report No'],x.Model,x['CR No'],x.PIC,x.Remark].map(v=>(v||'').toString().toLowerCase()).join(' ');
+  return (!st||(st==='issued'?!!report:!report))&&(!rs||(rs==='blank'?!rv:rv===rs))&&(!md||(x.Model||'').toString().trim()===md)&&(!q||hay.includes(q));
+ });
+}
+function renderReport(){
+ initReportModels();
+ const arr=filteredReport().sort((a,b)=>String(b['Requested Date by Planning team']||'').localeCompare(String(a['Requested Date by Planning team']||'')));
+ const issued=DATA.filter(x=>(x['Report No']||'').toString().trim()).length, total=DATA.length;
+ document.getElementById('rTotal').textContent=total;
+ document.getElementById('rIssued').textContent=issued;
+ document.getElementById('rMissing').textContent=total-issued;
+ document.getElementById('rRate').textContent=Math.round((issued/Math.max(total,1))*100)+'%';
+ document.getElementById('reportBody').innerHTML=arr.length?arr.map((x,i)=>{
+  const report=(x['Report No']||'').toString().trim(),rv=(x['Reliability Test Result']||'').toString().trim();
+  const reportCell=report?`<button class="report-link" data-report="${escapeHtml(report)}" data-no="${escapeHtml(x.No)}">${escapeHtml(report)}</button>`:`<button class="smallbtn report-register" data-no="${escapeHtml(x.No)}">Report 등록</button>`;
+const cpk=x['CPK Review Result']||'미검토'; const cpkLabel=cpk==='양호'?'양호':cpk==='보완필요'?'보완필요':'미검토'; const cpkCls=cpk==='양호'?'cpk-good':cpk==='보완필요'?'cpk-improve':'cpk-review'; const ts=x['Reliability Test Status']||'Not tested'; const tsLabel=ts==='Finished'?'완료':ts==='신뢰성 진행 중'?'TEST 중':'대기'; const tsCls=ts==='Finished'?'test-done':ts==='신뢰성 진행 중'?'test-run':'test-wait';
+return `<tr><td>${i+1}</td><td><span class="cpk-status ${cpkCls}">${escapeHtml(cpkLabel)}</span></td><td><span class="test-status ${tsCls}">${escapeHtml(tsLabel)}</span></td><td>${escapeHtml(x['Requested Date by Planning team']||'-')}</td><td>${escapeHtml(x.Model||'-')}</td><td>${escapeHtml(cleanMaterial(x.Material))}</td><td>${escapeHtml(cleanCond(x['Test Condition']))}</td><td>${escapeHtml(rv||'-')}</td><td>${reportCell}</td><td><span class="report-status ${report?'ok':'missing'}">${report?'발행':'미발행'}</span></td><td>${escapeHtml(x.PIC||'-')}</td><td>${escapeHtml(x['CR No']||'-')}</td><td><button class="smallbtn edit-report-item" type="button" data-no="${escapeHtml(x.No)}">수정</button></td></tr>`;
+ }).join(''):`<tr><td colspan="11" class="empty">${t('noData')}</td></tr>`;
+ refreshReportLinks();
+}
+['reportQ','reportState','reportResult','reportModel'].forEach(id=>document.getElementById(id).addEventListener('input',renderReport));
+document.getElementById('reportClear').onclick=()=>{document.getElementById('reportQ').value='';document.getElementById('reportState').value='';document.getElementById('reportResult').value='';document.getElementById('reportModel').value='';renderReport()};
+document.getElementById('reportBack').onclick=()=>showView('dashboard');
+
+
+
+
+async function getAllManual(){
+ const db=await openReportDB();
+ return new Promise((resolve,reject)=>{
+  const tx=db.transaction('manual','readonly'), req=tx.objectStore('manual').getAll();
+  req.onsuccess=()=>resolve(req.result||[]); req.onerror=()=>reject(req.error);
+ });
+}
+async function addManualRecord(record,file){
+ const db=await openReportDB();
+ return new Promise((resolve,reject)=>{
+  const tx=db.transaction(['manual','reports'],'readwrite');
+  tx.objectStore('manual').put(record);
+  if(file) tx.objectStore('reports').put({no:String(record.No),name:file.name,type:file.type||'',blob:file,lastModified:file.lastModified});
+  tx.oncomplete=()=>resolve(); tx.onerror=()=>reject(tx.error);
+ });
+}
+async function loadManualIntoData(){
+ try{
+  const arr=await getAllManual();
+  if(arr.length) arr.forEach(x=>{x.__manual=true;DATA.push(x)});
+ }catch(e){console.warn('manual records load failed',e)}
+}
+let reportRows={};
+let currentReportNo=null;
+let currentReportFile=null;
+let currentObjectUrl=null;
+
+function openReportDB(){
+ return new Promise((resolve,reject)=>{
+  const req=indexedDB.open('SJIT_Reliability_DB',2);
+  req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains('reports'))db.createObjectStore('reports',{keyPath:'no'});if(!db.objectStoreNames.contains('manual'))db.createObjectStore('manual',{keyPath:'No'})};
+  req.onsuccess=()=>resolve(req.result);
+  req.onerror=()=>reject(req.error);
+ });
+}
+async function saveReportToDB(no,file){
+ const db=await openReportDB();
+ return new Promise((resolve,reject)=>{
+  const tx=db.transaction('reports','readwrite');
+  tx.objectStore('reports').put({no:String(no),name:file.name,type:file.type||'',blob:file,lastModified:file.lastModified});
+  tx.oncomplete=()=>resolve();
+  tx.onerror=()=>reject(tx.error);
+ });
+}
+async function getReportFromDB(no){
+ const db=await openReportDB();
+ return new Promise((resolve,reject)=>{
+  const tx=db.transaction('reports','readonly');
+  const req=tx.objectStore('reports').get(String(no));
+  req.onsuccess=()=>resolve(req.result||null);
+  req.onerror=()=>reject(req.error);
+ });
+}
+async function refreshReportLinks(){
+ const body=document.getElementById('reportBody');
+ if(!body)return;
+ body.querySelectorAll('.report-link,.report-register').forEach(b=>{
+  b.onclick=async()=>{
+   const no=b.dataset.no, x=DATA.find(r=>String(r.No)===String(no));
+   if(!x)return;
+   currentReportNo=no; currentReportFile=null; document.getElementById('reportMeta').dataset.no=no;
+   document.getElementById('reportMeta').textContent=`${x?.Model||''} | ${x?.['Report No']||'-'} | ${x?.['CR No']||'-'}`;
+   document.getElementById('chosenFile').textContent='선택된 파일 없음';
+   const saved=await getReportFromDB(no).catch(()=>null);
+   const openBtn=document.getElementById('openReportFile');
+   if(saved&&saved.blob){
+    openBtn.style.display='inline-block';
+    openBtn.textContent=(/\.pdf$/i.test(saved.name||'')||saved.type==='application/pdf')?'PDF 열기':'Excel 다운로드';
+    openBtn.onclick=()=>{
+  if(currentObjectUrl)URL.revokeObjectURL(currentObjectUrl);
+  currentObjectUrl=URL.createObjectURL(saved.blob);
+  const isPdf=/\\.pdf$/i.test(saved.name||'') || saved.type==='application/pdf';
+  if(isPdf){
+    const w=window.open('about:blank','_blank');
+    if(w){w.location.href=currentObjectUrl;}
+    else{
+      const a=document.createElement('a');a.href=currentObjectUrl;a.target='_blank';a.rel='noopener';a.click();
+    }
+  }else{
+    const a=document.createElement('a');
+    a.href=currentObjectUrl;
+    a.download=saved.name||'Report';
+    document.body.appendChild(a);a.click();a.remove();
+    document.getElementById('reportHelp').textContent='Excel 파일은 브라우저에서 바로 열 수 없어 다운로드했습니다: '+saved.name;
+  }
+};
+    document.getElementById('reportHelp').textContent='연결된 파일: '+saved.name+' (이 PC의 브라우저에 저장됨)';
+   }else{
+    openBtn.style.display='none';
+    document.getElementById('reportHelp').textContent='※ 파일을 선택한 후 연결 저장을 누르세요.';
+   }
+   document.getElementById('reportModal').classList.add('show');
+  };
+ });
+}
+document.getElementById('reportFile').onchange=e=>{
+ currentReportFile=e.target.files?.[0]||null;
+ document.getElementById('chosenFile').textContent=currentReportFile?currentReportFile.name:'선택된 파일 없음';
+};
+document.getElementById('saveReportLink').onclick=async()=>{
+ if(!currentReportNo||!currentReportFile){alert('Report 파일을 먼저 선택하세요.');return}
+ const btn=document.getElementById('saveReportLink');
+ btn.disabled=true; btn.textContent='저장 중...';
+ try{
+   await saveReportToDB(currentReportNo,currentReportFile);
+   document.getElementById('reportHelp').textContent='저장 완료: '+currentReportFile.name+' — 다시 열려면 이 Report를 클릭하세요.';
+   alert('Report 연결이 저장되었습니다.');
+   btn.textContent='연결 저장';
+   btn.disabled=false;
+   document.getElementById('reportModal').classList.remove('show');
+   renderReport();
+ }catch(err){
+   console.error(err);
+   btn.textContent='연결 저장'; btn.disabled=false;
+   alert('저장에 실패했습니다. 브라우저의 파일 저장 권한을 확인해 주세요.');
+ }
+};
+document.getElementById('closeReportModal').onclick=()=>document.getElementById('reportModal').classList.remove('show');
+document.getElementById('reportBody').addEventListener('click',async e=>{
+ const b=e.target.closest('.report-link,.report-register'); if(!b)return;
+ const no=b.dataset.no, x=DATA.find(r=>String(r.No)===String(no)); if(!x)return;
+ currentReportNo=no; currentReportFile=null;
+ document.getElementById('reportMeta').textContent=`${x?.Model||''} | ${x?.['Report No']||'-'} | ${x?.['CR No']||'-'}`;
+ document.getElementById('chosenFile').textContent='선택된 파일 없음';
+ const saved=await getReportFromDB(no).catch(()=>null);
+ const openBtn=document.getElementById('openReportFile');
+ if(saved&&saved.blob){
+   openBtn.style.display='inline-block';
+   openBtn.textContent=(/\.pdf$/i.test(saved.name||'')||saved.type==='application/pdf')?'PDF 열기':'Excel 다운로드';
+   openBtn.onclick=()=>{
+  if(currentObjectUrl)URL.revokeObjectURL(currentObjectUrl);
+  currentObjectUrl=URL.createObjectURL(saved.blob);
+  const isPdf=/\\.pdf$/i.test(saved.name||'') || saved.type==='application/pdf';
+  if(isPdf){
+    const w=window.open('about:blank','_blank');
+    if(w){w.location.href=currentObjectUrl;}
+    else{
+      const a=document.createElement('a');a.href=currentObjectUrl;a.target='_blank';a.rel='noopener';a.click();
+    }
+  }else{
+    const a=document.createElement('a');
+    a.href=currentObjectUrl;
+    a.download=saved.name||'Report';
+    document.body.appendChild(a);a.click();a.remove();
+    document.getElementById('reportHelp').textContent='Excel 파일은 브라우저에서 바로 열 수 없어 다운로드했습니다: '+saved.name;
+  }
+};
+   document.getElementById('reportHelp').textContent='연결된 파일: '+saved.name+' (이 PC의 브라우저에 저장됨)';
+ }else{openBtn.style.display='none';document.getElementById('reportHelp').textContent='※ 파일을 선택한 후 연결 저장을 누르세요.'}
+ document.getElementById('reportModal').classList.add('show');
+});
+
+
+
+let manualFile=null;
+let editingManualNo=null;
+function clearManualForm(keepModel=false){
+ const keep=keepModel?document.getElementById('mModel').value:'';
+ document.querySelectorAll('#manualModal input,#manualModal textarea').forEach(el=>{if(el.type!=='file')el.value=''});
+ document.getElementById('mDate').value=new Date().toISOString().slice(0,10);
+ document.getElementById('mModel').value=keep;
+ document.getElementById('mCondition').value='';
+ document.getElementById('mResult').value='';
+ document.getElementById('mResultBefore').value='';
+ document.getElementById('mResultAfter').value='';
+ document.getElementById('mStatus').value='Finished';
+ document.getElementById('mReliabilityStartDate').value='';
+ document.getElementById('mReliabilityExpectedEndDate').value='';
+ document.getElementById('mFileName').textContent='선택된 파일 없음';
+ manualFile=null;
+}
+
+function openManualForEdit(no){
+ const x=DATA.find(r=>String(r.No)===String(no)); if(!x)return;
+ editingManualNo=String(no);
+ document.getElementById('manualModal').classList.add('show');
+ document.getElementById('mDate').value=x['Requested Date by Planning team']||'';
+ document.getElementById('mModel').value=x.Model||'';
+ document.getElementById('mMaterial').value=cleanMaterial(x.Material)||'';
+ document.getElementById('mCondition').value=x['Test Condition']||'';
+ document.getElementById('mResult').value=x['Reliability Test Result']||'';
+ document.getElementById('mCpkBefore').value=x['CPK Review Result']||'미검토';
+ document.getElementById('mResultAfter').value=x['Result after reliability test']||'';
+ document.getElementById('mStatus').value=x['Reliability Test Status']||'';
+ document.getElementById('mReliabilityStartDate').value=x['Reliability Test Start Date']||'';
+ document.getElementById('mReliabilityExpectedEndDate').value=x['Reliability Test Expected End Date']||'';
+ document.getElementById('mReportNo').value=x['Report No']||'';
+ document.getElementById('mReportSent').value=x['Report 발송 여부']||'미발송';
+ document.getElementById('mPIC').value=x.PIC||'';
+ document.getElementById('mCR').value=x['CR No']||'';
+ document.getElementById('mQty').value=x['Test Qty']||'';
+ document.getElementById('mProdDate').value=x['Production Date']||'';
+ document.getElementById('mLot').value=x['Lot No']||'';
+ document.getElementById('mReason').value=x['Reason for Running Sample']||'';
+ document.getElementById('mRemark').value=x.Remark||'';
+ document.getElementById('mFileName').textContent='기존 Report 파일은 변경하지 않습니다. 교체하려면 새 파일을 선택하세요.';
+ manualFile=null;
+ document.getElementById('manualSave').textContent='수정 저장';
+ document.getElementById('manualSaveContinue').style.display='none';
+ document.querySelector('#manualModal [data-k="newReportTitle"]').textContent='시험/Report 수정';
+}
+function leaveEditMode(){
+ editingManualNo=null;
+ document.getElementById('manualSave').textContent='저장 후 닫기';
+ document.getElementById('manualSaveContinue').style.display='';
+ document.querySelector('#manualModal [data-k="newReportTitle"]').textContent='새 시험/Report 등록';
+}
+
+function renderManualList(){
+ const body=document.getElementById('manualBody'); if(!body)return;
+ const manual=DATA.filter(x=>x.__manual===true).sort((a,b)=>Number(a.No)-Number(b.No));
+ document.getElementById('manualCount').textContent=manual.length+' '+(lang==='ko'?'건':lang==='en'?'records':'mục');
+ body.innerHTML=manual.length?manual.map(x=>{
+   const report=(x['Report No']||'').toString().trim();
+   const cpk=x['CPK Review Result']||'미검토'; const cpkCls=cpk==='양호'?'cpk-good':cpk==='보완필요'?'cpk-improve':'cpk-review'; const ts=x['Reliability Test Status']||'Not tested'; const tsLabel=ts==='Finished'?'완료':ts==='신뢰성 진행 중'?'TEST 중':'대기'; const tsCls=ts==='Finished'?'test-done':ts==='신뢰성 진행 중'?'test-run':'test-wait'; return `<tr><td>${x.No}</td><td><span class="cpk-status ${cpkCls}">${escapeHtml(cpk)}</span></td><td><span class="test-status ${tsCls}">${escapeHtml(tsLabel)}</span></td><td>${escapeHtml(x['Requested Date by Planning team']||'-')}</td><td>${escapeHtml(x.Model||'-')}</td><td>${escapeHtml(cleanCond(x['Test Condition']))}</td><td>${escapeHtml(x['Reliability Test Result']||'-')}</td><td>${report?escapeHtml(report):'-'}</td><td><button class="smallbtn" data-edit-manual="${x.No}">수정</button> <button class="smallbtn" data-delete-manual="${x.No}">삭제</button></td></tr>`;
+ }).join(''):`<tr><td colspan="8" style="text-align:center;color:#8a98a7">등록된 수동 항목이 없습니다.</td></tr>`;
+ body.querySelectorAll('[data-edit-manual]').forEach(btn=>btn.onclick=()=>openManualForEdit(btn.dataset.editManual));
+ body.querySelectorAll('[data-delete-manual]').forEach(btn=>btn.onclick=async()=>{
+   const no=btn.dataset.deleteManual;
+   if(!confirm('이 수동 등록 항목을 삭제할까요?'))return;
+   await deleteManualRecord(no);
+   DATA=DATA.filter(x=>String(x.No)!==String(no));
+   filtered=[...DATA];render();renderReport();renderManualList();
+ });
+}
+async function deleteManualRecord(no){
+ await deleteManualFromSupabase(no);
+ const {data,error}=await supabaseClient.from('reliability_tests').select('*').order('request_date',{ascending:true}).order('id',{ascending:true});
+ if(error)throw error;
+ DATA=(data||[]).map(mapDbRow); filtered=[...DATA];
+}
+document.getElementById('newReportBtn').onclick=()=>{leaveEditMode();clearManualForm(false);document.getElementById('manualModal').classList.add('show')};
+document.getElementById('closeManual').onclick=()=>{document.getElementById('manualModal').classList.remove('show');leaveEditMode()};
+document.getElementById('manualCancel').onclick=()=>{document.getElementById('manualModal').classList.remove('show');leaveEditMode()};
+document.getElementById('manualModal').addEventListener('click',e=>{if(e.target.id==='manualModal'){e.currentTarget.classList.remove('show');leaveEditMode()}});
+document.getElementById('mFile').onchange=e=>{
+ manualFile=e.target.files?.[0]||null;
+ document.getElementById('mFileName').textContent=manualFile?manualFile.name:'선택된 파일 없음';
+};
+
+
+async function insertManualToSupabase(record){
+ const payload={
+  request_date:record["Requested Date by Planning team"]||null,
+  model:record.Model||null, material:record.Material||null,
+  test_condition:record["Test Condition"]||null, test_result:record["Reliability Test Result"]||null,
+  test_status:record["Reliability Test Status"]||null, reliability_start_date:record["Reliability Test Start Date"]||null, reliability_expected_end_date:record["Reliability Test Expected End Date"]||null, report_no:record["Report No"]||null,
+  pic:record.PIC||null, cr_no:record["CR No"]||null, test_qty:record["Test Qty"]||null,
+  production_date:record["Production Date"]||null, lot_no:record["Lot No"]||null,
+  reason:record["Reason for Running Sample"]||null,
+  result_before:record["Result before reliability test"]||null,
+  result_after:record["Result after reliability test"]||null, remark:record.Remark||null, cpk_review_result:record["CPK Review Result"]||null
+ };
+ let resp=await supabaseClient.from('reliability_tests').insert(payload).select('*').single();
+ if(resp.error)throw resp.error;
+ return mapDbRow(resp.data);
+}
+async function updateManualInSupabase(no,record){
+ const payload={
+  request_date:record["Requested Date by Planning team"]||null, model:record.Model||null, material:record.Material||null,
+  test_condition:record["Test Condition"]||null, test_result:record["Reliability Test Result"]||null,
+  test_status:record["Reliability Test Status"]||null, reliability_start_date:record["Reliability Test Start Date"]||null, reliability_expected_end_date:record["Reliability Test Expected End Date"]||null, report_no:record["Report No"]||null, pic:record.PIC||null,
+  cr_no:record["CR No"]||null, test_qty:record["Test Qty"]||null, production_date:record["Production Date"]||null,
+  lot_no:record["Lot No"]||null, reason:record["Reason for Running Sample"]||null,
+  result_before:record["Result before reliability test"]||null, result_after:record["Result after reliability test"]||null,
+  remark:record.Remark||null, cpk_review_result:record["CPK Review Result"]||null, updated_at:new Date().toISOString()
+ };
+ const {data,error}=await supabaseClient.from('reliability_tests').update(payload).eq('id',Number(no)).select('*').single();
+ if(error)throw error;
+ return mapDbRow(data);
+}
+async function deleteManualFromSupabase(no){
+ const {error}=await supabaseClient.from('reliability_tests').delete().eq('id',Number(no));
+ if(error)throw error;
+}
+
+async function saveManual(closeAfter){
+ const model=document.getElementById('mModel').value.trim();
+ const date=document.getElementById('mDate').value||new Date().toISOString().slice(0,10);
+ if(!model){alert('Model을 입력하세요.');return}
+ const isEdit=!!editingManualNo;
+ const no=isEdit?Number(editingManualNo):null;
+ const old=isEdit?(DATA.find(x=>Number(x.No)===no)||{}):{};
+ const record={
+  ...old, "No":no,"Test Condition":document.getElementById('mCondition').value,
+  "Month":date?Number(date.slice(5,7)):null,"Requested Date by Planning team":date,
+  "CR No":document.getElementById('mCR').value.trim()||null,"Model":model,
+  "Material":document.getElementById('mMaterial').value.trim()||"-","Test Qty":Number(document.getElementById('mQty').value)||0,
+  "Production Date":document.getElementById('mProdDate').value||"-","Reason for Running Sample":document.getElementById('mReason').value.trim()||"-",
+  "Lot No":document.getElementById('mLot').value.trim()||"-",
+  "CPK Review Result":document.getElementById('mCpkBefore').value,"Reliability Test Status":document.getElementById('mStatus').value,"Reliability Test Result":document.getElementById('mResult').value,
+  "Result before reliability test":document.getElementById('mResultBefore').value||old["Result before reliability test"]||"-","Result after reliability test":document.getElementById('mResultAfter').value||old["Result after reliability test"]||"-",
+  "Report No":document.getElementById('mReportNo').value.trim()||"","PIC":document.getElementById('mPIC').value.trim()||"",
+  "Remark":document.getElementById('mRemark').value.trim()||""
+ };
+ const btn=closeAfter?document.getElementById('manualSave'):document.getElementById('manualSaveContinue');
+ btn.disabled=true; const oldtxt=btn.textContent; btn.textContent='DB 저장 중...';
+ try{
+   if(isEdit) await updateManualInSupabase(no,record);
+   else await insertManualToSupabase(record);
+
+   // Re-read from the server. Never treat a browser-only object as the source of truth.
+   const {data,error}=await supabaseClient.from('reliability_tests').select('*').order('request_date',{ascending:true}).order('id',{ascending:true});
+   if(error)throw error;
+   DATA=(data||[]).map(mapDbRow);
+   filtered=[...DATA];
+   initFilters(); render(); initReportModels(); renderReport(); renderManualList();
+
+   // Verify that the newly written row is actually present on the server.
+   const verify=isEdit ? DATA.find(x=>Number(x.No)===no) : DATA.find(x=>String(x.Model)===String(model) && String(x["Requested Date by Planning team"])===String(date) && Number(x.No)>78);
+   if(!verify) throw new Error('저장은 요청되었지만 서버 재조회 결과 새 데이터가 확인되지 않았습니다.');
+
+   alert(isEdit?'Supabase DB에 수정이 완료되었습니다.':'Supabase DB에 저장이 완료되었습니다. 새로고침 후에도 유지됩니다.');
+   clearManualForm(true);
+   if(closeAfter){document.getElementById('manualModal').classList.remove('show');leaveEditMode();}
+ }catch(e){
+   console.error(e);
+   alert('Supabase DB 저장 실패\\n\\n'+(e.message||e.details||'알 수 없는 오류')+'\\n\\nRLS 정책 또는 INSERT 권한을 확인하세요.');
+ }finally{
+   btn.disabled=false; btn.textContent=isEdit?'수정 저장':oldtxt;
+ }
+}
+document.getElementById('manualSave').onclick=()=>saveManual(true);
+document.getElementById('manualSaveContinue').onclick=()=>saveManual(false);
+
+
+
+document.getElementById('refreshDbBtn').onclick=async()=>{
+ const b=document.getElementById('dbStatus'); b.textContent='DB 새로고침 중...'; b.style.background='#eef3f8'; b.style.color='#6b7280';
+ try{
+  const {data,error}=await supabaseClient.from('reliability_tests').select('*').order('request_date',{ascending:true}).order('id',{ascending:true});
+  if(error)throw error;
+  DATA=(data||[]).map(mapDbRow);filtered=[...DATA];initFilters();render();initReportModels();renderReport();renderManualList();
+  b.textContent='SUPABASE DB 연결됨 · '+DATA.length+'건';b.style.background='#e7f7ee';b.style.color='#18844c';
+ }catch(e){b.textContent='DB 새로고침 실패';b.style.background='#fff1e4';b.style.color='#b42318';alert('DB 새로고침 실패: '+(e.message||e))}
+};
+document.getElementById('apply').onclick=apply;document.getElementById('reset').onclick=()=>{
+document.getElementById('dateFrom').value='2026-01-01';
+document.getElementById('dateTo').value='2026-09-10';
+document.getElementById('condition').value='';
+document.getElementById('model').value='';
+document.getElementById('material').value='';
+document.getElementById('status').value='';
+document.getElementById('resultFilter').value='';
+filtered=[...DATA];render()};
+let authStartPromise=null;
+async function startAuthenticated(session){
+ if(!session)return;
+ if(authStartPromise)return authStartPromise;
+ authStartPromise=(async()=>{
+  LOGIN_SCREEN.style.display='none';
+  document.getElementById('appShell').style.display='flex';
+  document.getElementById('userEmail').textContent=session?.user?.email||'';
+  try{await new Promise(r=>setTimeout(r,0)); await bootSupabase();}
+  catch(e){
+   console.error('Supabase boot failed',e);
+   const badge=document.getElementById('dbStatus'); badge.textContent='DB 오류'; badge.style.background='#fff1e4'; badge.style.color='#b42318';
+  }
+ })().finally(()=>{authStartPromise=null});
+ return authStartPromise;
+}
+document.getElementById('loginBtn').onclick=async()=>{
+ const email=document.getElementById('loginEmail').value.trim(), password=document.getElementById('loginPassword').value;
+ const err=document.getElementById('loginError'); err.textContent='';
+ if(!email||!password){err.textContent='이메일과 비밀번호를 입력하세요.';return}
+ const btn=document.getElementById('loginBtn'); btn.disabled=true; btn.textContent='로그인 중...';
+ const {data,error}=await supabaseClient.auth.signInWithPassword({email,password});
+ if(error){err.textContent='로그인 실패: '+error.message;btn.disabled=false;btn.textContent='로그인';return}
+ btn.disabled=false;btn.textContent='로그인';
+ if(data.session) setTimeout(()=>startAuthenticated(data.session),0);
+};
+document.getElementById('loginPassword').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('loginBtn').click()});
+document.getElementById('logoutBtn').onclick=async()=>{await supabaseClient.auth.signOut();location.reload()};
+supabaseClient.auth.onAuthStateChange((event,session)=>{
+ if(event==='SIGNED_OUT'){location.reload();}
+ else if(session) setTimeout(()=>startAuthenticated(session),0);
+});
+supabaseClient.auth.getSession().then(({data})=>{
+ if(data.session) startAuthenticated(data.session);
+});
+
+</script>
+<script>
+/* v16: Supabase Storage integration.
+   The UI keeps the existing layout, while Report files are stored in the private
+   reliability-reports bucket and linked to reliability_tests.report_path. */
+
+const REPORT_BUCKET_V16='reliability-reports';
+
+function safeReportNameV16(name){
+  return (name||'report').normalize('NFKC')
+    .replace(/[^\w가-힣.\-() ]+/g,'_').replace(/\s+/g,'_').slice(0,160);
+}
+async function getReportInfoV16(rowId){
+  const {data,error}=await supabaseClient.from('reliability_tests')
+    .select('id,report_path,report_filename,report_mime')
+    .eq('id',Number(rowId)).single();
+  if(error)throw error;
+  return data;
+}
+async function uploadReportV16(rowId,file){
+  if(!file)throw new Error('Report 파일을 선택하세요.');
+  const old=await getReportInfoV16(rowId).catch(()=>null);
+
+  // Storage object key: ASCII-only path to avoid invalid-key errors from
+  // browser/S3-compatible storage when Korean/spaces/special characters are used.
+  const ext=((file.name||'').match(/\.([A-Za-z0-9]+)$/)||['','bin'])[1].toLowerCase();
+  const token=(crypto.randomUUID?crypto.randomUUID().replace(/-/g,''):String(Date.now())+Math.random().toString(36).slice(2));
+  const path=`reports/${Number(rowId)}/${Date.now()}_${token}.${ext}`;
+
+  const {error:upErr}=await supabaseClient.storage.from(REPORT_BUCKET_V16)
+    .upload(path,file,{upsert:false,contentType:file.type||'application/octet-stream'});
+  if(upErr)throw upErr;
+
+  const {data,error:dbErr}=await supabaseClient.from('reliability_tests').update({
+    report_path:path,
+    report_filename:file.name,
+    report_mime:file.type||null,
+    updated_at:new Date().toISOString()
+  }).eq('id',Number(rowId)).select('*').single();
+
+  if(dbErr){
+    await supabaseClient.storage.from(REPORT_BUCKET_V16).remove([path]).catch(()=>{});
+    throw dbErr;
+  }
+
+  if(old?.report_path && old.report_path!==path){
+    await supabaseClient.storage.from(REPORT_BUCKET_V16).remove([old.report_path]).catch(()=>{});
+  }
+  return mapDbRow(data);
+}
+async function makeSignedReportUrlV16(rowId){
+  const info=await getReportInfoV16(rowId);
+  if(!info?.report_path)throw new Error('연결된 Report 파일이 없습니다.');
+  const {data,error}=await supabaseClient.storage.from(REPORT_BUCKET_V16)
+    .createSignedUrl(info.report_path,600);
+  if(error)throw error;
+  if(!data?.signedUrl)throw new Error('Report URL을 만들지 못했습니다.');
+  return {url:data.signedUrl,info};
+}
+async function openStoredReportV16(rowId){
+  const {url,info}=await makeSignedReportUrlV16(rowId);
+  const isPdf=(info.report_mime==='application/pdf'||/\.pdf$/i.test(info.report_filename||''));
+  if(isPdf){
+    const w=window.open('about:blank','_blank','noopener');
+    if(w)w.location.href=url;else{const a=document.createElement('a');a.href=url;a.target='_blank';a.rel='noopener';a.click();}
+  }else{
+    const a=document.createElement('a');a.href=url;a.target='_blank';a.rel='noopener';a.download=info.report_filename||'Report';
+    document.body.appendChild(a);a.click();a.remove();
+  }
+}
+function ensureReportStorageMetaV16(){
+  if(!document.getElementById('reportStoragePath')){
+    const el=document.createElement('div');el.id='reportStoragePath';el.className='storage-path';
+    document.getElementById('reportHelp')?.after(el);
+  }
+}
+async function showReportModalV16(no){
+  const __metaNo=document.getElementById('reportMeta'); if(__metaNo)__metaNo.dataset.no=String(no);
+  ensureReportStorageMetaV16();
+  const x=DATA.find(r=>String(r.No)===String(no)); if(!x)return;
+  currentReportNo=String(no);currentReportFile=null;
+  document.getElementById('reportModal').dataset.itemId=String(no);
+  document.getElementById('reportMeta').textContent=`${x.Model||''} | ${x['Report No']||'-'} | ${x['CR No']||'-'}`;
+  document.getElementById('chosenFile').textContent='선택된 파일 없음';
+  document.getElementById('reportStoragePath').textContent='';
+  const p=document.getElementById('uploadProgress');if(p)p.style.display='none';
+  const openBtn=document.getElementById('openReportFile');openBtn.style.display='none';
+  const downloadBtn=document.getElementById('downloadReportLink'); if(downloadBtn){downloadBtn.style.display='none';downloadBtn.onclick=null;}
+  const itemDelBtn=document.getElementById('deleteTestItemLink');
+  if(itemDelBtn){itemDelBtn.disabled=false;itemDelBtn.textContent='시험 항목 삭제';}
+  document.getElementById('reportHelp').textContent='PDF/Excel을 선택한 뒤 [연결 저장]을 누르세요. 공용 Supabase Storage에 저장됩니다.';
+  try{
+    const info=await getReportInfoV16(no);
+    if(info?.report_path){
+      openBtn.style.display='inline-block';
+      openBtn.textContent=(info.report_mime==='application/pdf'||/\.pdf$/i.test(info.report_filename||''))?'PDF 열기':'Excel 다운로드';
+      openBtn.onclick=async()=>{try{await openStoredReportV16(no)}catch(e){alert('Report 열기 실패: '+(e.message||e))}};
+      if(downloadBtn){
+        downloadBtn.style.display='inline-block';
+        downloadBtn.textContent='Report 다운로드';
+        downloadBtn.onclick=async()=>{
+          try{
+            const {url,info}=await makeSignedReportUrlV16(no);
+            const a=document.createElement('a');
+            a.href=url; a.download=info.report_filename||'Report'; a.rel='noopener';
+            document.body.appendChild(a); a.click(); a.remove();
+          }catch(e){alert('Report 다운로드 실패: '+(e.message||e))}
+        };
+      }
+      document.getElementById('reportHelp').textContent='공용 Supabase Storage에 연결된 Report입니다.';
+      document.getElementById('reportStoragePath').textContent='파일: '+(info.report_filename||info.report_path);
+    }
+  }catch(e){document.getElementById('reportHelp').textContent='Report 정보 조회 실패: '+(e.message||e)}
+  document.getElementById('reportModal').classList.add('show');
+}
+document.getElementById('reportFile').addEventListener('change',e=>{
+  currentReportFile=e.target.files?.[0]||null;
+  document.getElementById('chosenFile').textContent=currentReportFile?currentReportFile.name:'선택된 파일 없음';
+});
+document.getElementById('saveReportLink').onclick=async()=>{
+  if(!currentReportNo||!currentReportFile){alert('Report 파일을 먼저 선택하세요.');return}
+  const btn=document.getElementById('saveReportLink'),p=document.getElementById('uploadProgress');
+  btn.disabled=true;btn.textContent='업로드 중...';if(p)p.style.display='block';
+  try{
+    const saved=await uploadReportV16(Number(currentReportNo),currentReportFile);
+    const i=DATA.findIndex(r=>Number(r.No)===Number(currentReportNo));if(i>=0)DATA[i]=saved;
+    filtered=[...DATA];render();initReportModels();renderReport();
+    document.getElementById('reportHelp').textContent='공용 서버 업로드 완료';
+    document.getElementById('reportStoragePath').textContent='파일: '+(saved.__report_filename||currentReportFile.name);
+    alert('Report가 공용 서버에 저장되었습니다.');
+    document.getElementById('reportModal').classList.remove('show');
+  }catch(e){console.error(e);alert('Report 업로드 실패: '+(e.message||e.details||'Storage/DB 정책을 확인하세요.'))}
+  finally{btn.disabled=false;btn.textContent='연결 저장';if(p)p.style.display='none'}
+};
+
+/* Capture first: stop the legacy browser-local click listener, then use Storage. */
+document.addEventListener('click',async e=>{
+  const b=e.target.closest('.report-link,.report-register');
+  if(!b)return;
+  e.preventDefault();e.stopImmediatePropagation();
+  await showReportModalV16(b.dataset.no);
+},true);
+
+/* Manual registration/edit now writes to Supabase and uploads selected Report file there. */
+async function saveManualV16(closeAfter){
+  const model=document.getElementById('mModel').value.trim();
+  const date=document.getElementById('mDate').value||new Date().toISOString().slice(0,10);
+  if(!model){alert('Model을 입력하세요.');return}
+  const isEdit=!!editingManualNo,no=isEdit?Number(editingManualNo):null;
+  const old=isEdit?(DATA.find(x=>Number(x.No)===no)||{}):{};
+  const payload={
+    request_date:date,model:model,
+    material:document.getElementById('mMaterial').value.trim()||null,
+    test_condition:document.getElementById('mCondition').value,
+    test_result:document.getElementById('mResult').value||null,
+    result_before:document.getElementById('mResultBefore').value||old['Result before reliability test']||null,
+    result_after:document.getElementById('mResultAfter').value||old['Result after reliability test']||null,
+    test_status:document.getElementById('mStatus').value||null,
+    reliability_start_date:document.getElementById('mReliabilityStartDate').value||null,
+    reliability_expected_end_date:document.getElementById('mReliabilityExpectedEndDate').value||null,
+    report_no:document.getElementById('mReportNo').value.trim()||null,
+    pic:document.getElementById('mPIC').value.trim()||null,
+    cr_no:document.getElementById('mCR').value.trim()||null,
+    test_qty:Number(document.getElementById('mQty').value)||null,
+    production_date:document.getElementById('mProdDate').value||null,
+    lot_no:document.getElementById('mLot').value.trim()||null,
+    reason:document.getElementById('mReason').value.trim()||null,
+    remark:document.getElementById('mRemark').value.trim()||null,
+    updated_at:new Date().toISOString()
+  };
+  const btn=closeAfter?document.getElementById('manualSave'):document.getElementById('manualSaveContinue');
+  const oldtxt=btn.textContent;btn.disabled=true;btn.textContent='DB 저장 중...';
+  try{
+    let dbRow;
+    if(isEdit){
+      const r=await supabaseClient.from('reliability_tests').update(payload).eq('id',no).select('*').single();
+      if(r.error)throw r.error;dbRow=r.data;
+    }else{
+      const r=await supabaseClient.from('reliability_tests').insert({...payload,created_at:new Date().toISOString()}).select('*').single();
+      if(r.error)throw r.error;dbRow=r.data;
+    }
+    let saved=mapDbRow(dbRow);
+    if(manualFile) saved=await uploadReportV16(dbRow.id,manualFile);
+    const {data,error}=await supabaseClient.from('reliability_tests').select('*').order('request_date',{ascending:true}).order('id',{ascending:true});
+    if(error)throw error;
+    DATA=(data||[]).map(mapDbRow);filtered=[...DATA];initFilters();render();initReportModels();renderReport();renderManualList();
+    alert(isEdit?'시험/Report 정보가 공용 DB에 수정되었습니다.':'시험/Report 정보가 공용 DB에 저장되었습니다.');
+    clearManualForm(true);
+    if(closeAfter){document.getElementById('manualModal').classList.remove('show');leaveEditMode();}
+  }catch(e){console.error(e);alert('저장 실패: '+(e.message||e.details||'RLS/Storage 권한을 확인하세요.'))}
+  finally{btn.disabled=false;btn.textContent=isEdit?'수정 저장':oldtxt}
+}
+document.getElementById('manualSave').onclick=()=>saveManualV16(true);
+document.getElementById('manualSaveContinue').onclick=()=>saveManualV16(false);
+</script>
+
+
+<script>
+window.deleteTestItemNow = async function(){
+  const modal=document.getElementById('reportModal');
+  const btn=document.getElementById('deleteTestItemLink');
+  const targetNo=Number(modal?.dataset?.itemId||document.getElementById('reportMeta')?.dataset?.no||0);
+  if(!targetNo){
+    alert('삭제할 시험 항목을 찾을 수 없습니다.');
+    return;
+  }
+
+  const row=(typeof DATA!=='undefined') ? DATA.find(r=>Number(r.No)===targetNo) : null;
+  const label=row ? ((row.Model||'')+' / '+(row['Report No']||'-')) : ('No.'+targetNo);
+
+  if(!confirm('시험 항목 자체를 삭제하시겠습니까?\\n\\n'+label+
+    '\\n\\nReport 파일이 있으면 Storage에서도 함께 삭제되고, 시험 데이터가 DB에서 완전히 삭제됩니다.')) return;
+
+  const old=btn?btn.textContent:'시험 항목 삭제';
+  if(btn){btn.disabled=true;btn.textContent='삭제 중...';}
+
+  try{
+    let info=null;
+    try{info=await getReportInfoV16(targetNo);}catch(_){}
+    if(info?.report_path){
+      const sr=await supabaseClient.storage.from(REPORT_BUCKET_V16).remove([info.report_path]);
+      if(sr.error) throw sr.error;
+    }
+
+    const del=await supabaseClient.from('reliability_tests').delete().eq('id',targetNo);
+    if(del.error) throw del.error;
+
+    const loaded=await supabaseClient.from('reliability_tests').select('*').order('id',{ascending:true});
+    if(loaded.error) throw loaded.error;
+
+    DATA=(loaded.data||[]).map(mapDbRow);
+    filtered=[...DATA];
+
+    try{render()}catch(_){}
+    try{initFilters()}catch(_){}
+    try{initReportModels()}catch(_){}
+    try{renderReport()}catch(_){}
+    try{renderManualList()}catch(_){}
+
+    modal.classList.remove('show');
+    alert('시험 항목이 삭제되었습니다.');
+  }catch(err){
+    console.error(err);
+    alert('시험 항목 삭제 실패: '+(err.message||err.details||err));
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent=old;}
+  }
+};
+</script>
+
+<script>
+window.deleteReportFileNow = async function(){
+  const modal=document.getElementById('reportModal');
+  const btn=document.getElementById('deleteReportLink');
+  const no=Number(modal?.dataset?.itemId || currentReportNo || 0);
+  if(!no){
+    alert('삭제할 Report 항목을 찾을 수 없습니다.');
+    return;
+  }
+
+  let info=null;
+  try{ info=await getReportInfoV16(no); }catch(e){
+    alert('Report 정보를 조회하지 못했습니다: '+(e.message||e));
+    return;
+  }
+
+  if(!info?.report_path){
+    alert('연결된 Report 파일이 없습니다.');
+    return;
+  }
+
+  const filename=info.report_filename || info.report_path;
+  if(!confirm('다음 Report 파일을 삭제하시겠습니까?\\n\\n'+filename+
+    '\\n\\nSupabase Storage의 실제 파일과 DB 연결 정보가 함께 삭제됩니다.')) return;
+
+  const old=btn?.textContent || 'Report 삭제';
+  if(btn){btn.disabled=true;btn.textContent='삭제 중...';}
+
+  try{
+    // Delete the physical file from Storage.
+    const sr=await supabaseClient.storage.from(REPORT_BUCKET_V16).remove([info.report_path]);
+    if(sr.error) throw sr.error;
+
+    // Clear all Report-related DB fields.
+    const {data,error}=await supabaseClient.from('reliability_tests')
+      .update({
+        report_path:null,
+        report_filename:null,
+        report_mime:null,
+        report_no:null,
+        updated_at:new Date().toISOString()
+      })
+      .eq('id',no)
+      .select('*').single();
+
+    if(error) throw error;
+
+    // Update the local model and re-render from the server-backed row.
+    const mapped=mapDbRow(data);
+    const idx=DATA.findIndex(r=>Number(r.No)===no);
+    if(idx>=0) DATA[idx]=mapped;
+    filtered=[...DATA];
+
+    try{render()}catch(_){}
+    try{initFilters()}catch(_){}
+    try{initReportModels()}catch(_){}
+    try{renderReport()}catch(_){}
+
+    document.getElementById('openReportFile').style.display='none';
+    const dl=document.getElementById('downloadReportLink'); if(dl) dl.style.display='none';
+    document.getElementById('reportStoragePath').textContent='';
+    document.getElementById('reportHelp').textContent='Report 파일이 삭제되었습니다.';
+    document.getElementById('chosenFile').textContent='선택된 파일 없음';
+    document.getElementById('reportFile').value='';
+    btn.style.display='none';
+
+    alert('Report 파일 삭제가 완료되었습니다.');
+  }catch(e){
+    console.error(e);
+    alert('Report 삭제 실패: '+(e.message||e.details||e));
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent=old;}
+  }
+};
+</script>
+
+<script>
+let noticesV29=[], editingNoticeV29=null;
+
+function noticeEscape(v){return escapeHtml(v??'');}
+function noticePriorityBadgeV29(p){
+  if(p==='important') return '<span class="notice-badge notice-important">중요</span>';
+  return '<span class="notice-badge notice-normal">일반</span>';
+}
+function resetNoticeFormV29(){
+  editingNoticeV29=null;
+  document.getElementById('noticeId').value='';
+  document.getElementById('noticeTitleInput').value='';
+  document.getElementById('noticeContentInput').value='';
+  document.getElementById('noticePriorityInput').value='normal';
+  document.getElementById('noticePinnedInput').checked=false;
+  document.getElementById('noticeActiveInput').checked=true;
+  document.getElementById('noticeFormHeading').textContent=t('newNotice');
+  document.getElementById('noticeDelete').style.display='none';
+  document.querySelectorAll('.notice-row').forEach(x=>x.classList.remove('active'));
+}
+function renderNoticesV29(){
+  const list=document.getElementById('noticeList');
+  const count=noticesV29.length;
+  document.getElementById('noticeCount').textContent=count+(lang==='ko'?'건':lang==='en'?' notices':' thông báo');
+  if(!count){list.innerHTML='<div class="empty">'+noticeEscape(t('noticeEmpty'))+'</div>';return;}
+  list.innerHTML=noticesV29.map(n=>{
+    const pinned=n.is_pinned?'<span class="notice-badge notice-pin">PIN</span>':'';
+    const active=n.is_active?'':'<span class="notice-badge" style="background:#eee;color:#777">비공개</span>';
+    const dt=n.created_at?new Date(n.created_at).toLocaleString():'';
+    return `<div class="notice-row" data-notice-id="${n.id}">
+      <div class="ntitle">${pinned}${noticePriorityBadgeV29(n.priority)}${active}${noticeEscape(n.title)}</div>
+      <div class="nmeta">${noticeEscape(dt)}${n.created_by_email?' · '+noticeEscape(n.created_by_email):''}</div>
+      <div class="ncontent">${noticeEscape(n.content)}</div>
+    </div>`;
+  }).join('');
+  document.querySelectorAll('#noticeList .notice-row').forEach(el=>{
+    el.onclick=()=>selectNoticeV29(el.dataset.noticeId);
+  });
+}
+async function loadNoticesV29(){
+  const list=document.getElementById('noticeList');
+  list.innerHTML='<div class="empty">Loading...</div>';
+  const {data,error}=await supabaseClient.from('notices').select('*').order('is_pinned',{ascending:false}).order('created_at',{ascending:false});
+  if(error){
+    list.innerHTML='<div class="empty">공지 테이블을 확인하세요.<br><small>'+noticeEscape(error.message)+'</small></div>';
+    document.getElementById('noticeCount').textContent='0';
+    return;
+  }
+  noticesV29=data||[];
+  renderNoticesV29();
+}
+function selectNoticeV29(id){
+  const n=noticesV29.find(x=>String(x.id)===String(id));
+  if(!n)return;
+  editingNoticeV29=n;
+  document.getElementById('noticeId').value=n.id;
+  document.getElementById('noticeTitleInput').value=n.title||'';
+  document.getElementById('noticeContentInput').value=n.content||'';
+  document.getElementById('noticePriorityInput').value=n.priority||'normal';
+  document.getElementById('noticePinnedInput').checked=!!n.is_pinned;
+  document.getElementById('noticeActiveInput').checked=n.is_active!==false;
+  document.getElementById('noticeFormHeading').textContent=t('noticeEdit');
+  document.getElementById('noticeDelete').style.display='inline-block';
+  document.querySelectorAll('.notice-row').forEach(x=>x.classList.toggle('active',x.dataset.noticeId===String(id)));
+}
+async function saveNoticeV29(){
+  const title=document.getElementById('noticeTitleInput').value.trim();
+  const content=document.getElementById('noticeContentInput').value.trim();
+  if(!title){alert('공지 제목을 입력하세요.');return;}
+  if(!content){alert('공지 내용을 입력하세요.');return;}
+  const user=(await supabaseClient.auth.getUser()).data?.user;
+  const payload={
+    title,
+    content,
+    priority:document.getElementById('noticePriorityInput').value,
+    is_pinned:document.getElementById('noticePinnedInput').checked,
+    is_active:document.getElementById('noticeActiveInput').checked,
+    updated_at:new Date().toISOString()
+  };
+  let q;
+  if(editingNoticeV29){
+    q=supabaseClient.from('notices').update(payload).eq('id',editingNoticeV29.id);
+  }else{
+    q=supabaseClient.from('notices').insert({...payload,created_by:user?.id||null});
+  }
+  const {error}=await q;
+  if(error){alert('공지 저장 실패: '+error.message);return;}
+  resetNoticeFormV29();
+  await loadNoticesV29();
+  alert('공지 저장이 완료되었습니다.');
+}
+async function deleteNoticeV29(){
+  if(!editingNoticeV29)return;
+  if(!confirm(t('noticeConfirmDelete')))return;
+  const {error}=await supabaseClient.from('notices').delete().eq('id',editingNoticeV29.id);
+  if(error){alert('공지 삭제 실패: '+error.message);return;}
+  resetNoticeFormV29();
+  await loadNoticesV29();
+  alert('공지 삭제가 완료되었습니다.');
+}
+document.getElementById('noticeNew').onclick=resetNoticeFormV29;
+document.getElementById('noticeCancel').onclick=resetNoticeFormV29;
+document.getElementById('noticeRefresh').onclick=loadNoticesV29;
+document.getElementById('noticeSave').onclick=saveNoticeV29;
+document.getElementById('noticeDelete').onclick=deleteNoticeV29;
+</script>
+
+<script>
+(function(){
+  if(typeof mapDbRow==='function'){
+    const _mapDbRow=mapDbRow;
+    window.mapDbRow=function(r){
+      const x=_mapDbRow(r);
+      if(x && x['Report 발송 여부']==null) x['Report 발송 여부']=r.report_sent||'미발송';
+      return x;
+    };
+  }
+})();
+</script>
+
+<script>
+(function(){
+  function wireEditButtonsV33(){
+    document.querySelectorAll('.edit-report-item').forEach(btn=>{
+      btn.onclick=()=>openManualForEdit(btn.dataset.no);
+    });
+  }
+  const oldRenderReport=window.renderReport;
+  // The function is global via normal script declaration; wrap it after page startup.
+  if(typeof renderReport==='function' && !renderReport.__v33){
+    const original=renderReport;
+    const wrapped=function(){
+      original.apply(this,arguments);
+      wireEditButtonsV33();
+    };
+    wrapped.__v33=true;
+    window.renderReport=wrapped;
+  }
+  document.addEventListener('click',e=>{
+    const btn=e.target.closest('.edit-report-item');
+    if(btn) {
+      e.preventDefault();
+      openManualForEdit(btn.dataset.no);
+    }
+  });
+})();
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded',()=>{
+  document.querySelectorAll('.nav button[data-view="system"], .nav button[data-view="settings"]').forEach(el=>el.remove());
+  document.querySelectorAll('.nav button').forEach(el=>{
+    const label=(el.textContent||'').trim();
+    if(label.includes('시스템 관리') || label.includes('System Management') || label.includes('Quản lý hệ thống')) el.remove();
+  });
+});
+</script>
+
+
+
+
+
+
+</body></html>
