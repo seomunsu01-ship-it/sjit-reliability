@@ -43,3 +43,4 @@ jobs:
           git add index.html
           git diff --cached --quiet || git commit -m "Fix two-line CPK header and status translations"
           git push
+      # v2 trigger
