@@ -90,7 +90,7 @@ function openDefectDetail(){
 }
 function bind(){var n=document.getElementById('kBad');if(!n||n.dataset.defectBoundV2)return false;n.dataset.defectBoundV2='1';n.style.cursor='pointer';n.title='Click to view defect details';n.addEventListener('click',openDefectDetail);return true}
 var t=setInterval(function(){if(bind())clearInterval(t)},500);setTimeout(function(){clearInterval(t);bind()},15000);
-})();</script><script src="./history-fix-v5.js?v=5"></script><script id="DEFECT-CARD-DETAIL">(function(){
+})();</script><script id="DEFECT-CARD-DETAIL">(function(){
 function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
 function isVi(){try{return window.parent!==window&&window.parent.location.pathname.indexOf('/vi.html')>=0}catch(e){return false}}
 function openDetail(){
