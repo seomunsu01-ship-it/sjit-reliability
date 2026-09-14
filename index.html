@@ -693,7 +693,7 @@ async function saveManual(closeAfter){
   "Production Date":document.getElementById('mProdDate').value||"-","Reason for Running Sample":document.getElementById('mReason').value.trim()||"-",
   "Lot No":document.getElementById('mLot').value.trim()||"-",
   "CPK Review Result":document.getElementById('mCpkBefore').value,"Reliability Test Status":document.getElementById('mStatus').value,"Reliability Test Result":document.getElementById('mResult').value,
-  "Result before reliability test":document.getElementById('mResultBefore').value||old["Result before reliability test"]||"-","Result after reliability test":document.getElementById('mResultAfter').value||old["Result after reliability test"]||"-",
+  "Result before reliability test":document.getElementById('mResultBefore')?.value||old["Result before reliability test"]||"-","Result after reliability test":document.getElementById('mResultAfter').value||old["Result after reliability test"]||"-",
   "Report No":document.getElementById('mReportNo').value.trim()||"","PIC":document.getElementById('mPIC').value.trim()||"",
   "Remark":document.getElementById('mRemark').value.trim()||""
  };
@@ -764,9 +764,10 @@ async function startAuthenticated(session){
  return authStartPromise;
 }
 document.getElementById('loginBtn').onclick=async()=>{
- const email=document.getElementById('loginEmail').value.trim(), password=document.getElementById('loginPassword').value;
+ const loginId=document.getElementById('loginEmail').value.trim(), password=document.getElementById('loginPassword').value;
+ const email=loginId.includes('@')?loginId:loginId+'@naver.com';
  const err=document.getElementById('loginError'); err.textContent='';
- if(!email||!password){err.textContent='이메일과 비밀번호를 입력하세요.';return}
+ if(!loginId||!password){err.textContent='이메일과 비밀번호를 입력하세요.';return}
  const btn=document.getElementById('loginBtn'); btn.disabled=true; btn.textContent='로그인 중...';
  const {data,error}=await supabaseClient.auth.signInWithPassword({email,password});
  if(error){err.textContent='로그인 실패: '+error.message;btn.disabled=false;btn.textContent='로그인';return}
