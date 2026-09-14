@@ -565,7 +565,7 @@ function clearManualForm(keepModel=false){
  document.getElementById('mModel').value=keep;
  document.getElementById('mCondition').value='';
  document.getElementById('mResult').value='';
- document.getElementById('mResultBefore').value='';
+ document.getElementById('mResultBefore')?.value='';
  document.getElementById('mResultAfter').value='';
  document.getElementById('mStatus').value='Finished';
  document.getElementById('mReliabilityStartDate').value='';
@@ -941,6 +941,7 @@ async function saveManualV16(closeAfter){
     result_before:(document.getElementById('mResultBefore')?.value)||old['Result before reliability test']||null,
     result_after:document.getElementById('mResultAfter').value||old['Result after reliability test']||null,
     test_status:document.getElementById('mStatus').value||null,
+    cpk_review_result:document.getElementById('mCpkBefore')?.value||null,
     reliability_start_date:document.getElementById('mReliabilityStartDate').value||null,
     reliability_expected_end_date:document.getElementById('mReliabilityExpectedEndDate').value||null,
     report_no:document.getElementById('mReportNo').value.trim()||null,
