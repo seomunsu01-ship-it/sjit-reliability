@@ -565,7 +565,7 @@ function clearManualForm(keepModel=false){
  document.getElementById('mModel').value=keep;
  document.getElementById('mCondition').value='';
  document.getElementById('mResult').value='';
- document.getElementById('mResultBefore')?.value='';
+ {const rb=document.getElementById('mResultBefore');if(rb)rb.value='';}
  document.getElementById('mResultAfter').value='';
  document.getElementById('mStatus').value='Finished';
  document.getElementById('mReliabilityStartDate').value='';
