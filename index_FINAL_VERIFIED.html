@@ -771,13 +771,13 @@ document.getElementById('loginBtn').onclick=async()=>{
  const {data,error}=await supabaseClient.auth.signInWithPassword({email,password});
  if(error){err.textContent='로그인 실패: '+error.message;btn.disabled=false;btn.textContent='로그인';return}
  btn.disabled=false;btn.textContent='로그인';
- if(data.session) await startAuthenticated(data.session);
+ if(data.session) setTimeout(()=>startAuthenticated(data.session),0);
 };
 document.getElementById('loginPassword').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('loginBtn').click()});
 document.getElementById('logoutBtn').onclick=async()=>{await supabaseClient.auth.signOut();location.reload()};
 supabaseClient.auth.onAuthStateChange((event,session)=>{
  if(event==='SIGNED_OUT'){location.reload();}
- else if(session) startAuthenticated(session);
+ else if(session) setTimeout(()=>startAuthenticated(session),0);
 });
 supabaseClient.auth.getSession().then(({data})=>{
  if(data.session) startAuthenticated(data.session);
@@ -1271,11 +1271,5 @@ document.addEventListener('DOMContentLoaded',()=>{
 
 
 
-<script>
-(function(){
-  const extra={ko:{reliabilityStartDate:'신뢰성 TEST 시작 일자',reliabilityExpectedEndDate:'신뢰성 TEST 종료 예상 일자',reportSent:'Report 발송 여부'},en:{reliabilityStartDate:'Reliability TEST Start Date',reliabilityExpectedEndDate:'Reliability TEST Expected End Date',reportSent:'Report Sent'},vi:{reliabilityStartDate:'Ngày bắt đầu TEST độ tin cậy',reliabilityExpectedEndDate:'Ngày dự kiến kết thúc TEST độ tin cậy',reportSent:'Trạng thái gửi Report'}};
-  const obs=new MutationObserver(()=>{ if(typeof lang==='undefined') return; const L=extra[lang]||extra.ko; document.querySelectorAll('[data-k="reliabilityStartDate"]').forEach(e=>e.textContent=L.reliabilityStartDate); document.querySelectorAll('[data-k="reliabilityExpectedEndDate"]').forEach(e=>e.textContent=L.reliabilityExpectedEndDate); document.querySelectorAll('[data-k="reportSent"]').forEach(e=>e.textContent=L.reportSent); });
-  document.addEventListener('DOMContentLoaded',()=>obs.observe(document.body,{childList:true,subtree:true}));
-})();
-</script>
+
 </body></html>
