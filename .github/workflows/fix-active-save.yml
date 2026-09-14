@@ -1,0 +1,39 @@
+name: Fix active reliability save
+on:
+  push:
+    paths:
+      - '.active-save-fix-trigger'
+permissions:
+  contents: write
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch active save handler
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          old="result_before:document.getElementById('mResultBefore').value||old['Result before reliability test']||null,"
+          new="result_before:(document.getElementById('mResultBefore')?.value)||old['Result before reliability test']||null,"
+          s=s.replace(old,new)
+          needle="    test_status:document.getElementById('mStatus').value||null,"
+          cpk="    cpk_review_result:document.getElementById('mCpkBefore')?.value||null,"
+          if needle in s and cpk not in s:
+              s=s.replace(needle,needle+'\n'+cpk,1)
+          p.write_text(s,encoding='utf-8')
+          assert new in s
+          assert cpk in s
+          PY
+      - name: Commit
+        shell: bash
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add index.html
+          git diff --cached --quiet && exit 0
+          git commit -m 'Fix active reliability save handler'
+          git push origin HEAD:main
