@@ -1,45 +1,10 @@
 name: Emergency login repair
 on:
-  push:
-    paths:
-      - '.repair-save-button-trigger'
   workflow_dispatch:
 permissions:
-  contents: write
+  contents: read
 jobs:
-  repair:
+  notice:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Patch save handler
-        shell: bash
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          p=Path('index.html')
-          s=p.read_text(encoding='utf-8')
-          marker='<!-- FINAL SAVE BUTTON FIX 2026-09-14 -->'
-          if marker not in s:
-              fix='''\n<script>\n/* FINAL SAVE BUTTON FIX 2026-09-14 */\n(function(){\n  function wireSaveButtons(){\n    const save=document.getElementById('manualSave');\n    const cont=document.getElementById('manualSaveContinue');\n    if(save){\n      save.type='button';\n      save.onclick=null;\n      save.addEventListener('click',async function(e){\n        e.preventDefault();\n        e.stopPropagation();\n        try{\n          if(typeof saveManualV16==='function') await saveManualV16(true);\n          else if(typeof saveManual==='function') await saveManual(true);\n          else alert('저장 기능을 불러오지 못했습니다. 페이지를 새로고침해 주세요.');\n        }catch(err){\n          console.error('manualSave click error',err);\n          alert('저장 처리 중 오류: '+(err?.message||err));\n        }\n      });\n    }\n    if(cont){\n      cont.type='button';\n      cont.onclick=null;\n      cont.addEventListener('click',async function(e){\n        e.preventDefault();\n        e.stopPropagation();\n        try{\n          if(typeof saveManualV16==='function') await saveManualV16(false);\n          else if(typeof saveManual==='function') await saveManual(false);\n          else alert('저장 기능을 불러오지 못했습니다. 페이지를 새로고침해 주세요.');\n        }catch(err){\n          console.error('manualSaveContinue click error',err);\n          alert('저장 처리 중 오류: '+(err?.message||err));\n        }\n      });\n    }\n  }\n  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',wireSaveButtons,{once:true});\n  else wireSaveButtons();\n})();\n</script>\n'''
-              s=s.replace('</body>',fix+'</body>')
-          # Ensure the active V16 save payload also persists the CPK review result.
-          needle="request_date:document.getElementById('mDate').value||null,"
-          repl="request_date:document.getElementById('mDate').value||null,\n         cpk_review_result:document.getElementById('mCpkBefore').value||null,"
-          if 'cpk_review_result:document.getElementById(\'mCpkBefore\').value||null' not in s and needle in s:
-              s=s.replace(needle,repl,1)
-          p.write_text(s,encoding='utf-8')
-          print('patched',p)
-          PY
-      - name: Commit patch
-        shell: bash
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html
-          if git diff --cached --quiet; then
-            echo 'No index.html changes needed.'
-            exit 0
-          fi
-          git commit -m 'Fix reliability report save button'
-          git push
+      - run: echo "Emergency login repair workflow is intentionally disabled after final dashboard verification."
