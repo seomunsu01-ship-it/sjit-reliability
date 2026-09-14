@@ -50,9 +50,13 @@ jobs:
 </script>
 '''
               s=s.replace('</body>',fix+'</body>',1)
-          s=s.replace("cpk_review_result:document.getElementById('mCpkBefore').value||null,", "cpk_review_result:(document.getElementById('mCpkBefore')?.value)||null,")
-          # The active save function references a legacy field that is not present in the current modal.
+          # Guard the optional legacy field so editing can never fail with null.value.
           s=s.replace("result_before:document.getElementById('mResultBefore').value||old['Result before reliability test']||null,", "result_before:(document.getElementById('mResultBefore')?.value)||old['Result before reliability test']||null,")
+          # Ensure the active save function persists CPK review result.
+          needle="    test_status:document.getElementById('mStatus').value||null,"
+          repl=needle+"\n    cpk_review_result:document.getElementById('mCpkBefore')?.value||null,"
+          if needle in s and 'cpk_review_result:document.getElementById(\'mCpkBefore\')?.value||null' not in s:
+              s=s.replace(needle,repl,1)
           p.write_text(s,encoding='utf-8')
           PY
       - name: Commit patch
@@ -62,6 +66,6 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html
           if git diff --cached --quiet; then exit 0; fi
-          git commit -m 'Fix reliability report save legacy field'
+          git commit -m 'Fix reliability report save'
           git pull --rebase origin main
           git push origin HEAD:main
