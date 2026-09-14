@@ -1,8 +1,6 @@
 name: Repair reliability dashboard
 on:
   push:
-    paths:
-      - '.reliability-final-fix'
 permissions:
   contents: write
 jobs:
@@ -10,6 +8,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Wait for legacy repair workflows
+        run: sleep 45
       - name: Patch index
         run: |
           python - <<'PY'
