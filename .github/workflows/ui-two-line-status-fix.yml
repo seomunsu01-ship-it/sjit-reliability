@@ -1,0 +1,45 @@
+name: UI two-line status fix
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  fix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch index
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          original=s
+          # Preserve the existing design; only improve the two requested header cells.
+          s=s.replace('.report-status{display:inline-flex;align-items:center;gap:5px;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:700}', '.report-status{display:inline-flex;align-items:center;gap:5px;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:700}.report-table th[data-k="cpkBefore"],.report-table th[data-k="reliabilityTestStatus"],.manual-table th[data-k="cpkBefore"],.manual-table th[data-k="reliabilityTestStatus"]{white-space:pre-line;line-height:1.3;min-width:220px;height:52px}')
+          s=s.replace("cpkBefore:'신뢰성 전 CPK 검토결과'", "cpkBefore:'신뢰성 전\\nCPK 검토결과'")
+          s=s.replace("cpkBefore:'CPK Review Before Reliability Test'", "cpkBefore:'CPK Review Result\\n(Before Reliability)'")
+          s=s.replace("cpkBefore:'Kết quả đánh giá CPK trước kiểm tra độ tin cậy'", "cpkBefore:'Kết quả đánh giá CPK\\ntrước kiểm tra độ tin cậy'")
+          s=s.replace("reliabilityTestStatus:'신뢰성 TEST 상태'", "reliabilityTestStatus:'신뢰성 TEST\\n상태'")
+          s=s.replace("reliabilityTestStatus:'Reliability TEST Status'", "reliabilityTestStatus:'Reliability TEST\\nStatus'")
+          s=s.replace("reliabilityTestStatus:'Trạng thái TEST độ tin cậy'", "reliabilityTestStatus:'Trạng thái TEST\\nđộ tin cậy'")
+          old="""const cpk=x['CPK Review Result']||'미검토'; const cpkLabel=lang==='vi'?(cpk==='양호'?'Đạt':cpk==='보완필요'?'Cần cải thiện':'Chưa đánh giá'):lang==='en'?(cpk==='양호'?'Good':cpk==='보완필요'?'Needs Improvement':'Not Reviewed'):(cpk==='양호'?'양호':cpk==='보완필요'?'보완필요':'미검토');"""
+          new="""const cpk=x['CPK Review Result']||'미검토'; const cpkLabel=lang==='vi'?(cpk==='양호'?'Tốt':cpk==='보완필요'?'Cần cải thiện':'Chưa đánh giá'):lang==='en'?(cpk==='양호'?'Good':cpk==='보완필요'?'Needs Improvement':'Not Reviewed'):(cpk==='양호'?'양호':cpk==='보완필요'?'보완필요':'미검토');"""
+          s=s.replace(old,new)
+          old2="""const ts=x['Reliability Test Status']||'Not tested'; const tsLabel=lang==='vi'?(ts==='Finished'?'Hoàn thành':ts==='신뢰성 진행 중'?'Đang TEST':'Chờ'):lang==='en'?(ts==='Finished'?'Completed':ts==='신뢰성 진행 중'?'In Progress':'Pending'):(ts==='Finished'?'완료':ts==='신뢰성 진행 중'?'TEST 중':'대기');"""
+          new2="""const ts=x['Reliability Test Status']||'Not tested'; const tsLabel=lang==='vi'?(ts==='Finished'?'Hoàn thành':ts==='신뢰성 진행 중'?'Đang thực hiện':'Chờ xử lý'):lang==='en'?(ts==='Finished'?'Completed':ts==='신뢰성 진행 중'?'In Progress':'Pending'):(ts==='Finished'?'완료':ts==='신뢰성 진행 중'?'TEST 중':'대기');"""
+          s=s.replace(old2,new2)
+          if s==original:
+            print('No source changes needed')
+          else:
+            p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit patch
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add index.html
+          git diff --cached --quiet || git commit -m "Fix two-line CPK header and status translations"
+          git push
