@@ -16,10 +16,13 @@ jobs:
           from pathlib import Path
           p = Path('index.html')
           s = p.read_text(encoding='utf-8')
+          bad_reset = "document.getElementById('mResultBefore')?.value='';"
+          good_reset = "const mrb=document.getElementById('mResultBefore'); if(mrb) mrb.value='';"
+          if bad_reset in s:
+              s = s.replace(bad_reset, good_reset, 1)
           old1 = "document.getElementById('mResultBefore').value='';"
-          new1 = "document.getElementById('mResultBefore')?.value='';"
           if old1 in s:
-              s = s.replace(old1, new1, 1)
+              s = s.replace(old1, good_reset, 1)
           old2 = "result_before:document.getElementById('mResultBefore').value||old['Result before reliability test']||null,"
           new2 = "result_before:document.getElementById('mResultBefore')?.value||old['Result before reliability test']||null,"
           if old2 in s:
@@ -36,5 +39,5 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html
           git diff --cached --quiet && exit 0
-          git commit -m 'Fix final save null error and persist CPK review result'
+          git commit -m 'Fix invalid optional chaining assignment'
           git push origin HEAD:main
