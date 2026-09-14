@@ -9,59 +9,45 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Repair login safely
+      - name: Apply final verified root dashboard repair
         shell: python
         run: |
           from pathlib import Path
           import re
-          p=Path('daily-inspection/index.html')
+          p=Path('index.html')
           s=p.read_text(encoding='utf-8')
-          if 'SJIT_LOGIN_EMERGENCY_V1' not in s:
-              js=r'''<script id="SJIT_LOGIN_EMERGENCY_V1">
-(function(){
-  const URL='https://heaouuczehysapjhoslv.supabase.co';
-  const KEY='sb_publishable_ijtjC3p8aHEhrczByMuODg_lPtVKxkk';
-  async function getClient(){
-    try{if(typeof sb!=='undefined' && sb) return sb}catch(e){}
-    if(window.supabase&&window.supabase.createClient)return window.supabase.createClient(URL,KEY);
-    await new Promise((resolve,reject)=>{const x=document.createElement('script');x.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';x.onload=resolve;x.onerror=reject;document.head.appendChild(x)});
-    if(window.supabase&&window.supabase.createClient)return window.supabase.createClient(URL,KEY);
-    throw new Error('Supabase client unavailable');
-  }
-  async function loginFallback(){
-    const email=document.getElementById('loginEmail'),pw=document.getElementById('loginPw'),msg=document.getElementById('loginMsg'),btn=document.getElementById('loginBtn');
-    if(!email||!pw||!btn)return;
-    btn.onclick=async function(){
-      const e=email.value.trim(),p=pw.value;
-      if(!e||!p){msg.textContent='이메일과 비밀번호를 입력하세요.';return}
-      btn.disabled=true;msg.textContent='로그인 중...';
-      try{
-        const client=await getClient();
-        const r=await client.auth.signInWithPassword({email:e,password:p});
-        if(r.error)throw r.error;
-        window.currentUser=r.data.user;
-        const login=document.getElementById('login'),app=document.getElementById('app');
-        if(login)login.classList.add('hidden');if(app)app.classList.remove('hidden');
-        if(typeof load==='function'){try{load()}catch(x){}}
-        else location.reload();
-      }catch(err){msg.textContent='로그인 실패: '+(err.message||err);console.error('SJIT emergency login',err)}
-      finally{btn.disabled=false}
-    };
-    pw.onkeydown=function(e){if(e.key==='Enter')btn.click()};
-  }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',loginFallback);else loginFallback();
-})();
-</script>'''
-              s=s.replace('</body></html>',js+'</body></html>')
-              p.write_text(s,encoding='utf-8')
-          else:
-              print('Emergency login already installed')
-      - name: Commit repair
+          marker='FINAL_VERIFIED_AUTH_PATCH_V1'
+          if marker in s:
+              print('Final verified patch already present')
+              raise SystemExit(0)
+          s=s.replace("if(data.session) startAuthenticated(data.session);","if(data.session) setTimeout(()=>startAuthenticated(data.session),0);")
+          s=s.replace("else if(session) startAuthenticated(session);","else if(session) setTimeout(()=>startAuthenticated(session),0);")
+          s=re.sub(r'<script>\n\(function\(\)\{\n  const extra=\{ko:\{reliabilityStartDate:.*?</script>\n','',s,count=1,flags=re.S)
+          s=s.replace('</body></html>','<!-- FINAL_VERIFIED_AUTH_PATCH_V1 --></body></html>')
+          p.write_text(s,encoding='utf-8')
+          assert 'MutationObserver' not in s
+          print('Root dashboard patched:',len(s.encode('utf-8')),'bytes')
+      - name: Verify root dashboard JavaScript
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re, subprocess
+          s=Path('index.html').read_text(encoding='utf-8')
+          assert 'FINAL_VERIFIED_AUTH_PATCH_V1' in s
+          assert 'MutationObserver' not in s
+          assert "else if(session) setTimeout(()=>startAuthenticated(session),0);" in s
+          assert s.count("if(data.session) setTimeout(()=>startAuthenticated(data.session),0);") >= 2
+          for i,b in enumerate(re.findall(r'<script(?:\s[^>]*)?>(.*?)</script>',s,re.S|re.I),1):
+              f=f'/tmp/check{i}.js'; Path(f).write_text(b,encoding='utf-8'); subprocess.run(['node','--check',f],check=True)
+          print('ALL INLINE JS SYNTAX OK')
+          PY
+      - name: Commit final repair
         shell: bash
         run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add daily-inspection/index.html
+          git add index.html
           git diff --cached --quiet && exit 0
-          git commit -m 'Emergency repair login handler'
+          git commit -m 'Apply final verified reliability dashboard fix'
           git push origin HEAD:main
