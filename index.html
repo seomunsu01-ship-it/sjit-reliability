@@ -785,7 +785,7 @@ supabaseClient.auth.onAuthStateChange((event,session)=>{
  else if(session && !document.getElementById('appShell').style.display){startAuthenticated(session);}
 });
 supabaseClient.auth.getSession().then(({data})=>{
- if(data.session) startAuthenticated(data.session);
+ if(data.session) setTimeout(()=>startAuthenticated(data.session),0);
 });
 
 </script>
