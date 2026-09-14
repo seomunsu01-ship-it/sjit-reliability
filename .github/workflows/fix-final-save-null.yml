@@ -1,8 +1,8 @@
 name: Final save null fix
 on:
   push:
-    paths:
-      - '.repair-final-save-trigger'
+    branches:
+      - main
 permissions:
   contents: write
 jobs:
@@ -18,18 +18,16 @@ jobs:
           s = p.read_text(encoding='utf-8')
           old1 = "document.getElementById('mResultBefore').value='';"
           new1 = "document.getElementById('mResultBefore')?.value='';"
-          if old1 not in s:
-              raise SystemExit('target 1 not found')
-          s = s.replace(old1, new1, 1)
-          old2 = "test_result:document.getElementById('mResult').value||null,\n    result_before:"
-          new2 = "test_result:document.getElementById('mResult').value||null,\n    cpk_review_result:document.getElementById('mCpkBefore')?.value||null,\n    result_before:"
-          if old2 not in s:
-              raise SystemExit('target 2 not found')
-          s = s.replace(old2, new2, 1)
-          old3 = "document.getElementById('mResult').value='';\n document.getElementById('mResultBefore')?.value='';"
-          new3 = "document.getElementById('mResult').value='';\n document.getElementById('mCpkBefore')?.value='미검토';\n document.getElementById('mResultBefore')?.value='';"
-          if old3 in s:
-              s = s.replace(old3, new3, 1)
+          if old1 in s:
+              s = s.replace(old1, new1, 1)
+          old2 = "result_before:document.getElementById('mResultBefore').value||old['Result before reliability test']||null,"
+          new2 = "result_before:document.getElementById('mResultBefore')?.value||old['Result before reliability test']||null,"
+          if old2 in s:
+              s = s.replace(old2, new2, 1)
+          needle = "    test_status:document.getElementById('mStatus').value||null,"
+          cpk = "    cpk_review_result:document.getElementById('mCpkBefore')?.value||null,"
+          if needle in s and cpk not in s:
+              s = s.replace(needle, needle+'\n'+cpk, 1)
           p.write_text(s, encoding='utf-8')
           PY
       - name: Commit patch
@@ -37,5 +35,6 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html
+          git diff --cached --quiet && exit 0
           git commit -m 'Fix final save null error and persist CPK review result'
-          git push
+          git push origin HEAD:main
