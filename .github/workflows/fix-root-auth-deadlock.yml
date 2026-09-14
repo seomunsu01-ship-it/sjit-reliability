@@ -1,0 +1,69 @@
+name: Fix root Supabase auth deadlock
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch root index authentication flow
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          old = """async function startAuthenticated(session){
+ LOGIN_SCREEN.style.display='none';
+ document.getElementById('appShell').style.display='flex';
+ document.getElementById('userEmail').textContent=session?.user?.email||'';
+ try{await bootSupabase();}
+ catch(e){
+   console.error(e);
+   const badge=document.getElementById('dbStatus'); badge.textContent='DB 오류'; badge.style.background='#fff1e4'; badge.style.color='#b42318';
+   alert('DB를 불러오지 못했습니다. RLS 정책과 로그인 권한을 확인하세요.');
+ }
+}
+"""
+          new = """let authStarted=false;
+async function startAuthenticated(session){
+ if(authStarted)return;
+ authStarted=true;
+ LOGIN_SCREEN.style.display='none';
+ document.getElementById('appShell').style.display='flex';
+ document.getElementById('userEmail').textContent=session?.user?.email||'';
+ try{await bootSupabase();}
+ catch(e){
+   console.error(e);
+   authStarted=false;
+   const badge=document.getElementById('dbStatus'); badge.textContent='DB 오류'; badge.style.background='#fff1e4'; badge.style.color='#b42318';
+   alert('DB를 불러오지 못했습니다. RLS 정책과 로그인 권한을 확인하세요.');
+ }
+}
+"""
+          old2 = """supabaseClient.auth.onAuthStateChange((event,session)=>{
+ if(event==='SIGNED_OUT'){location.reload();}
+ else if(session && !document.getElementById('appShell').style.display){startAuthenticated(session);}
+});
+"""
+          new2 = """supabaseClient.auth.onAuthStateChange((event,session)=>{
+ if(event==='SIGNED_OUT'){location.reload();}
+ // Defer initialization until the auth callback releases Supabase's internal auth lock.
+ else if(session && !authStarted){setTimeout(()=>startAuthenticated(session),0);}
+});
+"""
+          if old not in s or old2 not in s:
+              raise SystemExit('Expected authentication blocks were not found; aborting without changes.')
+          s = s.replace(old, new, 1).replace(old2, new2, 1)
+          p.write_text(s, encoding='utf-8')
+      - name: Commit root fix and remove temporary workflow
+        shell: bash
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add index.html
+          git rm .github/workflows/fix-root-auth-deadlock.yml
+          git commit -m 'Fix root Supabase auth initialization deadlock'
+          git push origin HEAD:main
