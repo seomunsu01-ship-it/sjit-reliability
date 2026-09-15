@@ -1,5 +1,6 @@
 name: Deploy Daily Inspection
 
+# Trigger a fresh Pages deployment.
 on:
   push:
     branches: [main]
