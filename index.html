@@ -1315,12 +1315,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 
 
 
-<script>
-(function(){
-  const extra={ko:{reliabilityStartDate:'신뢰성 TEST 시작 일자',reliabilityExpectedEndDate:'신뢰성 TEST 종료 예상 일자',reportSent:'Report 발송 여부'},vi:{reliabilityStartDate:'Ngày bắt đầu TEST độ tin cậy',reliabilityExpectedEndDate:'Ngày dự kiến kết thúc TEST độ tin cậy',reportSent:'Trạng thái gửi Report'}};
-  const obs=new MutationObserver(()=>{ if(typeof lang==='undefined') return; const L=extra[lang]||extra.ko; document.querySelectorAll('[data-k="reliabilityStartDate"]').forEach(e=>e.textContent=L.reliabilityStartDate); document.querySelectorAll('[data-k="reliabilityExpectedEndDate"]').forEach(e=>e.textContent=L.reliabilityExpectedEndDate); document.querySelectorAll('[data-k="reportSent"]').forEach(e=>e.textContent=L.reportSent); });
-  document.addEventListener('DOMContentLoaded',()=>obs.observe(document.body,{childList:true,subtree:true}));
-})();
+
 applyManualModalLang();
 applyLoginLang();
 </script>
