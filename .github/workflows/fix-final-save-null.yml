@@ -18,6 +18,8 @@ jobs:
           git reset --hard origin/main
       - name: Apply reliability final patch
         run: python tools/reliability_final_fix.py
+      - name: Normalize final guard markup
+        run: python tools/fix_guard.py
       - name: Validate JavaScript-sensitive duplicates
         run: |
           python - <<'PY'
@@ -35,6 +37,8 @@ jobs:
           assert '?.value=' not in s, 'invalid optional chaining assignment found'
           assert 'reports/${targetNo}/' in s, 'per-row report path not found'
           assert 'reliability_start_date' in s and 'reliability_expected_end_date' in s, 'reliability date fields missing'
+          guard=s[s.find('<script id="reliabilityFinalGuard">'):s.find('</script>',s.find('<script id="reliabilityFinalGuard">'))]
+          assert '\\n' not in guard, 'literal backslash-n remains inside final guard'
           PY
       - name: Commit patch
         run: |
