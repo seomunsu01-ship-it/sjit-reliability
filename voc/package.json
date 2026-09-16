@@ -1,0 +1,8 @@
+{
+  "name": "sjit-vina-voc-server",
+  "version": "1.0.0",
+  "private": true,
+  "main": "server_corrected.js",
+  "scripts": { "start": "node server_corrected.js" },
+  "dependencies": { "cors": "^2.8.5", "express": "^4.21.2", "multer": "^1.4.5-lts.1", "xlsx": "^0.18.5" }
+}
