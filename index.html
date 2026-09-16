@@ -384,7 +384,7 @@ function renderDetailTable(){
 }
 function openDetail(no){
  const x=DATA.find(r=>String(r.No)===String(no)); if(!x)return;
- const f=[['requestDate','요청일',x['Requested Date by Planning team']],['model','제품명',x.Model],['material','자재',cleanMaterial(x.Material)],['condition','시험항목',cleanCond(x['Test Condition'])],['status','진행상태',x['Reliability Test Status']],['result','시험결과',x['Reliability Test Result']],['reportNo','Report No.',x['Report No']],['pic','PIC',x.PIC],['CR No.','CR No.',x['CR No']],['Test Qty','Test Qty',x['Test Qty']],['Test Start Time','시험 시작',x['Test Start Time']],['Test End Time','시험 종료',x['Test End Time']],['Production Date','생산일',x['Production Date']],['Lot No','Lot No.',x['Lot No']],['reason','시험 사유',x['Reason for Running Sample']],['before','시험 전 결과',x['Result before reliability test']],['after','시험 후 결과',x['Result after reliability test']],['remark','비고',x.Remark]];
+ const f=[['requestDate','요청일',x['Requested Date by Planning team']],['model','제품명',x.Model],['material','자재',cleanMaterial(x.Material)],['condition','시험항목',cleanCond(x['Test Condition'])],['status','진행상태',x['Reliability Test Status']],['result','시험결과',x['Reliability Test Result']],['reportNo','Report No.',x['Report No']],['pic','PIC',x.PIC],['CR No.','CR No.',x['CR No']],['Test Qty','Test Qty',x['Test Qty']],['reliabilityStartDate','신뢰성 TEST 시작 일자',x['Reliability Test Start Date']],['reliabilityExpectedEndDate','신뢰성 TEST 종료 예상 일자',x['Reliability Test Expected End Date']],['Test Start Time','시험 시작',x['Test Start Time']],['Test End Time','시험 종료',x['Test End Time']],['Production Date','생산일',x['Production Date']],['Lot No','Lot No.',x['Lot No']],['reason','시험 사유',x['Reason for Running Sample']],['before','시험 전 결과',x['Result before reliability test']],['after','시험 후 결과',x['Result after reliability test']],['remark','비고',x.Remark]];
  document.getElementById('detailContent').innerHTML=f.map(a=>`<div class="detailitem ${['reason','before','after','remark'].includes(a[0])?'full':''}"><b>${escapeHtml(lang==='ko'?a[1]:a[0])}</b><div class="longtext">${escapeHtml(a[2]??'-')}</div></div>`).join('');
  document.getElementById('detailModal').classList.add('show');
 }
@@ -935,6 +935,7 @@ async function showReportModalV16(no){
   document.getElementById('reportModal').dataset.itemId=String(no);
   document.getElementById('reportMeta').textContent=`${x.Model||''} | ${x['Report No']||'-'} | ${x['CR No']||'-'}`;
   document.getElementById('chosenFile').textContent='선택된 파일 없음';
+  const reportPicker=document.getElementById('reportFile'); if(reportPicker) reportPicker.value='';
   document.getElementById('reportStoragePath').textContent='';
   const p=document.getElementById('uploadProgress');if(p)p.style.display='none';
   const openBtn=document.getElementById('openReportFile');openBtn.style.display='none';
@@ -1003,6 +1004,12 @@ async function saveManualV16(closeAfter){
   if(!model){alert('Model을 입력하세요.');return}
   const isEdit=!!editingManualNo,no=isEdit?Number(editingManualNo):null;
   const old=isEdit?(DATA.find(x=>Number(x.No)===no)||{}):{};
+  const statusValue=document.getElementById('mStatus').value||null;
+  let reliabilityStartDate=document.getElementById('mReliabilityStartDate').value||old['Reliability Test Start Date']||null;
+  let reliabilityExpectedEndDate=document.getElementById('mReliabilityExpectedEndDate').value||old['Reliability Test Expected End Date']||null;
+  const todayISO=new Date().toISOString().slice(0,10);
+  if(statusValue==='신뢰성 진행 중' && !reliabilityStartDate) reliabilityStartDate=todayISO;
+  if(statusValue==='Finished' && !reliabilityExpectedEndDate) reliabilityExpectedEndDate=todayISO;
   const payload={
     request_date:date,model:model,
     material:document.getElementById('mMaterial').value.trim()||null,
@@ -1010,6 +1017,7 @@ async function saveManualV16(closeAfter){
     test_result:document.getElementById('mResult').value||null,
     result_before:document.getElementById('mResultBefore')?.value||old['Result before reliability test']||null,
     result_after:document.getElementById('mResultAfter').value||old['Result after reliability test']||null,
+    cpk_review_result:document.getElementById('mCpkBefore')?.value||old['CPK Review Result']||null,
     test_status:statusValue,
     reliability_start_date:reliabilityStartDate,
     reliability_expected_end_date:reliabilityExpectedEndDate,
@@ -1023,12 +1031,6 @@ async function saveManualV16(closeAfter){
     remark:document.getElementById('mRemark').value.trim()||null,
     updated_at:new Date().toISOString()
   };
-  const statusValue=document.getElementById('mStatus').value||null;
-  let reliabilityStartDate=document.getElementById('mReliabilityStartDate').value||old['Reliability Test Start Date']||null;
-  let reliabilityExpectedEndDate=document.getElementById('mReliabilityExpectedEndDate').value||old['Reliability Test Expected End Date']||null;
-  const todayISO=new Date().toISOString().slice(0,10);
-  if(statusValue==='신뢰성 진행 중' && !reliabilityStartDate) reliabilityStartDate=todayISO;
-  if(statusValue==='Finished' && !reliabilityExpectedEndDate) reliabilityExpectedEndDate=todayISO;
   const btn=closeAfter?document.getElementById('manualSave'):document.getElementById('manualSaveContinue');
   const oldtxt=btn.textContent;btn.disabled=true;btn.textContent='DB 저장 중...';
   try{
