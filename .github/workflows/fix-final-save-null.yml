@@ -10,28 +10,60 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Patch active save and form reset
+      - name: Patch active save, form reset, report isolation, and reliability dates
         run: |
           python - <<'PY'
           from pathlib import Path
           p = Path('index.html')
           s = p.read_text(encoding='utf-8')
+          original = s
+
           bad_reset = "document.getElementById('mResultBefore')?.value='';"
           good_reset = "const mrb=document.getElementById('mResultBefore'); if(mrb) mrb.value='';"
-          if bad_reset in s:
-              s = s.replace(bad_reset, good_reset, 1)
+          if bad_reset in s: s = s.replace(bad_reset, good_reset, 1)
           old1 = "document.getElementById('mResultBefore').value='';"
-          if old1 in s:
-              s = s.replace(old1, good_reset, 1)
+          if old1 in s: s = s.replace(old1, good_reset, 1)
           old2 = "result_before:document.getElementById('mResultBefore').value||old['Result before reliability test']||null,"
           new2 = "result_before:document.getElementById('mResultBefore')?.value||old['Result before reliability test']||null,"
-          if old2 in s:
-              s = s.replace(old2, new2, 1)
+          if old2 in s: s = s.replace(old2, new2, 1)
           needle = "    test_status:document.getElementById('mStatus').value||null,"
           cpk = "    cpk_review_result:document.getElementById('mCpkBefore')?.value||null,"
-          if needle in s and cpk not in s:
-              s = s.replace(needle, needle+'\n'+cpk, 1)
+          if needle in s and cpk not in s: s = s.replace(needle, needle+'\n'+cpk, 1)
+
+          # Add the missing editable field for Result before reliability test.
+          field_needle = '<div class="manual-field"><label data-k="cpkBefore">신뢰성 전 CPK 검토결과</label><select id="mCpkBefore"><option value="">미검토</option><option value="양호">양호</option><option value="보완필요">보완필요</option><option value="미검토">미검토</option></select></div>'
+          field_insert = field_needle + '\n   <div class="manual-field"><label data-k="resultBefore">신뢰성 시험 전 결과</label><input id="mResultBefore" type="text" placeholder="Pass / Fail / CPK 내용"></div>'
+          if 'id="mResultBefore"' not in s and field_needle in s: s = s.replace(field_needle, field_insert, 1)
+
+          # Load the field when editing an existing record.
+          load_old = "document.getElementById('mCpkBefore').value=x['CPK Review Result']||'미검토';\n document.getElementById('mResultAfter').value=x['Result after reliability test']||'';"
+          load_new = "document.getElementById('mCpkBefore').value=x['CPK Review Result']||'미검토';\n document.getElementById('mResultBefore').value=x['Result before reliability test']||'';\n document.getElementById('mResultAfter').value=x['Result after reliability test']||'';"
+          if load_old in s and "document.getElementById('mResultBefore').value=x['Result before reliability test']" not in s: s = s.replace(load_old, load_new, 1)
+
+          # Make blank Result (미입력) a valid saved null value and auto-stamp dates from status transitions.
+          save_marker = "const btn=closeAfter?document.getElementById('manualSave'):document.getElementById('manualSaveContinue');\n  const oldtxt=btn.textContent;"
+          save_insert = "const statusValue=document.getElementById('mStatus').value||null;\n  let reliabilityStartDate=document.getElementById('mReliabilityStartDate').value||old['Reliability Test Start Date']||null;\n  let reliabilityExpectedEndDate=document.getElementById('mReliabilityExpectedEndDate').value||old['Reliability Test Expected End Date']||null;\n  const todayISO=new Date().toISOString().slice(0,10);\n  if(statusValue==='신뢰성 진행 중' && !reliabilityStartDate) reliabilityStartDate=todayISO;\n  if(statusValue==='Finished' && !reliabilityExpectedEndDate) reliabilityExpectedEndDate=todayISO;\n  const btn=closeAfter?document.getElementById('manualSave'):document.getElementById('manualSaveContinue');\n  const oldtxt=btn.textContent;"
+          if save_marker in s and 'let reliabilityStartDate=' not in s: s = s.replace(save_marker, save_insert, 1)
+          s = s.replace("test_status:document.getElementById('mStatus').value||null,\n    reliability_start_date:document.getElementById('mReliabilityStartDate').value||null,\n    reliability_expected_end_date:document.getElementById('mReliabilityExpectedEndDate').value||null,", "test_status:statusValue,\n    reliability_start_date:reliabilityStartDate,\n    reliability_expected_end_date:reliabilityExpectedEndDate,")
+
+          # Per-row report deletion: keep Report No., remove only the attached file metadata.
+          s = s.replace("report_path:null,\n        report_filename:null,\n        report_mime:null,\n        report_no:null,", "report_path:null,\n        report_filename:null,\n        report_mime:null,")
+
+          # Show delete only when a file is actually attached.
+          hide_old = "const openBtn=document.getElementById('openReportFile');openBtn.style.display='none';\n  const downloadBtn=document.getElementById('downloadReportLink');"
+          hide_new = "const openBtn=document.getElementById('openReportFile');openBtn.style.display='none';\n  const deleteFileBtn=document.getElementById('deleteReportLink'); if(deleteFileBtn) deleteFileBtn.style.display='none';\n  const downloadBtn=document.getElementById('downloadReportLink');"
+          if hide_old in s and 'deleteFileBtn=document.getElementById' not in s: s = s.replace(hide_old, hide_new, 1)
+          show_old = "if(info?.report_path){\n      openBtn.style.display='inline-block';"
+          show_new = "if(info?.report_path){\n      const deleteFileBtn=document.getElementById('deleteReportLink'); if(deleteFileBtn) deleteFileBtn.style.display='inline-block';\n      openBtn.style.display='inline-block';"
+          if show_old in s and "deleteFileBtn=document.getElementById('deleteReportLink'); if(deleteFileBtn) deleteFileBtn.style.display='inline-block'" not in s: s = s.replace(show_old, show_new, 1)
+
+          # On report upload for a finished test, stamp the completion date if it is still blank.
+          upload_old = "const {data,error:dbErr}=await supabaseClient.from('reliability_tests').update({\n    report_path:path,\n    report_filename:file.name,\n    report_mime:file.type||null,\n    updated_at:new Date().toISOString()\n  }).eq('id',Number(rowId)).select('*').single();"
+          upload_new = "const rowForDate=DATA.find(r=>Number(r.No)===Number(rowId));\n  const datePatch={report_path:path,report_filename:file.name,report_mime:file.type||null,updated_at:new Date().toISOString()};\n  if(rowForDate?.['Reliability Test Status']==='Finished' && !rowForDate?.['Reliability Test Expected End Date']) datePatch.reliability_expected_end_date=new Date().toISOString().slice(0,10);\n  const {data,error:dbErr}=await supabaseClient.from('reliability_tests').update(datePatch).eq('id',Number(rowId)).select('*').single();"
+          if upload_old in s and 'const rowForDate=DATA.find' not in s: s = s.replace(upload_old, upload_new, 1)
+
           p.write_text(s, encoding='utf-8')
+          print('changed:', s != original)
           PY
       - name: Commit patch
         run: |
@@ -39,5 +71,6 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html
           git diff --cached --quiet && exit 0
-          git commit -m 'Fix invalid optional chaining assignment'
+          git commit -m 'Fix reliability form save report attachment and dates'
+          git pull --rebase origin main
           git push origin HEAD:main
