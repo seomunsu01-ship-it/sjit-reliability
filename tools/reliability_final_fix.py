@@ -1,4 +1,6 @@
+import re
 from pathlib import Path
+
 p=Path('index.html')
 s=p.read_text(encoding='utf-8')
 original=s
@@ -17,14 +19,12 @@ if a>=0 and b>a:
     s=s[:a]+fn+s[b:]
 
 # Ensure modal uses one authoritative row id.
-line="  document.getElementById('reportModal').dataset.itemId=String(no);"
 s=re.sub(r"\s*document\.getElementById\('reportModal'\)\.dataset\.itemId=String\(no\);",'',s)
 needle="  currentReportNo=String(no);currentReportFile=null;"
 s=s.replace(needle,needle+"document.getElementById('reportModal').dataset.itemId=String(no);",1)
 
 # Ensure exactly one hide statement for the attachment delete button in showReportModalV16.
-line_re=r"\s*const deleteFileBtn=document\.getElementById\('deleteReportLink'\);if\(deleteFileBtn\)deleteFileBtn\.style\.display='none';"
-s=re.sub(line_re,'',s)
+s=re.sub(r"\s*const deleteFileBtn=document\.getElementById\('deleteReportLink'\);if\(deleteFileBtn\)deleteFileBtn\.style\.display='none';",'',s)
 anchor="  const openBtn=document.getElementById('openReportFile');openBtn.style.display='none';"
 s=s.replace(anchor,anchor+"const deleteFileBtn=document.getElementById('deleteReportLink');if(deleteFileBtn)deleteFileBtn.style.display='none';",1)
 
