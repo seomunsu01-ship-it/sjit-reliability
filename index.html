@@ -940,7 +940,7 @@ async function showReportModalV16(no){
   try{
     const info=await getReportInfoV16(no);
     if(info?.report_path){
-      const deleteFileBtn=document.getElementById('deleteReportLink'); if(deleteFileBtn) deleteFileBtn.style.display='inline-block';
+       if(deleteFileBtn) deleteFileBtn.style.display='inline-block';
       openBtn.style.display='inline-block';
       openBtn.textContent=(info.report_mime==='application/pdf'||/\.pdf$/i.test(info.report_filename||''))?'PDF 열기':'Excel 다운로드';
       openBtn.onclick=async()=>{try{await openStoredReportV16(no)}catch(e){alert('Report 열기 실패: '+(e.message||e))}};
