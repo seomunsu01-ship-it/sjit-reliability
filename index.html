@@ -873,32 +873,27 @@ async function getReportInfoV16(rowId){
   return data;
 }
 async function uploadReportV16(rowId,file){
-  if(!file)throw new Error('Report 파일을 선택하세요.');
-  const old=await getReportInfoV16(rowId).catch(()=>null);
-
-  // Storage object key: ASCII-only path to avoid invalid-key errors from
-  // browser/S3-compatible storage when Korean/spaces/special characters are used.
+  const targetNo=Number(rowId);
+  if(!targetNo||!file)throw new Error('Report 파일과 시험 항목을 확인하세요.');
+  const old=await getReportInfoV16(targetNo).catch(()=>null);
+  const row=DATA.find(r=>Number(r.No)===targetNo);
+  if(!row)throw new Error('선택한 시험 항목을 찾을 수 없습니다.');
   const ext=((file.name||'').match(/\.([A-Za-z0-9]+)$/)||['','bin'])[1].toLowerCase();
   const token=(crypto.randomUUID?crypto.randomUUID().replace(/-/g,''):String(Date.now())+Math.random().toString(36).slice(2));
-  const path=`reports/${Number(rowId)}/${Date.now()}_${token}.${ext}`;
-
-  const {error:upErr}=await supabaseClient.storage.from(REPORT_BUCKET_V16)
-    .upload(path,file,{upsert:false,contentType:file.type||'application/octet-stream'});
+  const path=`reports/${targetNo}/${Date.now()}_${token}.${ext}`;
+  const {error:upErr}=await supabaseClient.storage.from(REPORT_BUCKET_V16).upload(path,file,{upsert:false,contentType:file.type||'application/octet-stream'});
   if(upErr)throw upErr;
-
-  const rowForDate=DATA.find(r=>Number(r.No)===Number(rowId));
-  const datePatch={report_path:path,report_filename:file.name,report_mime:file.type||null,updated_at:new Date().toISOString()};
-  if(rowForDate?.['Reliability Test Status']==='Finished' && !rowForDate?.['Reliability Test Expected End Date']) datePatch.reliability_expected_end_date=new Date().toISOString().slice(0,10);
-  const {data,error:dbErr}=await supabaseClient.from('reliability_tests').update(datePatch).eq('id',Number(rowId)).select('*').single();
-
-  if(dbErr){
-    await supabaseClient.storage.from(REPORT_BUCKET_V16).remove([path]).catch(()=>{});
-    throw dbErr;
-  }
-
-  if(old?.report_path && old.report_path!==path){
-    await supabaseClient.storage.from(REPORT_BUCKET_V16).remove([old.report_path]).catch(()=>{});
-  }
+  const todayISO=new Date().toISOString().slice(0,10);
+  const status=row['Reliability Test Status']||'Not tested';
+  let start=row['Reliability Test Start Date']||null;
+  let end=row['Reliability Test Expected End Date']||null;
+  if(status==='신뢰성 진행 중'&&!start)start=todayISO;
+  if(status==='Finished'&&!start)start=todayISO;
+  if(status==='Finished'&&!end)end=todayISO;
+  const patch={report_path:path,report_filename:file.name,report_mime:file.type||null,reliability_start_date:start,reliability_expected_end_date:end,updated_at:new Date().toISOString()};
+  const {data,error:dbErr}=await supabaseClient.from('reliability_tests').update(patch).eq('id',targetNo).select('*').single();
+  if(dbErr){await supabaseClient.storage.from(REPORT_BUCKET_V16).remove([path]).catch(()=>{});throw dbErr;}
+  if(old?.report_path&&old.report_path!==path)await supabaseClient.storage.from(REPORT_BUCKET_V16).remove([old.report_path]).catch(()=>{});
   return mapDbRow(data);
 }
 async function makeSignedReportUrlV16(rowId){
@@ -931,14 +926,14 @@ async function showReportModalV16(no){
   const __metaNo=document.getElementById('reportMeta'); if(__metaNo)__metaNo.dataset.no=String(no);
   ensureReportStorageMetaV16();
   const x=DATA.find(r=>String(r.No)===String(no)); if(!x)return;
-  currentReportNo=String(no);currentReportFile=null;
+  currentReportNo=String(no);currentReportFile=null;document.getElementById('reportModal').dataset.itemId=String(no);
   document.getElementById('reportModal').dataset.itemId=String(no);
   document.getElementById('reportMeta').textContent=`${x.Model||''} | ${x['Report No']||'-'} | ${x['CR No']||'-'}`;
   document.getElementById('chosenFile').textContent='선택된 파일 없음';
   const reportPicker=document.getElementById('reportFile'); if(reportPicker) reportPicker.value='';
   document.getElementById('reportStoragePath').textContent='';
   const p=document.getElementById('uploadProgress');if(p)p.style.display='none';
-  const openBtn=document.getElementById('openReportFile');openBtn.style.display='none';
+  const openBtn=document.getElementById('openReportFile');openBtn.style.display='none';const deleteFileBtn=document.getElementById('deleteReportLink');if(deleteFileBtn)deleteFileBtn.style.display='none';
   const deleteFileBtn=document.getElementById('deleteReportLink'); if(deleteFileBtn) deleteFileBtn.style.display='none';
   const downloadBtn=document.getElementById('downloadReportLink'); if(downloadBtn){downloadBtn.style.display='none';downloadBtn.onclick=null;}
   const itemDelBtn=document.getElementById('deleteTestItemLink');
@@ -1005,11 +1000,12 @@ async function saveManualV16(closeAfter){
   const isEdit=!!editingManualNo,no=isEdit?Number(editingManualNo):null;
   const old=isEdit?(DATA.find(x=>Number(x.No)===no)||{}):{};
   const statusValue=document.getElementById('mStatus').value||null;
+  const oldStatus=old['Reliability Test Status']||'Not tested';
   let reliabilityStartDate=document.getElementById('mReliabilityStartDate').value||old['Reliability Test Start Date']||null;
   let reliabilityExpectedEndDate=document.getElementById('mReliabilityExpectedEndDate').value||old['Reliability Test Expected End Date']||null;
   const todayISO=new Date().toISOString().slice(0,10);
-  if(statusValue==='신뢰성 진행 중' && !reliabilityStartDate) reliabilityStartDate=todayISO;
-  if(statusValue==='Finished' && !reliabilityExpectedEndDate) reliabilityExpectedEndDate=todayISO;
+  if(statusValue==='신뢰성 진행 중' && oldStatus!=='신뢰성 진행 중' && !reliabilityStartDate) reliabilityStartDate=todayISO;
+  if(statusValue==='Finished' && oldStatus==='신뢰성 진행 중' && !reliabilityExpectedEndDate) reliabilityExpectedEndDate=todayISO;
   const payload={
     request_date:date,model:model,
     material:document.getElementById('mMaterial').value.trim()||null,
