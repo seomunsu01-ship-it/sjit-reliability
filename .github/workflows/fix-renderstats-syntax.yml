@@ -9,6 +9,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Wait for other push workflows to settle
+        run: sleep 45
+      - name: Re-sync latest main
+        run: |
+          git fetch origin main
+          git reset --hard origin/main
       - name: Fix duplicated function token
         shell: python
         run: |
@@ -17,17 +23,38 @@ jobs:
           s=p.read_text(encoding='utf-8')
           old='function renderStatsfunction renderStatsfunction renderStats(){'
           new='function renderStats(){'
-          if old not in s:
+          if old in s:
+              s=s.replace(old,new)
+              p.write_text(s,encoding='utf-8')
+          else:
               print('Target syntax error not found')
-              raise SystemExit(0)
-          s=s.replace(old,new)
-          p.write_text(s,encoding='utf-8')
-      - name: Commit fix
+      - name: Apply final reliability dashboard patch
+        shell: bash
+        run: python tools/reliability_final_fix.py
+      - name: Validate final reliability patch
+        shell: python
+        run: |
+          from pathlib import Path
+          s=Path('index.html').read_text(encoding='utf-8')
+          checks={
+            'delete button':s.count('id="deleteReportLink"'),
+            'modal item id assignment':s.count("document.getElementById('reportModal').dataset.itemId=String(no);"),
+            'delete button declaration':s.count("const deleteFileBtn=document.getElementById('deleteReportLink')"),
+          }
+          print(checks)
+          assert checks['delete button']==1, checks
+          assert checks['modal item id assignment']==1, checks
+          assert checks['delete button declaration']==1, checks
+          assert '?.value=' not in s
+          assert 'reports/${targetNo}/' in s
+          assert 'reliability_start_date' in s and 'reliability_expected_end_date' in s
+      - name: Commit fixes
         shell: bash
         run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add daily-inspection/index.html
+          git add index.html daily-inspection/index.html tools/reliability_final_fix.py
           git diff --cached --quiet && exit 0
-          git commit -m 'Fix renderStats JavaScript syntax error'
+          git commit -m 'Finalize reliability dashboard fixes'
+          git pull --rebase origin main
           git push origin HEAD:main
