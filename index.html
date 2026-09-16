@@ -236,6 +236,7 @@ const LOGIN_SCREEN=document.getElementById('loginScreen');
    <div class="manual-field"><label data-k="condition">시험항목</label><select id="mCondition"><option value="">선택</option><option>VD</option><option>DA</option><option>HP</option><option>Other</option></select></div>
    <div class="manual-field"><label data-k="result">시험결과</label><select id="mResult"><option value="">미입력</option><option>Pass</option><option>Fail</option></select></div>
    <div class="manual-field"><label data-k="cpkBefore">신뢰성 전 CPK 검토결과</label><select id="mCpkBefore"><option value="">미검토</option><option value="양호">양호</option><option value="보완필요">보완필요</option><option value="미검토">미검토</option></select></div>
+   <div class="manual-field"><label data-k="resultBefore">신뢰성 시험 전 결과</label><input id="mResultBefore" type="text" placeholder="Pass / Fail / CPK 내용"></div>
    <div class="manual-field"><label data-k="resultAfter">신뢰성 시험 후</label><select id="mResultAfter"><option value="">미입력</option><option>Pass</option><option>Fail</option></select></div>
    <div class="manual-field"><label data-k="reliabilityTestStatus">신뢰성 TEST 상태</label><select id="mStatus"><option value="Not tested">대기</option><option value="신뢰성 진행 중">TEST 중</option><option value="Finished">완료</option></select></div>
    <div class="manual-field"><label data-k="reliabilityStartDate">신뢰성 TEST 시작 일자</label><input id="mReliabilityStartDate" type="date"></div>
@@ -633,7 +634,7 @@ function clearManualForm(keepModel=false){
  document.getElementById('mModel').value=keep;
  document.getElementById('mCondition').value='';
  document.getElementById('mResult').value='';
- document.getElementById('mResultBefore').value='';
+ const mrb=document.getElementById('mResultBefore'); if(mrb) mrb.value='';
  document.getElementById('mResultAfter').value='';
  document.getElementById('mStatus').value='Finished';
  document.getElementById('mReliabilityStartDate').value='';
@@ -652,6 +653,7 @@ function openManualForEdit(no){
  document.getElementById('mCondition').value=x['Test Condition']||'';
  document.getElementById('mResult').value=x['Reliability Test Result']||'';
  document.getElementById('mCpkBefore').value=x['CPK Review Result']||'미검토';
+ document.getElementById('mResultBefore').value=x['Result before reliability test']||'';
  document.getElementById('mResultAfter').value=x['Result after reliability test']||'';
  document.getElementById('mStatus').value=x['Reliability Test Status']||'';
  document.getElementById('mReliabilityStartDate').value=x['Reliability Test Start Date']||'';
@@ -884,12 +886,10 @@ async function uploadReportV16(rowId,file){
     .upload(path,file,{upsert:false,contentType:file.type||'application/octet-stream'});
   if(upErr)throw upErr;
 
-  const {data,error:dbErr}=await supabaseClient.from('reliability_tests').update({
-    report_path:path,
-    report_filename:file.name,
-    report_mime:file.type||null,
-    updated_at:new Date().toISOString()
-  }).eq('id',Number(rowId)).select('*').single();
+  const rowForDate=DATA.find(r=>Number(r.No)===Number(rowId));
+  const datePatch={report_path:path,report_filename:file.name,report_mime:file.type||null,updated_at:new Date().toISOString()};
+  if(rowForDate?.['Reliability Test Status']==='Finished' && !rowForDate?.['Reliability Test Expected End Date']) datePatch.reliability_expected_end_date=new Date().toISOString().slice(0,10);
+  const {data,error:dbErr}=await supabaseClient.from('reliability_tests').update(datePatch).eq('id',Number(rowId)).select('*').single();
 
   if(dbErr){
     await supabaseClient.storage.from(REPORT_BUCKET_V16).remove([path]).catch(()=>{});
@@ -938,6 +938,7 @@ async function showReportModalV16(no){
   document.getElementById('reportStoragePath').textContent='';
   const p=document.getElementById('uploadProgress');if(p)p.style.display='none';
   const openBtn=document.getElementById('openReportFile');openBtn.style.display='none';
+  const deleteFileBtn=document.getElementById('deleteReportLink'); if(deleteFileBtn) deleteFileBtn.style.display='none';
   const downloadBtn=document.getElementById('downloadReportLink'); if(downloadBtn){downloadBtn.style.display='none';downloadBtn.onclick=null;}
   const itemDelBtn=document.getElementById('deleteTestItemLink');
   if(itemDelBtn){itemDelBtn.disabled=false;itemDelBtn.textContent='시험 항목 삭제';}
@@ -945,6 +946,7 @@ async function showReportModalV16(no){
   try{
     const info=await getReportInfoV16(no);
     if(info?.report_path){
+      const deleteFileBtn=document.getElementById('deleteReportLink'); if(deleteFileBtn) deleteFileBtn.style.display='inline-block';
       openBtn.style.display='inline-block';
       openBtn.textContent=(info.report_mime==='application/pdf'||/\.pdf$/i.test(info.report_filename||''))?'PDF 열기':'Excel 다운로드';
       openBtn.onclick=async()=>{try{await openStoredReportV16(no)}catch(e){alert('Report 열기 실패: '+(e.message||e))}};
@@ -1006,11 +1008,11 @@ async function saveManualV16(closeAfter){
     material:document.getElementById('mMaterial').value.trim()||null,
     test_condition:document.getElementById('mCondition').value,
     test_result:document.getElementById('mResult').value||null,
-    result_before:document.getElementById('mResultBefore').value||old['Result before reliability test']||null,
+    result_before:document.getElementById('mResultBefore')?.value||old['Result before reliability test']||null,
     result_after:document.getElementById('mResultAfter').value||old['Result after reliability test']||null,
-    test_status:document.getElementById('mStatus').value||null,
-    reliability_start_date:document.getElementById('mReliabilityStartDate').value||null,
-    reliability_expected_end_date:document.getElementById('mReliabilityExpectedEndDate').value||null,
+    test_status:statusValue,
+    reliability_start_date:reliabilityStartDate,
+    reliability_expected_end_date:reliabilityExpectedEndDate,
     report_no:document.getElementById('mReportNo').value.trim()||null,
     pic:document.getElementById('mPIC').value.trim()||null,
     cr_no:document.getElementById('mCR').value.trim()||null,
@@ -1021,6 +1023,12 @@ async function saveManualV16(closeAfter){
     remark:document.getElementById('mRemark').value.trim()||null,
     updated_at:new Date().toISOString()
   };
+  const statusValue=document.getElementById('mStatus').value||null;
+  let reliabilityStartDate=document.getElementById('mReliabilityStartDate').value||old['Reliability Test Start Date']||null;
+  let reliabilityExpectedEndDate=document.getElementById('mReliabilityExpectedEndDate').value||old['Reliability Test Expected End Date']||null;
+  const todayISO=new Date().toISOString().slice(0,10);
+  if(statusValue==='신뢰성 진행 중' && !reliabilityStartDate) reliabilityStartDate=todayISO;
+  if(statusValue==='Finished' && !reliabilityExpectedEndDate) reliabilityExpectedEndDate=todayISO;
   const btn=closeAfter?document.getElementById('manualSave'):document.getElementById('manualSaveContinue');
   const oldtxt=btn.textContent;btn.disabled=true;btn.textContent='DB 저장 중...';
   try{
@@ -1140,7 +1148,6 @@ window.deleteReportFileNow = async function(){
         report_path:null,
         report_filename:null,
         report_mime:null,
-        report_no:null,
         updated_at:new Date().toISOString()
       })
       .eq('id',no)
