@@ -1,0 +1,1 @@
+Trigger report isolation and reliability date fix
