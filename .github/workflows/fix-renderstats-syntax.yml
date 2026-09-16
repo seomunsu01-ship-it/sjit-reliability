@@ -58,3 +58,4 @@ jobs:
           git commit -m 'Finalize reliability dashboard fixes'
           git pull --rebase origin main
           git push origin HEAD:main
+# Trigger active final reliability patch with the hardened cleanup script.
