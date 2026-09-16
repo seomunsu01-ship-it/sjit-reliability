@@ -225,4 +225,4 @@ function openDetail(){
 }
 function bind(){var n=document.getElementById('kBad');if(!n||n.dataset.defectBound)return false;n.dataset.defectBound='1';n.style.cursor='pointer';n.title=isVi()?'Nhấp để xem chi tiết lỗi':'클릭하면 불량 상세 내용을 확인합니다';n.addEventListener('click',openDetail);return true}
 var timer=setInterval(function(){if(bind())clearInterval(timer)},500);setTimeout(function(){clearInterval(timer);bind()},10000);
-})();</script></body></html>
+})();</script><script src="./history-fix-v5.js?v=5"></script></body></html>
