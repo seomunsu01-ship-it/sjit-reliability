@@ -926,14 +926,14 @@ async function showReportModalV16(no){
   const __metaNo=document.getElementById('reportMeta'); if(__metaNo)__metaNo.dataset.no=String(no);
   ensureReportStorageMetaV16();
   const x=DATA.find(r=>String(r.No)===String(no)); if(!x)return;
-  currentReportNo=String(no);currentReportFile=null;document.getElementById('reportModal').dataset.itemId=String(no);
+  currentReportNo=String(no);currentReportFile=null;document.getElementById('reportModal').dataset.itemId=String(no);document.getElementById('reportModal').dataset.itemId=String(no);
   document.getElementById('reportModal').dataset.itemId=String(no);
   document.getElementById('reportMeta').textContent=`${x.Model||''} | ${x['Report No']||'-'} | ${x['CR No']||'-'}`;
   document.getElementById('chosenFile').textContent='선택된 파일 없음';
   const reportPicker=document.getElementById('reportFile'); if(reportPicker) reportPicker.value='';
   document.getElementById('reportStoragePath').textContent='';
   const p=document.getElementById('uploadProgress');if(p)p.style.display='none';
-  const openBtn=document.getElementById('openReportFile');openBtn.style.display='none';const deleteFileBtn=document.getElementById('deleteReportLink');if(deleteFileBtn)deleteFileBtn.style.display='none';
+  const openBtn=document.getElementById('openReportFile');openBtn.style.display='none';const deleteFileBtn=document.getElementById('deleteReportLink');if(deleteFileBtn)deleteFileBtn.style.display='none';const deleteFileBtn=document.getElementById('deleteReportLink');if(deleteFileBtn)deleteFileBtn.style.display='none';
   const deleteFileBtn=document.getElementById('deleteReportLink'); if(deleteFileBtn) deleteFileBtn.style.display='none';
   const downloadBtn=document.getElementById('downloadReportLink'); if(downloadBtn){downloadBtn.style.display='none';downloadBtn.onclick=null;}
   const itemDelBtn=document.getElementById('deleteTestItemLink');
