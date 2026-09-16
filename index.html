@@ -933,7 +933,6 @@ async function showReportModalV16(no){
   document.getElementById('reportStoragePath').textContent='';
   const p=document.getElementById('uploadProgress');if(p)p.style.display='none';
   const openBtn=document.getElementById('openReportFile');openBtn.style.display='none';const deleteFileBtn=document.getElementById('deleteReportLink');if(deleteFileBtn)deleteFileBtn.style.display='none';
-  const deleteFileBtn=document.getElementById('deleteReportLink'); if(deleteFileBtn) deleteFileBtn.style.display='none';
   const downloadBtn=document.getElementById('downloadReportLink'); if(downloadBtn){downloadBtn.style.display='none';downloadBtn.onclick=null;}
   const itemDelBtn=document.getElementById('deleteTestItemLink');
   if(itemDelBtn){itemDelBtn.disabled=false;itemDelBtn.textContent='시험 항목 삭제';}
