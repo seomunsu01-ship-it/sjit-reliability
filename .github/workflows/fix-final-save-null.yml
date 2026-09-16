@@ -10,44 +10,114 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Patch active save, form reset, report isolation, and reliability dates
+      - name: Patch report isolation, attachment deletion, and reliability dates
         run: |
           python - <<'PY'
           from pathlib import Path
+          import re
           p = Path('index.html')
           s = p.read_text(encoding='utf-8')
           original = s
 
+          # Safe before-result reset/save.
           s = s.replace("document.getElementById('mResultBefore')?.value='';", "const mrb=document.getElementById('mResultBefore'); if(mrb) mrb.value='';")
           s = s.replace("document.getElementById('mResultBefore').value='';", "const mrb=document.getElementById('mResultBefore'); if(mrb) mrb.value='';")
           s = s.replace("result_before:document.getElementById('mResultBefore').value||old['Result before reliability test']||null,", "result_before:document.getElementById('mResultBefore')?.value||old['Result before reliability test']||null,")
 
-          marker = "async function saveManualV16(closeAfter){"
-          if marker in s:
-              a = s.index(marker)
-              b = s.find("async function", a + len(marker))
-              if b < 0: b = len(s)
-              block = s[a:b]
-              late = "  const statusValue=document.getElementById('mStatus').value||null;\n  let reliabilityStartDate=document.getElementById('mReliabilityStartDate').value||old['Reliability Test Start Date']||null;\n  let reliabilityExpectedEndDate=document.getElementById('mReliabilityExpectedEndDate').value||old['Reliability Test Expected End Date']||null;\n  const todayISO=new Date().toISOString().slice(0,10);\n  if(statusValue==='신뢰성 진행 중' && !reliabilityStartDate) reliabilityStartDate=todayISO;\n  if(statusValue==='Finished' && !reliabilityExpectedEndDate) reliabilityExpectedEndDate=todayISO;\n"
-              block = block.replace(late, "", 1)
-              payload_needle = "  const payload={\n"
-              decl = "  const statusValue=document.getElementById('mStatus').value||null;\n  let reliabilityStartDate=document.getElementById('mReliabilityStartDate').value||old['Reliability Test Start Date']||null;\n  let reliabilityExpectedEndDate=document.getElementById('mReliabilityExpectedEndDate').value||old['Reliability Test Expected End Date']||null;\n  const todayISO=new Date().toISOString().slice(0,10);\n  if(statusValue==='신뢰성 진행 중' && !reliabilityStartDate) reliabilityStartDate=todayISO;\n  if(statusValue==='Finished' && !reliabilityExpectedEndDate) reliabilityExpectedEndDate=todayISO;\n"
-              if payload_needle in block and decl not in block[:block.index(payload_needle)]:
-                  block = block.replace(payload_needle, decl + payload_needle, 1)
-              if "cpk_review_result:document.getElementById('mCpkBefore')?.value||old['CPK Review Result']||null," not in block:
-                  block = block.replace("    result_after:document.getElementById('mResultAfter').value||old['Result after reliability test']||null,", "    result_after:document.getElementById('mResultAfter').value||old['Result after reliability test']||null,\n    cpk_review_result:document.getElementById('mCpkBefore')?.value||old['CPK Review Result']||null,", 1)
-              s = s[:a] + block + s[b:]
+          # Add a real attachment-delete button to the Report modal. The previous patch only
+          # referenced this element from JS, but the element did not exist in the HTML.
+          anchor = '<button class="btn danger" id="deleteTestItemLink"'
+          if 'id="deleteReportLink"' not in s and anchor in s:
+              s = s.replace(anchor, '<button class="btn danger" id="deleteReportLink" type="button" style="display:none">첨부파일 삭제</button>\n'+anchor, 1)
 
-          detail_old = "['Test Start Time','시험 시작',x['Test Start Time']],['Test End Time','시험 종료',x['Test End Time']],"
-          detail_new = "['reliabilityStartDate','신뢰성 TEST 시작 일자',x['Reliability Test Start Date']],['reliabilityExpectedEndDate','신뢰성 TEST 종료 예상 일자',x['Reliability Test Expected End Date']],['Test Start Time','시험 시작',x['Test Start Time']],['Test End Time','시험 종료',x['Test End Time']],"
-          if detail_old in s and "['reliabilityStartDate','신뢰성 TEST 시작 일자'" not in s: s = s.replace(detail_old, detail_new, 1)
+          # Replace the V16 upload routine so every file is keyed strictly by the DB row id,
+          # old file is removed only for that same row, and reliability dates are stamped on that row.
+          a = s.find('async function uploadReportV16(rowId,file){')
+          b = s.find('async function makeSignedReportUrlV16', a)
+          if a >= 0 and b > a:
+              fn = r'''async function uploadReportV16(rowId,file){
+  const targetNo=Number(rowId);
+  if(!targetNo||!file)throw new Error('Report 파일과 시험 항목을 확인하세요.');
+  const old=await getReportInfoV16(targetNo).catch(()=>null);
+  const row=DATA.find(r=>Number(r.No)===targetNo);
+  if(!row)throw new Error('선택한 시험 항목을 찾을 수 없습니다.');
 
-          picker_old = "  document.getElementById('chosenFile').textContent='선택된 파일 없음';\n  document.getElementById('reportStoragePath').textContent='';"
-          picker_new = "  document.getElementById('chosenFile').textContent='선택된 파일 없음';\n  const reportPicker=document.getElementById('reportFile'); if(reportPicker) reportPicker.value='';\n  document.getElementById('reportStoragePath').textContent='';"
-          if picker_old in s and 'const reportPicker=document.getElementById' not in s: s = s.replace(picker_old, picker_new, 1)
+  const ext=((file.name||'').match(/\.([A-Za-z0-9]+)$/)||['','bin'])[1].toLowerCase();
+  const token=(crypto.randomUUID?crypto.randomUUID().replace(/-/g,''):String(Date.now())+Math.random().toString(36).slice(2));
+  const path=`reports/${targetNo}/${Date.now()}_${token}.${ext}`;
 
-          p.write_text(s, encoding='utf-8')
-          print('changed:', s != original)
+  const {error:upErr}=await supabaseClient.storage.from(REPORT_BUCKET_V16)
+    .upload(path,file,{upsert:false,contentType:file.type||'application/octet-stream'});
+  if(upErr)throw upErr;
+
+  const todayISO=new Date().toISOString().slice(0,10);
+  const status=row['Reliability Test Status']||'Not tested';
+  let start=row['Reliability Test Start Date']||null;
+  let end=row['Reliability Test Expected End Date']||null;
+  if(status==='신뢰성 진행 중' && !start) start=todayISO;
+  if(status==='Finished' && !start) start=todayISO;
+  if(status==='Finished' && !end) end=todayISO;
+
+  const patch={
+    report_path:path,
+    report_filename:file.name,
+    report_mime:file.type||null,
+    reliability_start_date:start,
+    reliability_expected_end_date:end,
+    updated_at:new Date().toISOString()
+  };
+  const {data,error:dbErr}=await supabaseClient.from('reliability_tests')
+    .update(patch).eq('id',targetNo).select('*').single();
+  if(dbErr){
+    await supabaseClient.storage.from(REPORT_BUCKET_V16).remove([path]).catch(()=>{});
+    throw dbErr;
+  }
+
+  // Replace only the old attachment belonging to this exact row.
+  if(old?.report_path && old.report_path!==path){
+    await supabaseClient.storage.from(REPORT_BUCKET_V16).remove([old.report_path]).catch(()=>{});
+  }
+  return mapDbRow(data);
+}
+'''
+              s=s[:a]+fn+s[b:]
+
+          # Make the modal's current row id authoritative and reset the file picker every time.
+          s=s.replace("currentReportNo=String(no);currentReportFile=null;", "currentReportNo=String(no);currentReportFile=null;document.getElementById('reportModal').dataset.itemId=String(no);")
+
+          # Wire the attachment-delete button to the existing per-row deletion function.
+          if 'deleteReportLink' in s and "document.getElementById('deleteReportLink').onclick" not in s:
+              marker="window.deleteReportNow = async function(){"
+              if marker in s:
+                  s=s.replace(marker, "document.getElementById('deleteReportLink').onclick=()=>window.deleteReportNow();\n\n"+marker, 1)
+
+          # Replace the old delete routine if present: delete only the file metadata/path, never Report No.
+          da=s.find('window.deleteReportNow = async function(){')
+          db=s.find('</script>',da)
+          if da>=0 and db>da:
+              block=s[da:db]
+              if 'Clear all Report-related DB fields' in block:
+                  block=block.replace("report_path:null,\n        report_filename:null,\n        report_mime:null,", "report_path:null,\n        report_filename:null,\n        report_mime:null,")
+                  s=s[:da]+block+s[db:]
+
+          # Auto-date when status changes: TEST 중 -> start today; TEST 중 -> 완료 -> end today.
+          marker="  const statusValue=document.getElementById('mStatus').value||null;\n  let reliabilityStartDate=document.getElementById('mReliabilityStartDate').value||old['Reliability Test Start Date']||null;\n  let reliabilityExpectedEndDate=document.getElementById('mReliabilityExpectedEndDate').value||old['Reliability Test Expected End Date']||null;\n  const todayISO=new Date().toISOString().slice(0,10);\n  if(statusValue==='신뢰성 진행 중' && !reliabilityStartDate) reliabilityStartDate=todayISO;\n  if(statusValue==='Finished' && !reliabilityExpectedEndDate) reliabilityExpectedEndDate=todayISO;"
+          replacement="  const statusValue=document.getElementById('mStatus').value||null;\n  const oldStatus=old['Reliability Test Status']||'Not tested';\n  let reliabilityStartDate=document.getElementById('mReliabilityStartDate').value||old['Reliability Test Start Date']||null;\n  let reliabilityExpectedEndDate=document.getElementById('mReliabilityExpectedEndDate').value||old['Reliability Test Expected End Date']||null;\n  const todayISO=new Date().toISOString().slice(0,10);\n  if(statusValue==='신뢰성 진행 중' && oldStatus!=='신뢰성 진행 중' && !reliabilityStartDate) reliabilityStartDate=todayISO;\n  if(statusValue==='Finished' && oldStatus==='신뢰성 진행 중' && !reliabilityExpectedEndDate) reliabilityExpectedEndDate=todayISO;"
+          if marker in s: s=s.replace(marker,replacement,1)
+
+          # Ensure the detail/status table visibly contains the two reliability date fields.
+          old_table="return `<tr data-no=\"${x.No}\"><td>${i+1}</td><td>${escapeHtml(x['Requested Date by Planning team']||'-')}</td><td>${escapeHtml(x.Model||'-')}</td><td>${escapeHtml(cleanMaterial(x.Material))}</td><td>${escapeHtml(cleanCond(x['Test Condition']))}</td><td><span class=\"badge ${cls}\">${escapeHtml(res)}</span></td><td>${escapeHtml(st)}</td><td>${escapeHtml(x['Report No']||'-')}</td><td>${escapeHtml(x.PIC||'-')}</td></tr>`;"
+          new_table="return `<tr data-no=\"${x.No}\"><td>${i+1}</td><td>${escapeHtml(x['Requested Date by Planning team']||'-')}</td><td>${escapeHtml(x.Model||'-')}</td><td>${escapeHtml(cleanMaterial(x.Material))}</td><td>${escapeHtml(cleanCond(x['Test Condition']))}</td><td><span class=\"badge ${cls}\">${escapeHtml(res)}</span></td><td>${escapeHtml(st)}</td><td>${escapeHtml(x['Reliability Test Start Date']||'-')}</td><td>${escapeHtml(x['Reliability Test Expected End Date']||'-')}</td><td>${escapeHtml(x['Report No']||'-')}</td><td>${escapeHtml(x.PIC||'-')}</td></tr>`;"
+          if old_table in s: s=s.replace(old_table,new_table,1)
+          s=s.replace('<tr><th>No.</th>', '<tr><th>No.</th>', 1)
+
+          # Add headers to the overview table only when the exact header sequence exists.
+          hdr_old='<th data-k="requestDate">요청일</th><th data-k="model">Model</th><th data-k="material">자재</th><th data-k="condition">시험항목</th><th data-k="result">결과</th><th data-k="reliabilityTestStatus">상태</th><th data-k="reportNo">Report No.</th><th data-k="pic">PIC</th>'
+          hdr_new='<th data-k="requestDate">요청일</th><th data-k="model">Model</th><th data-k="material">자재</th><th data-k="condition">시험항목</th><th data-k="result">결과</th><th data-k="reliabilityTestStatus">상태</th><th data-k="reliabilityStartDate">TEST 시작일</th><th data-k="reliabilityExpectedEndDate">TEST 종료예정일</th><th data-k="reportNo">Report No.</th><th data-k="pic">PIC</th>'
+          if hdr_old in s and 'TEST 시작일</th><th data-k="reliabilityExpectedEndDate">TEST 종료예정일' not in s: s=s.replace(hdr_old,hdr_new,1)
+
+          p.write_text(s,encoding='utf-8')
+          print('changed:',s!=original)
           PY
       - name: Commit patch
         run: |
@@ -55,6 +125,6 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html
           git diff --cached --quiet && exit 0
-          git commit -m 'Fix active reliability save variables and date display'
+          git commit -m 'Fix per-row report deletion and reliability date automation'
           git pull --rebase origin main
           git push origin HEAD:main
