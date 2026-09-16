@@ -29,7 +29,6 @@ jobs:
 
           # 3) Ensure both save implementations can handle the field safely.
           s = s.replace("result_before:document.getElementById('mResultBefore').value||old['Result before reliability test']||null,", "result_before:document.getElementById('mResultBefore')?.value||old['Result before reliability test']||null,")
-          s = s.replace("result_before:document.getElementById('mResultBefore')?.value||old['Result before reliability test']||null,", "result_before:document.getElementById('mResultBefore')?.value||old['Result before reliability test']||null,")
 
           # 4) Load/save the before-result field in edit mode.
           old = "document.getElementById('mCpkBefore').value=x['CPK Review Result']||'미검토';\n document.getElementById('mResultAfter').value=x['Result after reliability test']||'';"
@@ -68,6 +67,8 @@ jobs:
           if "resultBefore:'신뢰성 시험 전'" not in s:
               s = s.replace("resultFilter:'시험결과',", "resultFilter:'시험결과',resultBefore:'신뢰성 시험 전',", 1)
 
+          # 10) Marker so this workflow is intentionally re-runnable and idempotent.
+          print('Reliability form/report fix pass: 2026-09-16')
           p.write_text(s, encoding='utf-8')
           print('changed:', s != original)
           PY
