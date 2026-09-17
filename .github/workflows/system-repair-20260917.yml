@@ -1,54 +1,10 @@
-name: One-time system cleanup 2026-09-17
+name: Disabled one-time system repair
 on:
-  push:
-    paths:
-      - '.system-repair-20260917'
   workflow_dispatch:
 permissions:
-  contents: write
+  contents: read
 jobs:
-  repair:
+  disabled:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Clean duplicate UI patches and broken guard
-        shell: python
-        run: |
-          from pathlib import Path
-          import re
-          p = Path('index.html')
-          s = p.read_text(encoding='utf-8')
-          block = re.compile(r'<style id="fix20260917">.*?</style>.*?<script id="fix20260917">.*?</script>', re.S)
-          blocks = block.findall(s)
-          if len(blocks) > 1:
-              first = blocks[0]
-              s = s.replace(first, '@@KEEP_FIX_BLOCK@@', 1)
-              s = block.sub('', s)
-              s = s.replace('@@KEEP_FIX_BLOCK@@', first)
-          s, removed = re.subn(r'<script id="reliabilityFinalGuard">.*?</script>', '', s, count=1, flags=re.S)
-          p.write_text(s, encoding='utf-8')
-          print('complete fix blocks found:', len(blocks), 'guard removed:', removed)
-          final = p.read_text(encoding='utf-8')
-          checks = {
-              'at_most_one_fix_block': len(block.findall(final)) <= 1,
-              'guard_removed': 'id="reliabilityFinalGuard"' not in final,
-              'pagination': 'reportPagination' in final,
-              'report_dates': 'reliabilityStartDate' in final and 'reliabilityExpectedEndDate' in final,
-              'pass_fail_guard': "['Pass','Fail'].includes(r)" in final,
-              'per_row_storage': 'reports/${targetNo}/' in final,
-              'report_delete': 'deleteReportFileNow' in final,
-          }
-          print('SYSTEM CHECK:', checks)
-          failed = [k for k,v in checks.items() if not v]
-          if failed:
-              raise SystemExit('Failed checks: ' + ', '.join(failed))
-      - name: Commit cleanup
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html
-          if git diff --cached --quiet; then echo 'No changes needed'; exit 0; fi
-          git commit -m 'Clean duplicate reliability UI patches and broken guard [skip ci]'
-          git push origin HEAD:main
+      - run: echo "System repair completed; workflow disabled."
