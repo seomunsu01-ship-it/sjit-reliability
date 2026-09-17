@@ -1,52 +1,10 @@
-name: UI two-line status fix
+name: Disabled legacy auto-patch - UI two-line status
 on:
-  push:
-    branches: [main]
+  workflow_dispatch:
 permissions:
-  contents: write
+  contents: read
 jobs:
-  fix:
-    if: github.actor != 'github-actions[bot]'
+  disabled:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Patch requested UI only
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          import re
-          p=Path('index.html')
-          s=p.read_text(encoding='utf-8')
-          # Keep the requested header at exactly two lines in Korean/English/Vietnamese.
-          if '.report-table th[data-k="cpkBefore"]' not in s:
-              s=s.replace('.report-status{display:inline-flex;align-items:center;gap:5px;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:700}', '.report-status{display:inline-flex;align-items:center;gap:5px;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:700}.report-table th[data-k="cpkBefore"],.report-table th[data-k="reliabilityTestStatus"],.manual-table th[data-k="cpkBefore"],.manual-table th[data-k="reliabilityTestStatus"]{white-space:pre-line;line-height:1.3;min-width:220px;height:52px}')
-          s=re.sub(r"cpkBefore:'신뢰성 전(?:\\n|\\s)*CPK 검토결과'", r"cpkBefore:'신뢰성 전\\nCPK 검토결과'", s)
-          s=re.sub(r"cpkBefore:'CPK Review(?: Result)? Before Reliability Test'", r"cpkBefore:'CPK Review Result\\n(Before Reliability)'", s)
-          s=re.sub(r"cpkBefore:'Kết quả đánh giá CPK(?:\\n|\\s)*trước kiểm tra độ tin cậy'", r"cpkBefore:'Kết quả đánh giá CPK\\ntrước kiểm tra độ tin cậy'", s)
-          s=re.sub(r"reliabilityTestStatus:'신뢰성 TEST(?:\\n|\\s)*상태'", r"reliabilityTestStatus:'신뢰성 TEST\\n상태'", s)
-          s=re.sub(r"reliabilityTestStatus:'Reliability TEST(?:\\n|\\s)*Status'", r"reliabilityTestStatus:'Reliability TEST\\nStatus'", s)
-          s=re.sub(r"reliabilityTestStatus:'Trạng thái TEST(?:\\n|\\s)*độ tin cậy'", r"reliabilityTestStatus:'Trạng thái TEST\\nđộ tin cậy'", s)
-          # Translate status badges in both report tables.
-          cpk_pat=r"const cpk=x\['CPK Review Result'\]\|\|'미검토'; const cpkLabel=.*?; const cpkCls="
-          cpk_rep=r"const cpk=x['CPK Review Result']||'미검토'; const cpkLabel=lang==='vi'?(cpk==='양호'?'Tốt':cpk==='보완필요'?'Cần cải thiện':'Chưa đánh giá'):lang==='en'?(cpk==='양호'?'Good':cpk==='보완필요'?'Needs Improvement':'Not Reviewed'):(cpk==='양호'?'양호':cpk==='보완필요'?'보완필요':'미검토'); const cpkCls="
-          s,_=re.subn(cpk_pat,cpk_rep,s)
-          ts_pat=r"const ts=x\['Reliability Test Status'\]\|\|'Not tested'; const tsLabel=.*?; const tsCls="
-          ts_rep=r"const ts=x['Reliability Test Status']||'Not tested'; const tsLabel=lang==='vi'?(ts==='Finished'?'Hoàn thành':ts==='신뢰성 진행 중'?'Đang thực hiện':'Chờ xử lý'):lang==='en'?(ts==='Finished'?'Completed':ts==='신뢰성 진행 中'?'In Progress':'Pending'):(ts==='Finished'?'완료':ts==='신뢰성 진행 중'?'TEST 중':'대기'); const tsCls="
-          ts_rep=ts_rep.replace('신뢰성 진행 中','신뢰성 진행 중')
-          s,_=re.subn(ts_pat,ts_rep,s)
-          p.write_text(s,encoding='utf-8')
-          PY
-      - name: Verify JavaScript syntax
-        run: |
-          node - <<'JS'
-          const fs=require('fs'); const s=fs.readFileSync('index.html','utf8'); const scripts=[...s.matchAll(/<script(?:[^>]*)>([\s\S]*?)<\/script>/gi)].map(m=>m[1]).filter(x=>x.trim());
-          for(let i=0;i<scripts.length;i++){ try{ new Function(scripts[i]); }catch(e){ console.error('script',i+1,e.message); process.exit(1); } }
-          console.log('JS syntax OK:',scripts.length,'scripts');
-          JS
-      - name: Commit patch
-        run: |
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add index.html
-          git diff --cached --quiet || git commit -m "Apply CPK header and status translations"
-          git push
+      - run: echo "Legacy auto-patch disabled."
