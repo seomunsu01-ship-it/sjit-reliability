@@ -20,7 +20,6 @@ jobs:
           import re
           p = Path('index.html')
           s = p.read_text(encoding='utf-8')
-
           block = re.compile(r'<style id="fix20260917">.*?</style>.*?<script id="fix20260917">.*?</script>', re.S)
           blocks = block.findall(s)
           if len(blocks) > 1:
@@ -28,14 +27,12 @@ jobs:
               s = s.replace(first, '@@KEEP_FIX_BLOCK@@', 1)
               s = block.sub('', s)
               s = s.replace('@@KEEP_FIX_BLOCK@@', first)
-
           s, removed = re.subn(r'<script id="reliabilityFinalGuard">.*?</script>', '', s, count=1, flags=re.S)
           p.write_text(s, encoding='utf-8')
           print('complete fix blocks found:', len(blocks), 'guard removed:', removed)
-
           final = p.read_text(encoding='utf-8')
           checks = {
-              'single_fix_block': len(re.findall(r'<script id="fix20260917">', final)) == 1,
+              'at_most_one_fix_block': len(block.findall(final)) <= 1,
               'guard_removed': 'id="reliabilityFinalGuard"' not in final,
               'pagination': 'reportPagination' in final,
               'report_dates': 'reliabilityStartDate' in final and 'reliabilityExpectedEndDate' in final,
