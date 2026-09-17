@@ -1,0 +1,23 @@
+name: Reliability dashboard fix 2026-09-17
+on:
+  push:
+    paths:
+      - '.fix-2026-09-17'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply dashboard and report fixes
+        run: python tools/fix_2026_09_17.py
+      - name: Commit patched index
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git diff --cached --quiet && exit 0
+          git commit -m 'Fix Vietnamese UI report pagination and reliability dates'
+          git pull --rebase origin main
+          git push origin HEAD:main
