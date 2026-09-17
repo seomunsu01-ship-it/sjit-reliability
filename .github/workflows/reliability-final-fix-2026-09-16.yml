@@ -1,23 +1,10 @@
-name: Reliability final fix 2026-09-16
+name: Disabled legacy auto-patch - reliability final fix
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
 permissions:
-  contents: write
+  contents: read
 jobs:
-  patch:
+  disabled:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Apply reliability final patch
-        run: python tools/reliability_final_fix.py
-      - name: Commit patched index
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html
-          git diff --cached --quiet && exit 0
-          git commit -m 'Fix report attachment isolation deletion and reliability dates'
-          git pull --rebase origin main
-          git push origin HEAD:main
+      - run: echo "Legacy auto-patch disabled."
