@@ -1,71 +1,10 @@
-name: Reliability dashboard fix 2026-09-17
+name: Disabled legacy auto-patch - reliability fix
 on:
-  push:
-    paths:
-      - '.fix-2026-09-17'
-      - '.final-reliability-fix'
   workflow_dispatch:
 permissions:
-  contents: write
+  contents: read
 jobs:
-  patch:
+  disabled:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Wait for parallel maintenance workflows
-        run: sleep 60
-      - name: Apply final patch against latest main
-        run: |
-          set -e
-          git fetch origin main
-          git reset --hard origin/main
-          python tools/fix_2026_09_17.py
-          python tools/reliability_final_fix.py
-      - name: Pre-deploy sanity check
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          import re
-          s=Path('index.html').read_text(encoding='utf-8')
-          checks={
-            'final_guard_once': len(re.findall(r'<script id="reliabilityFinalGuard">',s)) == 1,
-            'pagination_fix': 'reportPagination' in s,
-            'report_dates': 'reliabilityStartDate' in s and 'reliabilityExpectedEndDate' in s,
-            'pass_fail_guard': "['Pass','Fail'].includes(r)" in s,
-            'per_row_upload': 'reports/${targetNo}/' in s,
-            'delete_report_button': 'deleteReportLink' in s,
-            'vi_ui_fix': 'Chưa nhập' in s and 'Đăng ký Report' in s,
-          }
-          failed=[k for k,v in checks.items() if not v]
-          print('PRE-DEPLOY CHECKS:', checks)
-          if failed:
-            raise SystemExit('Failed checks: '+', '.join(failed))
-          if len(s) > 2_000_000:
-            raise SystemExit('index.html unexpectedly large')
-          print('PRE-DEPLOY CHECK: PASS')
-          PY
-      - name: Commit and push final patch
-        run: |
-          set -e
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          for attempt in 1 2 3; do
-            git fetch origin main
-            git reset --hard origin/main
-            python tools/fix_2026_09_17.py
-            python tools/reliability_final_fix.py
-            git add index.html
-            if git diff --cached --quiet; then
-              echo 'No index.html changes needed.'
-              exit 0
-            fi
-            git commit -m 'Finalize reliability dashboard fixes [skip ci]'
-            if git push origin HEAD:main; then
-              echo "Final patch pushed on attempt $attempt"
-              exit 0
-            fi
-            echo "Push race on attempt $attempt; retrying against latest main"
-            git reset --hard origin/main
-            sleep 10
-          done
-          exit 1
+      - run: echo "Legacy auto-patch disabled."
