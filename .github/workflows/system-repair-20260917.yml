@@ -21,15 +21,15 @@ jobs:
           p = Path('index.html')
           s = p.read_text(encoding='utf-8')
 
-          pattern = re.compile(r'\n<style id="fix20260917">.*?</script>', re.S)
+          pattern = re.compile(r'<style id="fix20260917">.*?</script>', re.S)
           blocks = pattern.findall(s)
           if len(blocks) > 1:
               first = blocks[0]
-              s = s.replace(first, '\n@@KEEP_FIX_BLOCK@@', 1)
+              s = s.replace(first, '@@KEEP_FIX_BLOCK@@', 1)
               s = pattern.sub('', s)
               s = s.replace('@@KEEP_FIX_BLOCK@@', first)
 
-          s, removed = re.subn(r'\n<script id="reliabilityFinalGuard">.*?</script>', '', s, count=1, flags=re.S)
+          s, removed = re.subn(r'<script id="reliabilityFinalGuard">.*?</script>', '', s, count=1, flags=re.S)
           s = re.sub(r'(?:\\n){4,}', '\n', s)
           p.write_text(s, encoding='utf-8')
           print('fix blocks found:', len(blocks), 'guard removed:', removed)
