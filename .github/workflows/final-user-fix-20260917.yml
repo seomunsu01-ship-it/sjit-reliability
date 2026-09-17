@@ -1,0 +1,43 @@
+name: Final user fixes 2026-09-17
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.final-user-fix-20260917'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply final user fixes
+        run: |
+          set -e
+          git fetch origin main
+          git reset --hard origin/main
+          python tools/final_user_fix_20260917.py
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('index.html').read_text(encoding='utf-8')
+          checks={
+            'final_user_fix_once': len(re.findall(r'<script id="finalUserFix20260917">',s)) == 1,
+            'material_pagination': 'final-user-pagination' in s and 'materialAnalysisBody' in s,
+            'vi_error_translation': 'Không tìm thấy hạng mục kiểm tra đã chọn.' in s,
+            'new_report_file_reset': 'sjit_reliability_report_draft_v2' in s and 'reportFileInput' in s,
+            'upload_resolver': 'modal?.dataset?.itemId' in s,
+          }
+          print(checks)
+          failed=[k for k,v in checks.items() if not v]
+          if failed: raise SystemExit('Failed checks: '+', '.join(failed))
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git diff --cached --quiet && exit 0
+          git commit -m 'Apply final user fixes [skip ci]'
+          git push origin HEAD:main
