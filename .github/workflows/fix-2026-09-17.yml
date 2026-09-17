@@ -3,6 +3,8 @@ on:
   push:
     paths:
       - '.fix-2026-09-17'
+      - '.final-reliability-fix'
+  workflow_dispatch:
 permissions:
   contents: write
 jobs:
@@ -10,14 +12,39 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Apply dashboard and report fixes
+      - name: Apply dashboard UI fixes
         run: python tools/fix_2026_09_17.py
+      - name: Apply final report isolation and date fixes
+        run: python tools/reliability_final_fix.py
+      - name: Pre-deploy sanity check
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('index.html').read_text(encoding='utf-8')
+          checks={
+            'final_guard_once': len(re.findall(r'<script id="reliabilityFinalGuard">',s)) == 1,
+            'pagination_fix': 'reportPagination' in s,
+            'report_dates': 'reliabilityStartDate' in s and 'reliabilityExpectedEndDate' in s,
+            'pass_fail_guard': "['Pass','Fail'].includes(r)" in s,
+            'per_row_upload': 'reports/${targetNo}/' in s,
+            'delete_report_button': 'deleteReportLink' in s,
+            'vi_ui_fix': 'Chưa nhập' in s and 'Đăng ký Report' in s,
+          }
+          failed=[k for k,v in checks.items() if not v]
+          print('PRE-DEPLOY CHECKS:', checks)
+          if failed:
+            raise SystemExit('Failed checks: '+', '.join(failed))
+          if len(s) > 2_000_000:
+            raise SystemExit('index.html unexpectedly large')
+          print('PRE-DEPLOY CHECK: PASS')
+          PY
       - name: Commit patched index
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html
           git diff --cached --quiet && exit 0
-          git commit -m 'Fix Vietnamese UI report pagination and reliability dates'
+          git commit -m 'Finalize reliability dashboard fixes'
           git pull --rebase origin main
           git push origin HEAD:main
