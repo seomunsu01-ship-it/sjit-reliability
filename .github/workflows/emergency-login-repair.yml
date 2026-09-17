@@ -1,71 +1,10 @@
-name: Emergency login repair
+name: Disabled legacy auto-patch - emergency login
 on:
-  push:
-    paths:
-      - '.repair-save-button-trigger'
   workflow_dispatch:
 permissions:
-  contents: write
+  contents: read
 jobs:
-  repair:
+  disabled:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Patch save handler
-        shell: bash
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          p=Path('index.html')
-          s=p.read_text(encoding='utf-8')
-          marker='FINAL SAVE BUTTON FIX 2026-09-14'
-          if marker not in s:
-              fix='''
-<script>
-/* FINAL SAVE BUTTON FIX 2026-09-14 */
-(function(){
-  function wireSaveButtons(){
-    const save=document.getElementById('manualSave');
-    const cont=document.getElementById('manualSaveContinue');
-    if(save){
-      save.type='button'; save.onclick=null;
-      save.addEventListener('click',async function(e){
-        e.preventDefault(); e.stopPropagation();
-        try{ if(typeof saveManualV16==='function') await saveManualV16(true); else if(typeof saveManual==='function') await saveManual(true); else alert('저장 기능을 불러오지 못했습니다. 페이지를 새로고침해 주세요.'); }
-        catch(err){ console.error('manualSave click error',err); alert('저장 처리 중 오류: '+(err?.message||err)); }
-      });
-    }
-    if(cont){
-      cont.type='button'; cont.onclick=null;
-      cont.addEventListener('click',async function(e){
-        e.preventDefault(); e.stopPropagation();
-        try{ if(typeof saveManualV16==='function') await saveManualV16(false); else if(typeof saveManual==='function') await saveManual(false); else alert('저장 기능을 불러오지 못했습니다. 페이지를 새로고침해 주세요.'); }
-        catch(err){ console.error('manualSaveContinue click error',err); alert('저장 처리 중 오류: '+(err?.message||err)); }
-      });
-    }
-  }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',wireSaveButtons,{once:true}); else wireSaveButtons();
-})();
-</script>
-'''
-              s=s.replace('</body>',fix+'</body>',1)
-          # Guard the optional legacy field so editing can never fail with null.value.
-          s=s.replace("result_before:document.getElementById('mResultBefore').value||old['Result before reliability test']||null,", "result_before:(document.getElementById('mResultBefore')?.value)||old['Result before reliability test']||null,")
-          # Ensure the active save function persists CPK review result.
-          needle="    test_status:document.getElementById('mStatus').value||null,"
-          repl=needle+"\n    cpk_review_result:document.getElementById('mCpkBefore')?.value||null,"
-          if needle in s and 'cpk_review_result:document.getElementById(\'mCpkBefore\')?.value||null' not in s:
-              s=s.replace(needle,repl,1)
-          p.write_text(s,encoding='utf-8')
-          PY
-      - name: Commit patch
-        shell: bash
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html
-          if git diff --cached --quiet; then exit 0; fi
-          git commit -m 'Fix reliability report save'
-          git pull --rebase origin main
-          git push origin HEAD:main
+      - run: echo "Legacy auto-patch disabled."
