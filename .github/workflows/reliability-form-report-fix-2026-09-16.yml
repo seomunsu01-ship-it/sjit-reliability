@@ -1,54 +1,10 @@
-name: Reliability form and report fixes 2026-09-16
+name: Disabled legacy auto-patch - reliability form report
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
 permissions:
-  contents: write
+  contents: read
 jobs:
-  patch:
+  disabled:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Patch reliability form, report isolation, and date automation
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          p = Path('index.html')
-          s = p.read_text(encoding='utf-8')
-          original = s
-          needle = '<div class="manual-field"><label data-k="cpkBefore">신뢰성 전 CPK 검토결과</label><select id="mCpkBefore"><option value="">미검토</option><option value="양호">양호</option><option value="보완필요">보완필요</option><option value="미검토">미검토</option></select></div>'
-          insert = needle + '\n   <div class="manual-field"><label data-k="resultBefore">신뢰성 시험 전 결과</label><input id="mResultBefore" type="text" placeholder="Pass / Fail / CPK 내용"></div>'
-          if 'id="mResultBefore"' not in s and needle in s: s = s.replace(needle, insert, 1)
-          s = s.replace("document.getElementById('mResultBefore').value='';", "const mrb=document.getElementById('mResultBefore'); if(mrb) mrb.value='';")
-          s = s.replace("result_before:document.getElementById('mResultBefore').value||old['Result before reliability test']||null,", "result_before:document.getElementById('mResultBefore')?.value||old['Result before reliability test']||null,")
-          old = "document.getElementById('mCpkBefore').value=x['CPK Review Result']||'미검토';\n document.getElementById('mResultAfter').value=x['Result after reliability test']||'';"
-          new = "document.getElementById('mCpkBefore').value=x['CPK Review Result']||'미검토';\n document.getElementById('mResultBefore').value=x['Result before reliability test']||'';\n document.getElementById('mResultAfter').value=x['Result after reliability test']||'';"
-          if old in s and "document.getElementById('mResultBefore').value=x['Result before reliability test']" not in s: s = s.replace(old, new, 1)
-          old = "const btn=closeAfter?document.getElementById('manualSave'):document.getElementById('manualSaveContinue');\n  const oldtxt=btn.textContent;"
-          new = "const statusValue=document.getElementById('mStatus').value||null;\n  let reliabilityStartDate=document.getElementById('mReliabilityStartDate').value||old['Reliability Test Start Date']||null;\n  let reliabilityExpectedEndDate=document.getElementById('mReliabilityExpectedEndDate').value||old['Reliability Test Expected End Date']||null;\n  const todayISO=new Date().toISOString().slice(0,10);\n  if(statusValue==='신뢰성 진행 중' && !reliabilityStartDate) reliabilityStartDate=todayISO;\n  if(statusValue==='Finished' && !reliabilityExpectedEndDate) reliabilityExpectedEndDate=todayISO;\n  const btn=closeAfter?document.getElementById('manualSave'):document.getElementById('manualSaveContinue');\n  const oldtxt=btn.textContent;"
-          if old in s and 'let reliabilityStartDate=' not in s: s = s.replace(old, new, 1)
-          s = s.replace("test_status:document.getElementById('mStatus').value||null,\n    reliability_start_date:document.getElementById('mReliabilityStartDate').value||null,\n    reliability_expected_end_date:document.getElementById('mReliabilityExpectedEndDate').value||null,", "test_status:statusValue,\n    reliability_start_date:reliabilityStartDate,\n    reliability_expected_end_date:reliabilityExpectedEndDate,")
-          old = "const {data,error:dbErr}=await supabaseClient.from('reliability_tests').update({\n    report_path:path,\n    report_filename:file.name,\n    report_mime:file.type||null,\n    updated_at:new Date().toISOString()\n  }).eq('id',Number(rowId)).select('*').single();"
-          new = "const rowForDate=DATA.find(r=>Number(r.No)===Number(rowId));\n  const datePatch={report_path:path,report_filename:file.name,report_mime:file.type||null,updated_at:new Date().toISOString()};\n  if(rowForDate?.['Reliability Test Status']==='Finished' && !rowForDate?.['Reliability Test Expected End Date']) datePatch.reliability_expected_end_date=new Date().toISOString().slice(0,10);\n  const {data,error:dbErr}=await supabaseClient.from('reliability_tests').update(datePatch).eq('id',Number(rowId)).select('*').single();"
-          if old in s and 'const rowForDate=DATA.find' not in s: s = s.replace(old, new, 1)
-          s = s.replace("report_path:null,\n        report_filename:null,\n        report_mime:null,\n        report_no:null,", "report_path:null,\n        report_filename:null,\n        report_mime:null,")
-          old = "const openBtn=document.getElementById('openReportFile');openBtn.style.display='none';\n  const downloadBtn=document.getElementById('downloadReportLink');"
-          new = "const openBtn=document.getElementById('openReportFile');openBtn.style.display='none';\n  const deleteFileBtn=document.getElementById('deleteReportLink'); if(deleteFileBtn) deleteFileBtn.style.display='none';\n  const downloadBtn=document.getElementById('downloadReportLink');"
-          if old in s and 'deleteFileBtn=document.getElementById' not in s: s = s.replace(old, new, 1)
-          old = "if(info?.report_path){\n      openBtn.style.display='inline-block';"
-          new = "if(info?.report_path){\n      const deleteFileBtn=document.getElementById('deleteReportLink'); if(deleteFileBtn) deleteFileBtn.style.display='inline-block';\n      openBtn.style.display='inline-block';"
-          if old in s and "deleteFileBtn=document.getElementById('deleteReportLink'); if(deleteFileBtn) deleteFileBtn.style.display='inline-block'" not in s: s = s.replace(old, new, 1)
-          if "resultBefore:'신뢰성 시험 전'" not in s: s = s.replace("resultFilter:'시험결과',", "resultFilter:'시험결과',resultBefore:'신뢰성 시험 전',", 1)
-          p.write_text(s, encoding='utf-8')
-          print('changed:', s != original)
-          PY
-      - name: Commit patch
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html
-          git diff --cached --quiet && exit 0
-          git commit -m 'Fix reliability result saving report isolation and test dates'
-          git pull --rebase origin main
-          git push origin HEAD:main
+      - run: echo "Legacy auto-patch disabled."
