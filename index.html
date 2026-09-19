@@ -747,24 +747,8 @@ document.getElementById('reportFile').onchange=e=>{
  currentReportFile=e.target.files?.[0]||null;
  document.getElementById('chosenFile').textContent=currentReportFile?currentReportFile.name:t('noFileSelected');
 };
-document.getElementById('saveReportLink').onclick=async()=>{
- if(!currentReportNo||!currentReportFile){alert(msg('selectReport'));return}
- const btn=document.getElementById('saveReportLink');
- btn.disabled=true; btn.textContent='저장 중...';
- try{
-   await saveReportToDB(currentReportNo,currentReportFile);
-   document.getElementById('reportHelp').textContent='저장 완료: '+currentReportFile.name+' — 다시 열려면 이 Report를 클릭하세요.';
-   alert('Report 연결이 저장되었습니다.');
-   btn.textContent='연결 저장';
-   btn.disabled=false;
-   document.getElementById('reportModal').classList.remove('show');
-   renderReport();
- }catch(err){
-   console.error(err);
-   btn.textContent='연결 저장'; btn.disabled=false;
-   alert('저장에 실패했습니다. 브라우저의 파일 저장 권한을 확인해 주세요.');
- }
-};
+// Legacy local-browser Report save handler removed. Supabase v16 handler is defined below.
+
 document.getElementById('closeReportModal').onclick=()=>document.getElementById('reportModal').classList.remove('show');
 document.getElementById('reportBody').addEventListener('click',async e=>{
  const b=e.target.closest('.report-link,.report-register'); if(!b)return;
@@ -972,8 +956,8 @@ async function saveManual(closeAfter){
    btn.disabled=false; btn.textContent=isEdit?'수정 저장':oldtxt;
  }
 }
-document.getElementById('manualSave').onclick=()=>saveManual(true);
-document.getElementById('manualSaveContinue').onclick=()=>saveManual(false);
+// Legacy manual-save handlers removed. Supabase v16 handlers are defined below.
+
 
 
 
