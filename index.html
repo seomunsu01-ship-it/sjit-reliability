@@ -110,6 +110,38 @@ async function bootSupabase(){
 </div>
 <script>
 const LOGIN_SCREEN=document.getElementById('loginScreen');
+/* Early login handler: keep authentication working even if a later UI script has a runtime error. */
+(function(){
+ const btn=document.getElementById('loginBtn');
+ const emailEl=document.getElementById('loginEmail');
+ const passEl=document.getElementById('loginPassword');
+ const errEl=document.getElementById('loginError');
+ if(!btn||!emailEl||!passEl||!errEl)return;
+ async function doLogin(){
+   const email=emailEl.value.trim(), password=passEl.value;
+   errEl.textContent='';
+   if(!email||!password){errEl.textContent='이메일과 비밀번호를 입력하세요.';return;}
+   btn.disabled=true; btn.textContent='로그인 중...';
+   try{
+     if(!window.supabase||!supabaseClient){throw new Error('Supabase 인증 모듈이 초기화되지 않았습니다.');}
+     const loginPromise=supabaseClient.auth.signInWithPassword({email,password});
+     const timeoutPromise=new Promise((_,reject)=>setTimeout(()=>reject(new Error('LOGIN_TIMEOUT')),10000));
+     const result=await Promise.race([loginPromise,timeoutPromise]);
+     if(result.error)throw result.error;
+     if(!result.data?.session)throw new Error('로그인 세션이 생성되지 않았습니다.');
+     errEl.textContent='';
+     if(typeof startAuthenticated==='function') await startAuthenticated(result.data.session);
+     else { errEl.textContent='로그인 성공 후 화면을 불러오지 못했습니다. 페이지를 새로고침해 주세요.'; }
+   }catch(e){
+     console.error('Login error:',e);
+     errEl.textContent=e?.message==='LOGIN_TIMEOUT'?'로그인 서버 응답이 없습니다. Supabase 연결을 확인하세요.':'로그인 실패: '+(e?.message||e||'알 수 없는 오류');
+   }finally{
+     btn.disabled=false; btn.textContent='로그인';
+   }
+ }
+ btn.addEventListener('click',doLogin);
+ passEl.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();doLogin();}});
+})();
 </script>
 <div class="app"><div id="appShell"><aside class="side"><div class="brand">SJIT VINA<small>Smart Connection, Better Tomorrow</small></div><div class="nav"><button class="active" data-view="dashboard">⌂ <span data-k="dashboard">대시보드</span></button><button data-view="overview">✓ <span data-k="overview">신뢰성 시험 현황</span></button><button data-view="material">♙ <span data-k="material">자재별 분석</span></button><button data-view="report">▤ <span data-k="report">보고서 관리</span></button><button data-view="notice">♧ <span data-k="notice">알림 / 공지</span></button></div><div class="tag">Good<br>Quality<br>Better<br>Tomorrow<br><br><small>© 2026 SJIT VINA</small></div></aside><main class="main"><div class="top"><div><div class="title" data-k="title">신뢰성 관리 대시보드</div><div class="sub" data-k="subtitle">신뢰성 시험 통합 현황</div><div style="font-size:11px;color:#8a98a7;margin-top:3px">※ 현재 원본 데이터에는 거래처(Customer) 컬럼이 없어, 거래처 필터는 다음 단계에서 데이터 항목 추가 후 연결</div></div><div id="dbStatus" style="display:inline-block;margin-right:8px;padding:6px 10px;border-radius:999px;background:#eef3f8;color:#6b7280;font-size:11px;font-weight:700">SUPABASE DB 연결 확인 중...</div><div class="userbox"><span id="userEmail"></span><button id="logoutBtn" class="logout">로그아웃</button></div><div class="langs"><button class="active" data-lang="ko">한국어</button><button data-lang="vi">Tiếng Việt</button></div></div><div id="viewDashboard" class="view active"><section class="panel filters">
 <div class="field"><label data-k="date">기간</label><div style="display:grid;grid-template-columns:1fr 1fr;gap:5px"><input id="dateFrom" type="date" value="2026-01-01"><input id="dateTo" type="date" value="2026-09-10"></div></div>
