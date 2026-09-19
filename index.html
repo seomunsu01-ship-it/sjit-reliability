@@ -528,9 +528,10 @@ function renderReport(){
  const page=window.reportPage;
  const arr=all.slice((page-1)*size,page*size);
  const downloadMode=!!window.reportDownloadMode;
+ const selected=window.selectedReportNos||new Set();
  const missingLabel=lang==='vi'?'Chưa nhập':lang==='en'?'Not Entered':'미입력';
- const cpkLabel=v=>{const c=v||'미검토';return lang==='vi'?(c==='양호'?'Tốt':c==='보완필요'?'Cần cải thiện':'Chưa đánh giá'):lang==='en'?(c==='양호'?'Good':c==='보완필요'?'Needs Improvement':'Not Reviewed'):c};
- const statusLabel=v=>{const st=v||'Not tested';return lang==='vi'?(st==='Finished'?'Hoàn thành':st==='신뢰성 진행 중'?'Đang thực hiện':'Chờ xử lý'):lang==='en'?(st==='Finished'?'Completed':st==='신뢰성 진행 중'?'In Progress':'Pending'):(st==='Finished'?'완료':st==='신뢰성 진행 중'?'TEST 중':'대기')};
+ const cpkLabel=v=>{const x=v||'미검토';return lang==='vi'?(x==='양호'?'Tốt':x==='보완필요'?'Cần cải thiện':'Chưa đánh giá'):lang==='en'?(x==='양호'?'Good':x==='보완필요'?'Needs Improvement':'Not Reviewed'):x};
+ const statusLabel=v=>{const x=v||'Not tested';return lang==='vi'?(x==='Finished'?'Hoàn thành':x==='신뢰성 진행 중'?'Đang thực hiện':'Chờ xử lý'):lang==='en'?(x==='Finished'?'Completed':x==='신뢰성 진행 중'?'In Progress':'Pending'):(x==='Finished'?'완료':x==='신뢰성 진행 중'?'TEST 중':'대기')};
  const reportState=has=>has?(lang==='vi'?'Đã phát hành':lang==='en'?'Issued':'발행'):(lang==='vi'?'Chưa phát hành':lang==='en'?'Not Issued':'미발행');
  const reportBtn=lang==='vi'?'Đăng ký Report':lang==='en'?'Register Report':'Report 등록';
  const editBtn=lang==='vi'?'Sửa':lang==='en'?'Edit':'수정';
@@ -542,32 +543,33 @@ function renderReport(){
   const ts=x['Reliability Test Status']||'Not tested';
   const cpkCls=cpk==='양호'?'cpk-good':cpk==='보완필요'?'cpk-improve':'cpk-review';
   const tsCls=ts==='Finished'?'test-done':ts==='신뢰성 진행 중'?'test-run':'test-wait';
-  const reportCell=report?`<button class="report-link" data-report="${esc(report)}" data-no="${esc(x.No)}">${esc(report)}</button>`:`<button class="smallbtn report-register" data-no="${esc(x.No)}">${esc(reportBtn)}</button>`;
-  return `<tr><td class="report-select-cell" style="display:none"><input class="report-row-check" type="checkbox" data-no="${esc(x.No)}" ${report?'':'disabled'}></td><td>${(page-1)*size+i+1}</td><td><span class="cpk-status ${cpkCls}">${esc(cpkLabel(cpk))}</span></td><td><span class="test-status ${tsCls}">${esc(statusLabel(ts))}</span></td><td>${esc(x['Requested Date by Planning team']||'-')}</td><td>${esc(x.Model||missingLabel)}</td><td>${esc(cleanMaterial(x.Material)==='미입력'?missingLabel:cleanMaterial(x.Material))}</td><td>${esc(cleanCond(x['Test Condition'])==='미입력'?missingLabel:cleanCond(x['Test Condition']))}</td><td>${esc(rv||'-')}</td><td>${reportCell}</td><td><span class="report-status ${report?'ok':'missing'}">${esc(reportState(!!report))}</span></td><td>${esc(x.PIC||'-')}</td><td>${esc(x['CR No']||'-')}</td><td>${esc(x['Reliability Test Start Date']||'-')}</td><td>${esc(x['Reliability Test Expected End Date']||'-')}</td><td><div class="report-manage-actions"><button class="smallbtn edit-report-item" type="button" data-no="${esc(x.No)}">${esc(editBtn)}</button><button class="smallbtn delete-test-item" type="button" data-no="${esc(x.No)}" data-k="deleteTestItem">${esc(t('deleteTestItem'))}</button></div></td></tr>`;
- }).join(''):`<tr><td colspan="15" class="empty">${t('noData')}</td></tr>`;
+  const reportCell=report?'<button class="report-link" data-report="'+esc(report)+'" data-no="'+esc(x.No)+'">'+esc(report)+'</button>':'<button class="smallbtn report-register" data-no="'+esc(x.No)+'">'+esc(reportBtn)+'</button>';
+  const canSelect=!!report;
+  return '<tr><td class="report-select-cell" style="display:'+(downloadMode?'table-cell':'none')+'"><input class="report-row-check" type="checkbox" data-no="'+esc(x.No)+'" '+(canSelect?'':'disabled')+' '+(selected.has(String(x.No))?'checked':'')+'></td><td>'+((page-1)*size+i+1)+'</td><td><span class="cpk-status '+cpkCls+'">'+esc(cpkLabel(cpk))+'</span></td><td><span class="test-status '+tsCls+'">'+esc(statusLabel(ts))+'</span></td><td>'+esc(x['Requested Date by Planning team']||'-')+'</td><td>'+esc(x.Model||missingLabel)+'</td><td>'+esc(cleanMaterial(x.Material)==='미입력'?missingLabel:cleanMaterial(x.Material))+'</td><td>'+esc(cleanCond(x['Test Condition'])==='미입력'?missingLabel:cleanCond(x['Test Condition']))+'</td><td>'+esc(rv||'-')+'</td><td>'+reportCell+'</td><td><span class="report-status '+(report?'ok':'missing')+'">'+esc(reportState(!!report))+'</span></td><td>'+esc(x.PIC||'-')+'</td><td>'+esc(x['CR No']||'-')+'</td><td>'+esc(x['Reliability Test Start Date']||'-')+'</td><td>'+esc(x['Reliability Test Expected End Date']||'-')+'</td><td><div class="report-manage-actions"><button class="smallbtn edit-report-item" type="button" data-no="'+esc(x.No)+'">'+esc(editBtn)+'</button><button class="smallbtn delete-test-item" type="button" data-no="'+esc(x.No)+'" data-k="deleteTestItem">'+esc(t('deleteTestItem'))+'</button></div></td></tr>';
+ }).join(''):'<tr><td colspan="'+(downloadMode?'16':'15')+'" class="empty">'+t('noData')+'</td></tr>';
  const pg=document.getElementById('reportPagination');
  if(pg){
-  let h=`<button ${page<=1?'disabled':''} data-rpage="${page-1}">‹</button>`;
-  const pStart=Math.max(1,Math.min(page-3,pages-6)),pEnd=Math.min(pages,pStart+6); for(let n=pStart;n<=pEnd;n++)h+=`<button class="${n===page?'active':''}" data-rpage="${n}">${n}</button>`;
-  h+=`<span class="report-page-info">${page} / ${pages}</span><button ${page>=pages?'disabled':''} data-rpage="${page+1}">›</button>`;
+  let h='<button '+(page<=1?'disabled':'')+' data-rpage="'+(page-1)+'">‹</button>';
+  const pStart=Math.max(1,Math.min(page-3,pages-6)),pEnd=Math.min(pages,pStart+6);
+  for(let n=pStart;n<=pEnd;n++)h+='<button class="'+(n===page?'active':'')+'" data-rpage="'+n+'">'+n+'</button>';
+  h+='<span class="report-page-info">'+page+' / '+pages+'</span><button '+(page>=pages?'disabled':'')+' data-rpage="'+(page+1)+'">›</button>';
   pg.innerHTML=h;
   pg.querySelectorAll('[data-rpage]').forEach(b=>b.onclick=()=>{window.reportPage=Number(b.dataset.rpage);renderReport()});
  }
- document.querySelectorAll('.report-select-col,.report-select-cell').forEach(el=>el.style.display=downloadMode?'table-cell':'none');
- if(downloadMode){
-   document.getElementById('reportDownloadToolbar').style.display='flex';
-   const selected=window.selectedReportNos||new Set();
-   document.querySelectorAll('.report-row-check').forEach(ch=>{
-     ch.checked=selected.has(String(ch.dataset.no));
-     ch.onchange=()=>{if(ch.checked)selected.add(String(ch.dataset.no));else selected.delete(String(ch.dataset.no));window.selectedReportNos=selected;updateReportDownloadUI();};
-   });
-   const pageNos=arr.filter(x=>(x['Report No']||'').toString().trim()).map(x=>String(x.No));
-   const pageChecked=pageNos.length>0&&pageNos.every(no=>selected.has(no));
-   const pAll=document.getElementById('reportPageSelectAll'); if(pAll){pAll.checked=pageChecked;pAll.onchange=()=>{pageNos.forEach(no=>pAll.checked?selected.add(no):selected.delete(no);window.selectedReportNos=selected;renderReport();};}
-   updateReportDownloadUI();
- }else{
-   document.getElementById('reportDownloadToolbar').style.display='none';
+ const toolbar=document.getElementById('reportDownloadToolbar');
+ if(toolbar)toolbar.style.display=downloadMode?'flex':'none';
+ document.querySelectorAll('.report-select-col').forEach(el=>el.style.display=downloadMode?'table-cell':'none');
+ document.querySelectorAll('.report-row-check').forEach(ch=>{
+   ch.onchange=()=>{if(ch.checked)selected.add(String(ch.dataset.no));else selected.delete(String(ch.dataset.no));window.selectedReportNos=selected;updateReportDownloadUI();};
+ });
+ const pageNos=arr.filter(x=>(x['Report No']||'').toString().trim()).map(x=>String(x.No));
+ const pAll=document.getElementById('reportPageSelectAll');
+ if(pAll){
+   pAll.style.display=downloadMode?'inline-block':'none';
+   pAll.checked=pageNos.length>0&&pageNos.every(no=>selected.has(no));
+   pAll.onchange=()=>{pageNos.forEach(no=>pAll.checked?selected.add(no):selected.delete(no));window.selectedReportNos=selected;renderReport();};
  }
+ updateReportDownloadUI();
  refreshReportLinks();
  document.querySelectorAll('.edit-report-item').forEach(b=>b.onclick=()=>openManualForEdit(b.dataset.no));
  document.querySelectorAll('.delete-test-item').forEach(b=>b.onclick=()=>window.deleteTestItemNow(b.dataset.no,b));
