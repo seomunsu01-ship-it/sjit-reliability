@@ -1036,13 +1036,35 @@ async function startAuthenticated(session){
 }
 document.getElementById('loginBtn').onclick=async()=>{
  const email=document.getElementById('loginEmail').value.trim(), password=document.getElementById('loginPassword').value;
- const err=document.getElementById('loginError'); err.textContent='';
+ const err=document.getElementById('loginError');
+ const btn=document.getElementById('loginBtn');
+ err.textContent='';
  if(!email||!password){err.textContent=msg('loginRequired');return}
- const btn=document.getElementById('loginBtn'); btn.disabled=true; btn.textContent='로그인 중...';
- const {data,error}=await supabaseClient.auth.signInWithPassword({email,password});
- if(error){err.textContent=msg('loginFail')+error.message;btn.disabled=false;btn.textContent='로그인';return}
- btn.disabled=false;btn.textContent='로그인';
- if(data.session) setTimeout(()=>startAuthenticated(data.session),0);
+ btn.disabled=true; btn.textContent='로그인 중...';
+ try{
+   const loginPromise=supabaseClient.auth.signInWithPassword({email,password});
+   const timeoutPromise=new Promise((_,reject)=>setTimeout(()=>reject(new Error('LOGIN_TIMEOUT')),10000));
+   const {data,error}=await Promise.race([loginPromise,timeoutPromise]);
+   if(error){
+     err.textContent=msg('loginFail')+(error.message||'인증에 실패했습니다.');
+     return;
+   }
+   if(!data?.session){
+     err.textContent=msg('loginFail')+'세션이 생성되지 않았습니다. Supabase 인증 설정을 확인하세요.';
+     return;
+   }
+   err.textContent='';
+   setTimeout(()=>startAuthenticated(data.session),0);
+ }catch(e){
+   console.error('Login error:',e);
+   if(e?.message==='LOGIN_TIMEOUT'){
+     err.textContent='로그인 서버 응답이 없습니다. 네트워크 또는 Supabase 연결을 확인하세요.';
+   }else{
+     err.textContent=msg('loginFail')+(e?.message||e||'알 수 없는 오류');
+   }
+ }finally{
+   btn.disabled=false; btn.textContent='로그인';
+ }
 };
 document.getElementById('loginPassword').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('loginBtn').click()});
 document.getElementById('logoutBtn').onclick=async()=>{await supabaseClient.auth.signOut();location.reload()};
