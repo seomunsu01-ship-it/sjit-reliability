@@ -218,7 +218,7 @@ const LOGIN_SCREEN=document.getElementById('loginScreen');
   </div>
   <div class="tablewrap" style="max-height:220px">
     <table class="manual-table"><thead><tr>
-      <th class="report-select-col" style="display:none"><input id="reportPageSelectAll" type="checkbox" title="현재 페이지 전체 선택"></th><th>No.</th><th data-k="cpkBefore">신뢰성 전 CPK 검토결과</th><th data-k="reliabilityTestStatus">신뢰성 TEST 상태</th><th data-k="requestDate">요청일</th><th>Model</th><th data-k="condition">시험항목</th><th data-k="result">시험결과</th><th data-k="reportNo">Report No.</th><th data-k="manage">관리</th>
+      <th>No.</th><th data-k="cpkBefore">신뢰성 전 CPK 검토결과</th><th data-k="reliabilityTestStatus">신뢰성 TEST 상태</th><th data-k="requestDate">요청일</th><th>Model</th><th data-k="condition">시험항목</th><th data-k="result">시험결과</th><th data-k="reportNo">Report No.</th><th data-k="manage">관리</th>
     </tr></thead><tbody id="manualBody"></tbody></table>
   </div>
 </section>
@@ -239,7 +239,7 @@ const LOGIN_SCREEN=document.getElementById('loginScreen');
 </div>
 <div class="tablewrap" style="max-height:60vh">
 <table class="tbl"><thead><tr>
-<th>No.</th><th data-k="cpkBefore">신뢰성 전 CPK 검토결과</th><th data-k="reliabilityTestStatus">신뢰성 TEST 상태</th><th data-k="requestDate">요청일</th><th>Model</th><th data-k="material">자재</th><th data-k="condition">시험항목</th><th data-k="result">시험결과</th><th data-k="reportNo">Report No.</th><th data-k="status">상태</th><th data-k="pic">PIC</th><th data-k="crNo">CR No.</th><th data-k="reliabilityStartDate">TEST 시작일</th><th data-k="reliabilityExpectedEndDate">TEST 종료예정일</th><th data-k="manage">관리</th>
+<th class="report-select-col" style="display:none"><input id="reportPageSelectAll" type="checkbox" title="현재 페이지 전체 선택"></th><th>No.</th><th data-k="cpkBefore">신뢰성 전 CPK 검토결과</th><th data-k="reliabilityTestStatus">신뢰성 TEST 상태</th><th data-k="requestDate">요청일</th><th>Model</th><th data-k="material">자재</th><th data-k="condition">시험항목</th><th data-k="result">시험결과</th><th data-k="reportNo">Report No.</th><th data-k="status">상태</th><th data-k="pic">PIC</th><th data-k="crNo">CR No.</th><th data-k="reliabilityStartDate">TEST 시작일</th><th data-k="reliabilityExpectedEndDate">TEST 종료예정일</th><th data-k="manage">관리</th>
 </tr></thead><tbody id="reportBody"></tbody></table>
 </div>
 <div id="reportPagination" class="report-pagination"></div>
@@ -607,18 +607,22 @@ async function downloadReportsByNosV16(nos){
  const oldText=btn.textContent; btn.disabled=true;
  try{
    if(typeof JSZip==='undefined')throw new Error('ZIP library is not loaded.');
-   const candidates=[];
-   for(const no of nos){
-     const x=DATA.find(r=>String(r.No)===String(no)); if(!x)continue;
-     try{const info=await getReportInfoV16(Number(x.No)); if(info?.report_path)candidates.push({x,info});}catch(e){console.warn('Report info failed',no,e);}
-   }
-   if(!candidates.length){alert(msg('downloadAllReportsNone'));return;}
+   const ids=[...new Set(nos.map(Number).filter(Number.isFinite))];
+   if(!ids.length){alert(msg('downloadAllReportsNone'));return;}
+   const {data:rows,error:dbError}=await supabaseClient.from('reliability_tests').select('id,report_path,report_filename,report_mime').in('id',ids);
+   if(dbError)throw dbError;
+   const candidates=ids.map(id=>{
+     const x=DATA.find(r=>Number(r.No)===id);
+     const info=(rows||[]).find(r=>Number(r.id)===id);
+     return x&&info?.report_path?{x,info}:null;
+   }).filter(Boolean);
+   if(!candidates.length)throw new Error('Report 파일이 연결된 항목을 찾지 못했습니다.');
    const zip=new JSZip(),used=new Set();
    for(let idx=0;idx<candidates.length;idx++){
      btn.textContent=(lang==='vi'?'Đang tải ':lang==='en'?'Downloading ':'다운로드 중 ')+(idx+1)+'/'+candidates.length;
      const {x,info}=candidates[idx];
      const {data,error}=await supabaseClient.storage.from(REPORT_BUCKET_V16).download(info.report_path);
-     if(error)throw error;
+     if(error)throw new Error((info.report_filename||info.report_path)+': '+error.message);
      const base=safeReportNameV16(String(x.No)+'_'+(x.Model||'Report')+'_'+(info.report_filename||('Report_'+x.No)));
      let filename=base||('Report_'+x.No),n=2,dot=filename.lastIndexOf('.');
      const stem=dot>0?filename.slice(0,dot):filename,ext=dot>0?filename.slice(dot):'';
@@ -630,8 +634,12 @@ async function downloadReportsByNosV16(nos){
    a.href=url;a.download='SJIT_Reliability_Reports_'+new Date().toISOString().slice(0,10)+'.zip';
    document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),3000);
    alert(msg('downloadAllReportsDone')+' ('+candidates.length+' files)');
- }catch(e){console.error(e);alert(msg('downloadAllReportsFail')+(e.message||e.details||e));}
- finally{btn.disabled=false;btn.textContent=oldText;window.__bulkReportDownloadRunning=false;}
+ }catch(e){
+   console.error('Report bulk download failed:',e);
+   alert(msg('downloadAllReportsFail')+(e.message||e.details||e));
+ }finally{
+   btn.disabled=false;btn.textContent=oldText;window.__bulkReportDownloadRunning=false;
+ }
 }
 document.getElementById('downloadAllReportsBtn').onclick=enterReportDownloadMode;
 document.getElementById('reportSelectAll').onclick=()=>{const selected=window.selectedReportNos||new Set();const allIssued=DATA.filter(x=>(x['Report No']||'').toString().trim()).map(x=>String(x.No));allIssued.forEach(no=>document.getElementById('reportSelectAll').checked?selected.add(no):selected.delete(no));window.selectedReportNos=selected;renderReport();};
