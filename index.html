@@ -641,64 +641,7 @@ document.getElementById('cancelReportDownloadMode').onclick=exitReportDownloadMo
 
 document.getElementById('reportClear').onclick=()=>{document.getElementById('reportQ').value='';document.getElementById('reportState').value='';document.getElementById('reportResult').value='';document.getElementById('reportModel').value='';window.reportPage=1;renderReport()};
 
-async function downloadAllReportsV16(){
-  const btn=document.getElementById('downloadAllReportsBtn');
-  if(!btn)return;
-  // Lock immediately, before any async DB work, so repeated clicks cannot start
-  // a second bulk-download job while the first one is collecting Report metadata.
-  if(window.__bulkReportDownloadRunning)return;
-  window.__bulkReportDownloadRunning=true;
-  const oldText=btn.textContent;
-  btn.disabled=true;
-  if(typeof JSZip==='undefined'){
-    window.__bulkReportDownloadRunning=false;
-    btn.disabled=false;
-    alert(msg('downloadAllReportsFail')+'ZIP library is not loaded.');
-    return;
-  }
-  const rows=DATA.filter(x=>(x.report_path||x.__report_path||'').toString().trim() || (x['Report No']||'').toString().trim());
-  const candidates=[];
-  for(const x of rows){
-    try{
-      const info=await getReportInfoV16(Number(x.No));
-      if(info?.report_path)candidates.push({x,info});
-    }catch(e){console.warn('Report info failed',x?.No,e);}
-  }
-  if(!candidates.length){alert(msg('downloadAllReportsNone'));return;}
-  try{
-    const zip=new JSZip();
-    const used=new Set();
-    for(let idx=0;idx<candidates.length;idx++){
-      const {x,info}=candidates[idx];
-      btn.textContent=(lang==='vi'?'Đang tải ':lang==='en'?'Downloading ':'다운로드 중 ')+(idx+1)+'/'+candidates.length;
-      const {data,error}=await supabaseClient.storage.from(REPORT_BUCKET_V16).download(info.report_path);
-      if(error)throw error;
-      const base=safeReportNameV16(String(x.No)+'_'+(x.Model||'Report')+'_'+(info.report_filename||('Report_'+x.No)));
-      let filename=base||('Report_'+x.No);
-      let n=2, dot=filename.lastIndexOf('.');
-      const stem=dot>0?filename.slice(0,dot):filename, ext=dot>0?filename.slice(dot):'';
-      while(used.has(filename)){filename=stem+'_'+n+ext;n++;}
-      used.add(filename);
-      zip.file(filename,data);
-    }
-    btn.textContent=msg('downloadAllReportsProgress');
-    const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:6}});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');
-    a.href=url;a.download='SJIT_Reliability_Reports_'+new Date().toISOString().slice(0,10)+'.zip';
-    document.body.appendChild(a);a.click();a.remove();
-    setTimeout(()=>URL.revokeObjectURL(url),3000);
-    alert(msg('downloadAllReportsDone')+' ('+candidates.length+' files)');
-  }catch(e){
-    console.error(e);
-    alert(msg('downloadAllReportsFail')+(e.message||e.details||e));
-  }finally{
-    btn.disabled=false;
-    btn.textContent=oldText;
-    window.__bulkReportDownloadRunning=false;
-  }
-}
-document.getElementById('downloadAllReportsBtn').onclick=downloadAllReportsV16;
+// Legacy full-download handler removed. The Report download button must open selection mode.
 
 document.getElementById('reportBack').onclick=()=>showView('dashboard');
 
