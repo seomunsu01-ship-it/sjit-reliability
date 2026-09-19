@@ -94,7 +94,7 @@ async function bootSupabase(){
 </style>
 
 <style id="final-20260917-fix">
-.report-pagination{display:flex;justify-content:center;align-items:center;gap:6px;margin-top:12px;flex-wrap:wrap}.report-pagination button{min-width:34px;height:34px;border:1px solid var(--line);background:#fff;color:var(--navy);border-radius:7px;font-weight:700;cursor:pointer}.report-pagination button.active{background:var(--blue);color:#fff;border-color:var(--blue)}.report-pagination button:disabled{opacity:.45;cursor:not-allowed}.report-page-info{font-size:11px;color:var(--muted);margin:0 8px}
+.report-pagination{display:flex;justify-content:center;align-items:center;gap:6px;margin-top:12px;flex-wrap:wrap}.report-pagination button{min-width:34px;height:34px;border:1px solid var(--line);background:#fff;color:var(--navy);border-radius:7px;font-weight:700;cursor:pointer}.report-pagination button.active{background:var(--blue);color:#fff;border-color:var(--blue)}.report-pagination button:disabled{opacity:.45;cursor:not-allowed}.report-page-info{font-size:11px;color:var(--muted);margin:0 8px}.report-manage-actions{display:flex;align-items:center;justify-content:center;gap:5px;white-space:nowrap}.report-manage-actions .delete-test-item{background:#fff4e5;border:1px solid #e59a3a;color:#9a5b00}.report-manage-actions .delete-test-item:hover{background:#ffedd5}
 </style>
 </head><body>
 <div id="loginScreen">
@@ -222,9 +222,8 @@ const LOGIN_SCREEN=document.getElementById('loginScreen');
 </div>
 <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px">
 <button class="btn danger" id="deleteReportLink" type="button" onclick="window.deleteReportFileNow()" data-k="deleteReport">Report 삭제</button>
-<button class="btn danger" id="deleteTestItemLink" type="button" onclick="window.deleteTestItemNow()" style="background:#fff4e5;border-color:#e59a3a;color:#9a5b00;cursor:pointer" data-k="deleteTestItem">시험 항목 삭제</button>
 <button class="btn ghost" id="openReportFile" style="display:none" type="button" data-k="openReport">Report 열기</button>
-<button class="btn ghost" id="downloadReportLink" style="display:none" type="button" data-k="downloadReport">Report 다운로드</button>
+<button class="btn ghost" id="downloadReportLink" style="display:none;background:#fff4e5;border-color:#e59a3a;color:#9a5b00" type="button" data-k="downloadReport">Report 다운로드</button>
 <button class="btn primary" id="saveReportLink" type="button" data-k="saveLink">연결 저장</button>
 </div>
 <div id="reportHelp" class="file-note" style="margin-top:12px"></div><div id="reportStoragePath" class="storage-path"></div>
@@ -366,7 +365,7 @@ function setLang(l){
  const result=document.getElementById('mResult');if(result)result.innerHTML=`<option value="">${l==='ko'?'미입력':l==='en'?'Not Entered':'Chưa nhập'}</option><option value="Pass">Pass</option><option value="Fail">Fail</option>`;
  const after=document.getElementById('mResultAfter');if(after)after.innerHTML=`<option value="">${l==='ko'?'미입력':l==='en'?'Not Entered':'Chưa nhập'}</option><option value="Pass">Pass</option><option value="Fail">Fail</option>`;
  const cpk=document.getElementById('mCpkBefore');if(cpk)[...cpk.options].forEach(o=>{if(o.value==='')o.text=l==='ko'?'미검토':l==='en'?'Not Reviewed':'Chưa đánh giá';if(o.value==='양호')o.text=l==='ko'?'양호':l==='en'?'Good':'Tốt';if(o.value==='보완필요')o.text=l==='ko'?'보완필요':l==='en'?'Needs Improvement':'Cần cải thiện';if(o.value==='미검토')o.text=l==='ko'?'미검토':l==='en'?'Not Reviewed':'Chưa đánh giá'});
- const modalTexts={manualCancel:l==='ko'?'취소':l==='en'?'Cancel':'Hủy',manualSaveContinue:l==='ko'?'저장 후 계속 등록':l==='en'?'Save & Continue':'Lưu và tiếp tục',manualSave:l==='ko'?'저장 후 닫기':l==='en'?'Save & Close':'Lưu và đóng',deleteReportLink:l==='ko'?'Report 삭제':l==='en'?'Delete Report':'Xóa Report',deleteTestItemLink:l==='ko'?'시험 항목 삭제':l==='en'?'Delete Test Item':'Xóa hạng mục kiểm tra',saveReportLink:l==='ko'?'연결 저장':l==='en'?'Save Link':'Lưu liên kết'};
+ const modalTexts={manualCancel:l==='ko'?'취소':l==='en'?'Cancel':'Hủy',manualSaveContinue:l==='ko'?'저장 후 계속 등록':l==='en'?'Save & Continue':'Lưu và tiếp tục',manualSave:l==='ko'?'저장 후 닫기':l==='en'?'Save & Close':'Lưu và đóng',deleteReportLink:l==='ko'?'Report 삭제':l==='en'?'Delete Report':'Xóa Report',downloadReportLink:l==='ko'?'Report 다운로드':l==='en'?'Download Report':'Tải Report',saveReportLink:l==='ko'?'연결 저장':l==='en'?'Save Link':'Lưu liên kết'};
  Object.entries(modalTexts).forEach(([id,v])=>{const e=document.getElementById(id);if(e)e.textContent=v});
  const fileNote=document.getElementById('mFileName');if(fileNote&&!manualFile)fileNote.textContent=l==='ko'?'선택된 파일 없음':l==='en'?'No file selected':'Chưa chọn tệp';
  const reportFileNote=document.getElementById('chosenFile');if(reportFileNote&&!currentReportFile)reportFileNote.textContent=l==='ko'?'선택된 파일 없음':l==='en'?'No file selected':'Chưa chọn tệp'; const mfNote=document.getElementById('mFileName');if(mfNote&&!manualFile&&!editingManualNo)mfNote.textContent=t('noFileSelected');
@@ -504,7 +503,7 @@ function renderReport(){
   const cpkCls=cpk==='양호'?'cpk-good':cpk==='보완필요'?'cpk-improve':'cpk-review';
   const tsCls=ts==='Finished'?'test-done':ts==='신뢰성 진행 중'?'test-run':'test-wait';
   const reportCell=report?`<button class="report-link" data-report="${esc(report)}" data-no="${esc(x.No)}">${esc(report)}</button>`:`<button class="smallbtn report-register" data-no="${esc(x.No)}">${esc(reportBtn)}</button>`;
-  return `<tr><td>${(page-1)*size+i+1}</td><td><span class="cpk-status ${cpkCls}">${esc(cpkLabel(cpk))}</span></td><td><span class="test-status ${tsCls}">${esc(statusLabel(ts))}</span></td><td>${esc(x['Requested Date by Planning team']||'-')}</td><td>${esc(x.Model||missingLabel)}</td><td>${esc(cleanMaterial(x.Material)==='미입력'?missingLabel:cleanMaterial(x.Material))}</td><td>${esc(cleanCond(x['Test Condition'])==='미입력'?missingLabel:cleanCond(x['Test Condition']))}</td><td>${esc(rv||'-')}</td><td>${reportCell}</td><td><span class="report-status ${report?'ok':'missing'}">${esc(reportState(!!report))}</span></td><td>${esc(x.PIC||'-')}</td><td>${esc(x['CR No']||'-')}</td><td>${esc(x['Reliability Test Start Date']||'-')}</td><td>${esc(x['Reliability Test Expected End Date']||'-')}</td><td><button class="smallbtn edit-report-item" type="button" data-no="${esc(x.No)}">${esc(editBtn)}</button></td></tr>`;
+  return `<tr><td>${(page-1)*size+i+1}</td><td><span class="cpk-status ${cpkCls}">${esc(cpkLabel(cpk))}</span></td><td><span class="test-status ${tsCls}">${esc(statusLabel(ts))}</span></td><td>${esc(x['Requested Date by Planning team']||'-')}</td><td>${esc(x.Model||missingLabel)}</td><td>${esc(cleanMaterial(x.Material)==='미입력'?missingLabel:cleanMaterial(x.Material))}</td><td>${esc(cleanCond(x['Test Condition'])==='미입력'?missingLabel:cleanCond(x['Test Condition']))}</td><td>${esc(rv||'-')}</td><td>${reportCell}</td><td><span class="report-status ${report?'ok':'missing'}">${esc(reportState(!!report))}</span></td><td>${esc(x.PIC||'-')}</td><td>${esc(x['CR No']||'-')}</td><td>${esc(x['Reliability Test Start Date']||'-')}</td><td>${esc(x['Reliability Test Expected End Date']||'-')}</td><td><div class="report-manage-actions"><button class="smallbtn edit-report-item" type="button" data-no="${esc(x.No)}">${esc(editBtn)}</button><button class="smallbtn delete-test-item" type="button" data-no="${esc(x.No)}" data-k="deleteTestItem">${esc(t('deleteTestItem'))}</button></div></td></tr>`;
  }).join(''):`<tr><td colspan="15" class="empty">${t('noData')}</td></tr>`;
  const pg=document.getElementById('reportPagination');
  if(pg){
@@ -516,6 +515,7 @@ function renderReport(){
  }
  refreshReportLinks();
  document.querySelectorAll('.edit-report-item').forEach(b=>b.onclick=()=>openManualForEdit(b.dataset.no));
+ document.querySelectorAll('.delete-test-item').forEach(b=>b.onclick=()=>window.deleteTestItemNow(b.dataset.no,b));
 }
 ['reportQ','reportState','reportResult','reportModel'].forEach(id=>document.getElementById(id).addEventListener('input',()=>{window.reportPage=1;renderReport()}));
 document.getElementById('reportClear').onclick=()=>{document.getElementById('reportQ').value='';document.getElementById('reportState').value='';document.getElementById('reportResult').value='';document.getElementById('reportModel').value='';window.reportPage=1;renderReport()};
@@ -981,8 +981,6 @@ async function showReportModalV16(no){
   const p=document.getElementById('uploadProgress');if(p)p.style.display='none';
   const openBtn=document.getElementById('openReportFile');openBtn.style.display='none';const deleteFileBtn=document.getElementById('deleteReportLink');if(deleteFileBtn)deleteFileBtn.style.display='none';
   const downloadBtn=document.getElementById('downloadReportLink'); if(downloadBtn){downloadBtn.style.display='none';downloadBtn.onclick=null;}
-  const itemDelBtn=document.getElementById('deleteTestItemLink');
-  if(itemDelBtn){itemDelBtn.disabled=false;itemDelBtn.textContent=t('deleteTestItem');}
   document.getElementById('reportHelp').textContent=t('reportPickNote');
   try{
     const info=await getReportInfoV16(no);
@@ -1106,53 +1104,38 @@ document.getElementById('manualSaveContinue').onclick=()=>saveManualV16(false);
 
 
 <script>
-window.deleteTestItemNow = async function(){
-  const modal=document.getElementById('reportModal');
-  const btn=document.getElementById('deleteTestItemLink');
-  const targetNo=Number(modal?.dataset?.itemId||document.getElementById('reportMeta')?.dataset?.no||0);
-  if(!targetNo){
-    alert(msg('deleteItemNotFound'));
-    return;
-  }
-
-  const row=(typeof DATA!=='undefined') ? DATA.find(r=>Number(r.No)===targetNo) : null;
-  const label=row ? ((row.Model||'')+' / '+(row['Report No']||'-')) : ('No.'+targetNo);
-
+window.deleteTestItemNow = async function(targetNo, btn){
+  const no=Number(targetNo);
+  if(!no){ alert(msg('deleteItemNotFound')); return; }
+  const row=(typeof DATA!=='undefined') ? DATA.find(r=>Number(r.No)===no) : null;
+  const label=row ? ((row.Model||'')+' / '+(row['Report No']||'-')) : ('No.'+no);
   if(!confirm(t('confirmDeleteItem')+'\n\n'+label+'\n\n'+t('confirmDeleteItemDesc'))) return;
-
-  const old=btn?btn.textContent:t('deleteTestItem');
+  const oldText=btn?.textContent || t('deleteTestItem');
   if(btn){btn.disabled=true;btn.textContent=t('deleting');}
-
   try{
-    let info=null;
-    try{info=await getReportInfoV16(targetNo);}catch(_){}
+    const info=await getReportInfoV16(no).catch(()=>null);
     if(info?.report_path){
       const sr=await supabaseClient.storage.from(REPORT_BUCKET_V16).remove([info.report_path]);
       if(sr.error) throw sr.error;
     }
-
-    const del=await supabaseClient.from('reliability_tests').delete().eq('id',targetNo);
+    const del=await supabaseClient.from('reliability_tests').delete().eq('id',no);
     if(del.error) throw del.error;
-
-    const loaded=await supabaseClient.from('reliability_tests').select('*').order('id',{ascending:true});
+    const loaded=await supabaseClient.from('reliability_tests').select('*').order('request_date',{ascending:true}).order('id',{ascending:true});
     if(loaded.error) throw loaded.error;
-
     DATA=(loaded.data||[]).map(mapDbRow);
     filtered=[...DATA];
-
     try{render()}catch(_){}
     try{initFilters()}catch(_){}
     try{initReportModels()}catch(_){}
     try{renderReport()}catch(_){}
     try{renderManualList()}catch(_){}
-
-    modal.classList.remove('show');
+    document.getElementById('reportModal')?.classList.remove('show');
     alert(msg('deleteItemDone'));
   }catch(err){
     console.error(err);
     alert(msg('deleteItemFail')+(err.message||err.details||err));
   }finally{
-    if(btn){btn.disabled=false;btn.textContent=old;}
+    if(btn){btn.disabled=false;btn.textContent=oldText;}
   }
 };
 </script>
