@@ -523,7 +523,18 @@ document.getElementById('reportClear').onclick=()=>{document.getElementById('rep
 async function downloadAllReportsV16(){
   const btn=document.getElementById('downloadAllReportsBtn');
   if(!btn)return;
-  if(typeof JSZip==='undefined'){alert(msg('downloadAllReportsFail')+'ZIP library is not loaded.');return;}
+  // Lock immediately, before any async DB work, so repeated clicks cannot start
+  // a second bulk-download job while the first one is collecting Report metadata.
+  if(window.__bulkReportDownloadRunning)return;
+  window.__bulkReportDownloadRunning=true;
+  const oldText=btn.textContent;
+  btn.disabled=true;
+  if(typeof JSZip==='undefined'){
+    window.__bulkReportDownloadRunning=false;
+    btn.disabled=false;
+    alert(msg('downloadAllReportsFail')+'ZIP library is not loaded.');
+    return;
+  }
   const rows=DATA.filter(x=>(x.report_path||x.__report_path||'').toString().trim() || (x['Report No']||'').toString().trim());
   const candidates=[];
   for(const x of rows){
@@ -533,8 +544,6 @@ async function downloadAllReportsV16(){
     }catch(e){console.warn('Report info failed',x?.No,e);}
   }
   if(!candidates.length){alert(msg('downloadAllReportsNone'));return;}
-  const oldText=btn.textContent;
-  btn.disabled=true;
   try{
     const zip=new JSZip();
     const used=new Set();
@@ -563,7 +572,9 @@ async function downloadAllReportsV16(){
     console.error(e);
     alert(msg('downloadAllReportsFail')+(e.message||e.details||e));
   }finally{
-    btn.disabled=false;btn.textContent=oldText;
+    btn.disabled=false;
+    btn.textContent=oldText;
+    window.__bulkReportDownloadRunning=false;
   }
 }
 document.getElementById('downloadAllReportsBtn').onclick=downloadAllReportsV16;
