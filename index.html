@@ -114,6 +114,72 @@ async function bootSupabase(){
 .progress-table .download-btn:disabled{opacity:.55;cursor:wait}
 .progress-table .dash{color:#a0a8b1}
 @media(max-width:900px){.progress-table{min-width:850px}.progress-table-wrap{overflow:auto}.progress-toolbar{flex-wrap:wrap}.progress-toolbar input{min-width:100%}}
+
+/* Layout stabilization - all views */
+html,body{max-width:100%;overflow-x:hidden}
+.main{min-width:0;overflow-x:hidden}
+.view,.panel,.table-card,.notice-card,.manual-list,.report-grid,.filters,.grid,.bottom,.card,.tablewrap{min-width:0;max-width:100%}
+.tablewrap{width:100%;overflow-x:auto;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.tbl{max-width:none}
+.tbl th,.tbl td{vertical-align:middle;overflow:hidden;text-overflow:ellipsis}
+.report-main-table{width:1740px;min-width:1740px;table-layout:fixed}
+.manual-table{width:980px;min-width:980px;table-layout:fixed}
+.progress-table{width:1150px;min-width:1150px;table-layout:fixed}
+.progress-table th:nth-child(1),.progress-table td:nth-child(1){width:55px}
+.progress-table th:nth-child(2),.progress-table td:nth-child(2){width:110px}
+.progress-table th:nth-child(3),.progress-table td:nth-child(3){width:270px;text-align:left}
+.progress-table th:nth-child(4),.progress-table td:nth-child(4){width:120px}
+.progress-table th:nth-child(5),.progress-table td:nth-child(5){width:120px}
+.progress-table th:nth-child(6),.progress-table td:nth-child(6){width:120px}
+.progress-table th:nth-child(7),.progress-table td:nth-child(7){width:120px}
+.progress-table th:nth-child(8),.progress-table td:nth-child(8){width:130px}
+.progress-table th:nth-child(9),.progress-table td:nth-child(9){width:105px}
+#viewMaterial .tablewrap>table.tbl{width:1240px;min-width:1240px;table-layout:fixed}
+#viewMaterial .tablewrap>table.tbl th:nth-child(1),#viewMaterial .tablewrap>table.tbl td:nth-child(1){width:55px;text-align:center}
+#viewMaterial .tablewrap>table.tbl th:nth-child(2),#viewMaterial .tablewrap>table.tbl td:nth-child(2){width:110px}
+#viewMaterial .tablewrap>table.tbl th:nth-child(3),#viewMaterial .tablewrap>table.tbl td:nth-child(3){width:270px;text-align:left}
+#viewMaterial .tablewrap>table.tbl th:nth-child(4),#viewMaterial .tablewrap>table.tbl td:nth-child(4){width:150px}
+#viewMaterial .tablewrap>table.tbl th:nth-child(5),#viewMaterial .tablewrap>table.tbl td:nth-child(5){width:150px}
+#viewMaterial .tablewrap>table.tbl th:nth-child(6),#viewMaterial .tablewrap>table.tbl td:nth-child(6){width:110px}
+#viewMaterial .tablewrap>table.tbl th:nth-child(7),#viewMaterial .tablewrap>table.tbl td:nth-child(7){width:100px}
+#viewMaterial .tablewrap>table.tbl th:nth-child(8),#viewMaterial .tablewrap>table.tbl td:nth-child(8){width:180px}
+#viewMaterial .tablewrap>table.tbl th:nth-child(9),#viewMaterial .tablewrap>table.tbl td:nth-child(9){width:120px}
+#viewMaterial .tablewrap>table.tbl th:nth-child(10),#viewMaterial .tablewrap>table.tbl td:nth-child(10){width:95px}
+#viewOverview .tablewrap>table.tbl{width:1050px;min-width:1050px;table-layout:fixed}
+#viewOverview .tablewrap>table.tbl th:nth-child(1),#viewOverview .tablewrap>table.tbl td:nth-child(1){width:55px}
+#viewOverview .tablewrap>table.tbl th:nth-child(2),#viewOverview .tablewrap>table.tbl td:nth-child(2){width:105px}
+#viewOverview .tablewrap>table.tbl th:nth-child(3),#viewOverview .tablewrap>table.tbl td:nth-child(3){width:110px}
+#viewOverview .tablewrap>table.tbl th:nth-child(4),#viewOverview .tablewrap>table.tbl td:nth-child(4){width:260px;text-align:left}
+#viewOverview .tablewrap>table.tbl th:nth-child(5),#viewOverview .tablewrap>table.tbl td:nth-child(5){width:150px}
+#viewOverview .tablewrap>table.tbl th:nth-child(6),#viewOverview .tablewrap>table.tbl td:nth-child(6){width:100px}
+#viewOverview .tablewrap>table.tbl th:nth-child(7),#viewOverview .tablewrap>table.tbl td:nth-child(7){width:110px}
+#viewOverview .tablewrap>table.tbl th:nth-child(8),#viewOverview .tablewrap>table.tbl td:nth-child(8){width:130px}
+#viewOverview .tablewrap>table.tbl th:nth-child(9),#viewOverview .tablewrap>table.tbl td:nth-child(9){width:100px}
+#viewDashboard .bottom .tablewrap>table.tbl{width:1050px;min-width:1050px;table-layout:fixed}
+#viewDashboard .bottom .tablewrap>table.tbl th:nth-child(1),#viewDashboard .bottom .tablewrap>table.tbl td:nth-child(1){width:55px}
+#viewDashboard .bottom .tablewrap>table.tbl th:nth-child(2),#viewDashboard .bottom .tablewrap>table.tbl td:nth-child(2){width:105px}
+#viewDashboard .bottom .tablewrap>table.tbl th:nth-child(3),#viewDashboard .bottom .tablewrap>table.tbl td:nth-child(3){width:110px}
+#viewDashboard .bottom .tablewrap>table.tbl th:nth-child(4),#viewDashboard .bottom .tablewrap>table.tbl td:nth-child(4){width:240px;text-align:left}
+#viewDashboard .bottom .tablewrap>table.tbl th:nth-child(5),#viewDashboard .bottom .tablewrap>table.tbl td:nth-child(5){width:150px}
+#viewDashboard .bottom .tablewrap>table.tbl th:nth-child(6),#viewDashboard .bottom .tablewrap>table.tbl td:nth-child(6){width:100px}
+#viewDashboard .bottom .tablewrap>table.tbl th:nth-child(7),#viewDashboard .bottom .tablewrap>table.tbl td:nth-child(7){width:110px}
+#viewDashboard .bottom .tablewrap>table.tbl th:nth-child(8),#viewDashboard .bottom .tablewrap>table.tbl td:nth-child(8){width:130px}
+#viewDashboard .bottom .tablewrap>table.tbl th:nth-child(9),#viewDashboard .bottom .tablewrap>table.tbl td:nth-child(9){width:100px}
+@media(max-width:1200px){
+  .main{width:calc(100% - 200px)}
+  .filters{min-width:0}
+  .report-search{min-width:0}
+}
+@media(max-width:760px){
+  .side{width:180px;padding:18px 10px}
+  .main{margin-left:180px;width:calc(100% - 180px);padding:14px 12px}
+  .title{font-size:26px}
+  .top{gap:10px;flex-wrap:wrap}
+  .langs button{padding:8px 10px}
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  .filters,.report-search{grid-template-columns:1fr}
+  .report-grid{grid-template-columns:repeat(2,1fr)}
+}
 </style>
 </head><body>
 <div id="loginScreen">
@@ -1812,4 +1878,30 @@ document.addEventListener('DOMContentLoaded',()=>{
  window.confirm=function(s){return nativeConfirm(tr(s))};
 })();
 </script>
+
+<script id="layout-stabilization-20260923">
+(function(){
+  function resetViewScroll(viewId){
+    const view=document.getElementById(viewId);
+    if(!view)return;
+    view.querySelectorAll('.tablewrap').forEach(w=>{w.scrollLeft=0;});
+  }
+  const originalShowView=window.showView;
+  if(typeof originalShowView==='function' && !originalShowView.__layoutStabilized){
+    const wrappedShowView=function(v){
+      originalShowView.apply(this,arguments);
+      requestAnimationFrame(function(){
+        const map={dashboard:'viewDashboard',overview:'viewOverview',progress:'viewProgress',material:'viewMaterial',report:'viewReport',notice:'viewNotice'};
+        resetViewScroll(map[v]||'viewDashboard');
+      });
+    };
+    wrappedShowView.__layoutStabilized=true;
+    window.showView=wrappedShowView;
+  }
+  document.addEventListener('DOMContentLoaded',function(){
+    document.querySelectorAll('.tablewrap').forEach(w=>{w.scrollLeft=0;});
+  });
+})();
+</script>
+
 </body></html>
