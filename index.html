@@ -61,6 +61,16 @@
 .notice-actions{display:flex;gap:8px;justify-content:flex-end}
 .btn.red{background:#fff0f0;color:#b42318;border:1px solid #efb0ad}
 </style>
+<style id="integrated-reliability-view-20260923">
+.reliability-overview-wrap{width:100%;max-height:62vh;overflow-x:auto;overflow-y:auto;scrollbar-width:auto}
+.reliability-overview-table{width:2140px;min-width:2140px;table-layout:fixed}
+.reliability-overview-table th,.reliability-overview-table td{vertical-align:middle;text-align:center;padding:8px 7px;line-height:1.25}
+.reliability-overview-table th{white-space:nowrap}.reliability-overview-table td{white-space:normal;word-break:break-word;overflow-wrap:anywhere}
+.reliability-overview-table th:nth-child(1),.reliability-overview-table td:nth-child(1){width:55px}.reliability-overview-table th:nth-child(2),.reliability-overview-table td:nth-child(2){width:110px}.reliability-overview-table th:nth-child(3),.reliability-overview-table td:nth-child(3){width:280px;text-align:left}.reliability-overview-table th:nth-child(4),.reliability-overview-table td:nth-child(4){width:125px}.reliability-overview-table th:nth-child(5),.reliability-overview-table td:nth-child(5){width:190px;text-align:left}.reliability-overview-table th:nth-child(6),.reliability-overview-table td:nth-child(6){width:145px;text-align:left}.reliability-overview-table th:nth-child(7),.reliability-overview-table td:nth-child(7){width:125px}.reliability-overview-table th:nth-child(8),.reliability-overview-table td:nth-child(8){width:125px}.reliability-overview-table th:nth-child(9),.reliability-overview-table td:nth-child(9){width:125px}.reliability-overview-table th:nth-child(10),.reliability-overview-table td:nth-child(10){width:110px}.reliability-overview-table th:nth-child(11),.reliability-overview-table td:nth-child(11){width:135px}.reliability-overview-table th:nth-child(12),.reliability-overview-table td:nth-child(12){width:110px}.reliability-overview-table th:nth-child(13),.reliability-overview-table td:nth-child(13){width:100px}.reliability-overview-table th:nth-child(14),.reliability-overview-table td:nth-child(14){width:125px}.reliability-overview-table th:nth-child(15),.reliability-overview-table td:nth-child(15){width:145px}.reliability-overview-table th:nth-child(16),.reliability-overview-table td:nth-child(16){width:110px}
+.reliability-overview-table .wrap-cell,.reliability-overview-table .reason-cell{white-space:normal;word-break:break-word;overflow-wrap:anywhere}.reliability-overview-table .missing-cell{color:#b76500;background:#fff8ed;font-weight:800}.reliability-overview-table .present-cell{font-weight:700}.reliability-overview-table .download-btn{border:1px solid #b9d1e7;background:#edf4fb;color:var(--navy);border-radius:7px;padding:6px 9px;font-weight:800;cursor:pointer;white-space:nowrap}.reliability-overview-table .download-btn:hover{background:#dfeefb}
+@media(max-width:760px){.reliability-overview-table{min-width:2140px}}
+</style>
+<script id="integrated-reliability-view-20260923-js">document.addEventListener('DOMContentLoaded',function(){const b=document.getElementById('overviewDownloadAll');if(b)b.onclick=downloadReliabilityProgressExcel;});</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const SUPABASE_URL='https://heaouuczehysapjhoslv.supabase.co';
@@ -275,7 +285,7 @@ const LOGIN_SCREEN=document.getElementById('loginScreen');
  passEl.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();doLogin();}});
 })();
 </script>
-<div class="app"><div id="appShell"><aside class="side"><div class="brand">SJIT VINA<small>Smart Connection, Better Tomorrow</small></div><div class="nav"><button class="active" data-view="dashboard">⌂ <span data-k="menuDashboard">대시보드</span></button><button data-view="overview">✓ <span data-k="menuOverview">신뢰성 시험 현황</span></button><button data-view="progress">▤ <span data-k="menuProgress">신뢰성 진행 내역</span></button><button data-view="material">♙ <span data-k="menuMaterial">자재별 분석</span></button><button data-view="report">▤ <span data-k="menuReport">보고서 관리</span></button><button data-view="notice">♧ <span data-k="menuNotice">알림 / 공지</span></button></div><div class="tag">Good<br>Quality<br>Better<br>Tomorrow<br><br><small>© 2026 SJIT VINA</small></div></aside><main class="main"><div class="top"><div><div class="title" data-k="title">신뢰성 관리 대시보드</div><div class="sub" data-k="subtitle">신뢰성 시험 통합 현황</div><div style="font-size:11px;color:#8a98a7;margin-top:3px">※ 현재 원본 데이터에는 거래처(Customer) 컬럼이 없어, 거래처 필터는 다음 단계에서 데이터 항목 추가 후 연결</div></div><div id="dbStatus" style="display:inline-block;margin-right:8px;padding:6px 10px;border-radius:999px;background:#eef3f8;color:#6b7280;font-size:11px;font-weight:700">SUPABASE DB 연결 확인 중...</div><div class="userbox"><span id="userEmail"></span><button id="logoutBtn" class="logout">로그아웃</button></div><div class="langs"><button class="active" data-lang="ko">한국어</button><button data-lang="vi">Tiếng Việt</button></div></div><div id="viewDashboard" class="view active"><section class="panel filters">
+<div class="app"><div id="appShell"><aside class="side"><div class="brand">SJIT VINA<small>Smart Connection, Better Tomorrow</small></div><div class="nav"><button class="active" data-view="dashboard">⌂ <span data-k="menuDashboard">대시보드</span></button><button data-view="overview">✓ <span data-k="menuOverview">신뢰성 시험 현황</span></button><button data-view="material">♙ <span data-k="menuMaterial">자재별 분석</span></button><button data-view="report">▤ <span data-k="menuReport">보고서 관리</span></button><button data-view="notice">♧ <span data-k="menuNotice">알림 / 공지</span></button></div><div class="tag">Good<br>Quality<br>Better<br>Tomorrow<br><br><small>© 2026 SJIT VINA</small></div></aside><main class="main"><div class="top"><div><div class="title" data-k="title">신뢰성 관리 대시보드</div><div class="sub" data-k="subtitle">신뢰성 시험 통합 현황</div><div style="font-size:11px;color:#8a98a7;margin-top:3px">※ 현재 원본 데이터에는 거래처(Customer) 컬럼이 없어, 거래처 필터는 다음 단계에서 데이터 항목 추가 후 연결</div></div><div id="dbStatus" style="display:inline-block;margin-right:8px;padding:6px 10px;border-radius:999px;background:#eef3f8;color:#6b7280;font-size:11px;font-weight:700">SUPABASE DB 연결 확인 중...</div><div class="userbox"><span id="userEmail"></span><button id="logoutBtn" class="logout">로그아웃</button></div><div class="langs"><button class="active" data-lang="ko">한국어</button><button data-lang="vi">Tiếng Việt</button></div></div><div id="viewDashboard" class="view active"><section class="panel filters">
 <div class="field"><label data-k="date">기간</label><div style="display:grid;grid-template-columns:1fr 1fr;gap:5px"><input id="dateFrom" type="date" value="2026-01-01"><input id="dateTo" type="date" value="2026-09-10"></div></div>
 <div class="field"><label data-k="condition">시험항목</label><select id="condition"><option value="">전체</option></select></div>
 <div class="field"><label data-k="model">제품명</label><select id="model"><option value="">전체</option></select></div>
@@ -291,13 +301,14 @@ const LOGIN_SCREEN=document.getElementById('loginScreen');
 <div class="field"><label data-k="status">진행상태</label><select id="detailStatus"><option value="">전체</option><option value="Finished">Finished</option><option value="Not tested">Not tested</option><option value="blank">미입력</option></select></div>
 <div class="field"><label data-k="resultFilter">시험결과</label><select id="detailResult"><option value="">전체</option><option value="Pass">Pass</option><option value="Fail">Fail</option><option value="blank">미입력</option></select></div>
 <div class="field"><label data-k="model">제품명</label><input id="detailSearchModel" data-k-placeholder="modelPlaceholder" placeholder="Model"></div>
-<div class="field"><label data-k="search">검색</label><input id="detailSearch" data-k-placeholder="detailSearchPlaceholder" placeholder="Model / Material / Report / PIC"></div>
+<div class="field"><label data-k="search">검색</label><input id="detailSearch" data-k-placeholder="detailSearchPlaceholder" placeholder="CR No. / Report No. / Model / 시험사유 / 요청일"></div>
 <button class="btn ghost" id="detailClear">↻ <span data-k="reset">초기화</span></button>
 </div></section>
-<div class="table-card detail-table"><div class="detailbar"><h3 data-k="detailListTitle">시험 목록</h3><span id="detailCount"></span></div>
-<div class="tablewrap" style="max-height:56vh"><table class="tbl"><thead><tr><th>No.</th><th data-k="requestDate">요청일</th><th>Model</th><th data-k="material">자재</th><th data-k="condition">시험항목</th><th data-k="result">시험결과</th><th data-k="status">진행상태</th><th data-k="reportNo">Report No.</th><th data-k="pic">PIC</th></tr></thead><tbody id="detailBody"></tbody></table></div></div>
-</div>
-
+<div class="table-card detail-table integrated-reliability-table">
+<div class="detailbar"><h3 data-k="detailListTitle">시험 목록</h3><div style="display:flex;align-items:center;gap:8px"><span id="detailCount"></span><button class="btn primary" id="overviewDownloadAll">↓ <span data-k="progressDownloadAll">전체 다운로드 (Excel)</span></button></div></div>
+<div class="tablewrap reliability-overview-wrap"><table class="tbl reliability-overview-table"><thead><tr>
+<th>No.</th><th data-k="requestDate">요청일</th><th data-k="reason">시험사유</th><th>Model</th><th data-k="material">자재</th><th data-k="condition">시험항목</th><th data-k="cpkBefore">CPK Before</th><th data-k="cpkAfter">CPK After</th><th data-k="crNo">CR No.</th><th data-k="progressResult">실험결과</th><th data-k="reportNo">Report No.</th><th data-k="status">상태</th><th data-k="pic">PIC</th><th data-k="reliabilityStartDate">TEST 시작일</th><th data-k="reliabilityExpectedEndDate">TEST 종료예정일</th><th data-k="download">다운로드</th>
+</tr></thead><tbody id="detailBody"></tbody></table></div></div></div>
 <div id="viewProgress" class="view">
 <section class="panel progress-page">
   <div class="detailbar">
@@ -611,14 +622,23 @@ function detailFiltered(){
  });
 }
 function renderDetailTable(){
- const arr=detailFiltered().sort((a,b)=>String(b['Requested Date by Planning team']||'').localeCompare(String(a['Requested Date by Planning team']||'')));
- document.getElementById('detailCount').textContent=arr.length+' '+(lang==='ko'?'건':lang==='en'?'cases':'ca');
- document.getElementById('detailBody').innerHTML=arr.length?arr.map((x,i)=>{
-  const res=x['Reliability Test Result']||'-',st=x['Reliability Test Status']||'-',cls=res==='Pass'?'pass':(res==='Fail'||res==='NG')?'fail':'pending';
-  return `<tr data-no="${x.No}"><td>${i+1}</td><td>${escapeHtml(x['Requested Date by Planning team']||'-')}</td><td>${escapeHtml(x.Model||'-')}</td><td>${escapeHtml(cleanMaterial(x.Material))}</td><td>${escapeHtml(cleanCond(x['Test Condition']))}</td><td><span class="badge ${cls}">${escapeHtml(res)}</span></td><td>${escapeHtml(st)}</td><td>${escapeHtml(x['Report No']||'-')}</td><td>${escapeHtml(x.PIC||'-')}</td></tr>`;
- }).join(''):`<tr><td colspan="9" class="empty">${t('noData')}</td></tr>`;
+ const arr=detailFiltered().sort((a,b)=>String(b['Requested Date by Planning team']||'').localeCompare(String(a['Requested Date by Planning team']||''))||Number(b.No)-Number(a.No));
+ const countEl=document.getElementById('detailCount'); if(countEl)countEl.textContent=arr.length+' '+(lang==='ko'?'건':lang==='en'?'cases':'ca');
+ const body=document.getElementById('detailBody'); if(!body)return;
+ if(!arr.length){body.innerHTML='<tr><td colspan="16" class="empty">'+escapeHtml(t('noData'))+'</td></tr>';return;}
+ body.innerHTML=arr.map((x,i)=>{
+  const res=(x['Reliability Test Result']||x['Result after reliability test']||'').toString().trim();
+  const resCls=res==='Pass'?'pass':(res==='Fail'||res==='NG')?'fail':'pending';
+  const before=(x['CPK Review Result']||'').toString().trim(), after=(x['CPK After']||'').toString().trim();
+  const beforeHtml=before?'<span class="cpk-status '+(before==='양호'?'cpk-good':before==='보완필요'?'cpk-improve':'cpk-review')+'">'+escapeHtml(before)+'</span>':'<span class="missing-cell">'+escapeHtml(progressText('review'))+'</span>';
+  const afterHtml=after?'<span class="cpk-status '+(after==='양호'?'cpk-good':after==='보완필요'?'cpk-improve':'cpk-review')+'">'+escapeHtml(after)+'</span>':'<span class="missing-cell">'+escapeHtml(progressText('missing'))+'</span>';
+  const cr=(x['CR No']||'').toString().trim(), report=(x['Report No']||'').toString().trim(), reason=progressReason(x), file=x.__report_path||x.__report_filename;
+  const download=file?'<button type="button" class="download-btn" onclick="event.stopPropagation();downloadReliabilityProgressReport('+Number(x.No)+',this)">↓ '+escapeHtml(lang==='vi'?'Tải xuống':lang==='en'?'Download':'다운로드')+'</button>':'<span class="dash">-</span>';
+  return '<tr data-no="'+Number(x.No)+'"><td>'+Number(i+1)+'</td><td>'+escapeHtml(x['Requested Date by Planning team']||'-')+'</td><td class="reason-cell">'+escapeHtml(reason||progressText('missing'))+'</td><td>'+escapeHtml(x.Model||'-')+'</td><td class="wrap-cell">'+escapeHtml(cleanMaterial(x.Material))+'</td><td class="wrap-cell">'+escapeHtml(cleanCond(x['Test Condition']))+'</td><td>'+beforeHtml+'</td><td>'+afterHtml+'</td><td class="'+(cr?'present-cell':'missing-cell')+'">'+escapeHtml(cr||progressText('crMissing'))+'</td><td>'+(res?'<span class="badge '+resCls+'">'+escapeHtml(res)+'</span>':'<span class="missing-cell">'+escapeHtml(progressText('missing'))+'</span>')+'</td><td class="'+(report?'present-cell':'missing-cell')+'">'+escapeHtml(report||progressText('reportMissing'))+'</td><td>'+escapeHtml(x['Reliability Test Status']||'-')+'</td><td>'+escapeHtml(x.PIC||'-')+'</td><td>'+escapeHtml(x['Reliability Test Start Date']||'-')+'</td><td>'+escapeHtml(x['Reliability Test Expected End Date']||'-')+'</td><td>'+download+'</td></tr>';
+ }).join('');
  document.querySelectorAll('#detailBody tr[data-no]').forEach(tr=>tr.onclick=()=>openDetail(tr.dataset.no));
 }
+
 function openDetail(no){
  const x=DATA.find(r=>String(r.No)===String(no)); if(!x)return;
  const f=[['requestDate','요청일',x['Requested Date by Planning team']],['model','제품명',x.Model],['material','자재',cleanMaterial(x.Material)],['condition','시험항목',cleanCond(x['Test Condition'])],['status','진행상태',x['Reliability Test Status']],['result','시험결과',x['Reliability Test Result']],['reportNo','Report No.',x['Report No']],['pic','PIC',x.PIC],['CR No.','CR No.',x['CR No']],['Test Qty','Test Qty',x['Test Qty']],['reliabilityStartDate','신뢰성 TEST 시작 일자',x['Reliability Test Start Date']],['reliabilityExpectedEndDate','신뢰성 TEST 종료 예상 일자',x['Reliability Test Expected End Date']],['Test Start Time','시험 시작',x['Test Start Time']],['Test End Time','시험 종료',x['Test End Time']],['Production Date','생산일',x['Production Date']],['Lot No','Lot No.',x['Lot No']],['reason','시험 사유',x['Reason for Running Sample']],['before','시험 전 결과',x['Result before reliability test']],['after','시험 후 결과',x['Result after reliability test']],['remark','비고',x.Remark]];
