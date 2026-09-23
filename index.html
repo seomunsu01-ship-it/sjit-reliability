@@ -61,16 +61,6 @@
 .notice-actions{display:flex;gap:8px;justify-content:flex-end}
 .btn.red{background:#fff0f0;color:#b42318;border:1px solid #efb0ad}
 </style>
-<style id="integrated-reliability-view-20260923">
-.reliability-overview-wrap{width:100%;max-height:62vh;overflow-x:auto;overflow-y:auto;scrollbar-width:auto}
-.reliability-overview-table{width:2140px;min-width:2140px;table-layout:fixed}
-.reliability-overview-table th,.reliability-overview-table td{vertical-align:middle;text-align:center;padding:8px 7px;line-height:1.25}
-.reliability-overview-table th{white-space:nowrap}.reliability-overview-table td{white-space:normal;word-break:break-word;overflow-wrap:anywhere}
-.reliability-overview-table th:nth-child(1),.reliability-overview-table td:nth-child(1){width:55px}.reliability-overview-table th:nth-child(2),.reliability-overview-table td:nth-child(2){width:110px}.reliability-overview-table th:nth-child(3),.reliability-overview-table td:nth-child(3){width:280px;text-align:left}.reliability-overview-table th:nth-child(4),.reliability-overview-table td:nth-child(4){width:125px}.reliability-overview-table th:nth-child(5),.reliability-overview-table td:nth-child(5){width:190px;text-align:left}.reliability-overview-table th:nth-child(6),.reliability-overview-table td:nth-child(6){width:145px;text-align:left}.reliability-overview-table th:nth-child(7),.reliability-overview-table td:nth-child(7){width:125px}.reliability-overview-table th:nth-child(8),.reliability-overview-table td:nth-child(8){width:125px}.reliability-overview-table th:nth-child(9),.reliability-overview-table td:nth-child(9){width:125px}.reliability-overview-table th:nth-child(10),.reliability-overview-table td:nth-child(10){width:110px}.reliability-overview-table th:nth-child(11),.reliability-overview-table td:nth-child(11){width:135px}.reliability-overview-table th:nth-child(12),.reliability-overview-table td:nth-child(12){width:110px}.reliability-overview-table th:nth-child(13),.reliability-overview-table td:nth-child(13){width:100px}.reliability-overview-table th:nth-child(14),.reliability-overview-table td:nth-child(14){width:125px}.reliability-overview-table th:nth-child(15),.reliability-overview-table td:nth-child(15){width:145px}.reliability-overview-table th:nth-child(16),.reliability-overview-table td:nth-child(16){width:110px}
-.reliability-overview-table .wrap-cell,.reliability-overview-table .reason-cell{white-space:normal;word-break:break-word;overflow-wrap:anywhere}.reliability-overview-table .missing-cell{color:#b76500;background:#fff8ed;font-weight:800}.reliability-overview-table .present-cell{font-weight:700}.reliability-overview-table .download-btn{border:1px solid #b9d1e7;background:#edf4fb;color:var(--navy);border-radius:7px;padding:6px 9px;font-weight:800;cursor:pointer;white-space:nowrap}.reliability-overview-table .download-btn:hover{background:#dfeefb}
-@media(max-width:760px){.reliability-overview-table{min-width:2140px}}
-</style>
-<script id="integrated-reliability-view-20260923-js">document.addEventListener('DOMContentLoaded',function(){const b=document.getElementById('overviewDownloadAll');if(b)b.onclick=downloadReliabilityProgressExcel;});</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const SUPABASE_URL='https://heaouuczehysapjhoslv.supabase.co';
@@ -90,7 +80,7 @@ async function bootSupabase(){
  if(error) throw error;
  DATA=(data||[]).map(mapDbRow); filtered=[...DATA];
  badge.textContent='SUPABASE DB 연결됨 · '+DATA.length+'건'; badge.style.background='#e7f7ee'; badge.style.color='#18844c';
- initFilters(); render(); initReportModels(); renderReport(); renderManualList(); renderReliabilityProgress();
+ initFilters(); render(); initReportModels(); renderReport(); renderManualList(); if(typeof renderDetailTable==='function')renderDetailTable();
 }
 </script>
 
@@ -107,23 +97,6 @@ async function bootSupabase(){
 .report-pagination{display:flex;justify-content:center;align-items:center;gap:6px;margin-top:12px;flex-wrap:wrap}.report-pagination button{min-width:34px;height:34px;border:1px solid var(--line);background:#fff;color:var(--navy);border-radius:7px;font-weight:700;cursor:pointer}.report-pagination button.active{background:var(--blue);color:#fff;border-color:var(--blue)}.report-pagination button:disabled{opacity:.45;cursor:not-allowed}.report-page-info{font-size:11px;color:var(--muted);margin:0 8px}.report-manage-actions{display:flex;align-items:center;justify-content:center;gap:5px;white-space:nowrap}.report-manage-actions .delete-test-item{background:#fff4e5;border:1px solid #e59a3a;color:#9a5b00}.report-manage-actions .delete-test-item:hover{background:#ffedd5}
 </style>
 <style id="reliability-progress-v1">
-.progress-page{padding:14px;margin-bottom:12px}
-.progress-summary{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
-.progress-summary .summary-chip{padding:7px 11px;border:1px solid var(--line);border-radius:999px;background:#fff;font-size:11px;font-weight:800;color:var(--navy)}
-.progress-summary .summary-chip.warn{background:#fff4e5;color:#a45d00;border-color:#f0c58a}
-.progress-summary .summary-chip.ok{background:#e7f7ee;color:#18844c;border-color:#bde4cc}
-.progress-toolbar{display:flex;gap:8px;margin-bottom:10px}
-.progress-toolbar input{flex:1;min-width:220px;height:40px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fff}
-.progress-table-wrap{max-height:68vh}
-.progress-table th{text-align:center;white-space:nowrap;padding:8px 7px;line-height:1.25}
-.progress-table td{text-align:center;vertical-align:middle;padding:7px 7px;line-height:1.25;white-space:nowrap}
-.progress-table td.missing{background:#fff8ed;color:#a45d00;font-weight:800}
-.progress-table td.present{font-weight:700}
-.progress-table .download-btn{border:1px solid #b9d1e7;background:#edf4fb;color:var(--navy);border-radius:7px;padding:6px 9px;font-weight:800;cursor:pointer;white-space:nowrap}
-.progress-table .download-btn:hover{background:#dfeefb}
-.progress-table .download-btn:disabled{opacity:.55;cursor:wait}
-.progress-table .dash{color:#a0a8b1}
-@media(max-width:900px){.progress-table{min-width:850px}.progress-table-wrap{overflow:auto}.progress-toolbar{flex-wrap:wrap}.progress-toolbar input{min-width:100%}}
 
 /* Layout stabilization - all views */
 html,body{max-width:100%;overflow-x:hidden}
@@ -134,16 +107,6 @@ html,body{max-width:100%;overflow-x:hidden}
 .tbl th,.tbl td{vertical-align:middle;overflow:hidden;text-overflow:ellipsis}
 .report-main-table{width:1740px;min-width:1740px;table-layout:fixed}
 .manual-table{width:980px;min-width:980px;table-layout:fixed}
-.progress-table{width:1150px;min-width:1150px;table-layout:fixed}
-.progress-table th:nth-child(1),.progress-table td:nth-child(1){width:55px}
-.progress-table th:nth-child(2),.progress-table td:nth-child(2){width:110px}
-.progress-table th:nth-child(3),.progress-table td:nth-child(3){width:270px;text-align:left}
-.progress-table th:nth-child(4),.progress-table td:nth-child(4){width:120px}
-.progress-table th:nth-child(5),.progress-table td:nth-child(5){width:120px}
-.progress-table th:nth-child(6),.progress-table td:nth-child(6){width:120px}
-.progress-table th:nth-child(7),.progress-table td:nth-child(7){width:120px}
-.progress-table th:nth-child(8),.progress-table td:nth-child(8){width:130px}
-.progress-table th:nth-child(9),.progress-table td:nth-child(9){width:105px}
 #viewMaterial .tablewrap>table.tbl{width:1240px;min-width:1240px;table-layout:fixed}
 #viewMaterial .tablewrap>table.tbl th:nth-child(1),#viewMaterial .tablewrap>table.tbl td:nth-child(1){width:55px;text-align:center}
 #viewMaterial .tablewrap>table.tbl th:nth-child(2),#viewMaterial .tablewrap>table.tbl td:nth-child(2){width:110px}
@@ -155,16 +118,6 @@ html,body{max-width:100%;overflow-x:hidden}
 #viewMaterial .tablewrap>table.tbl th:nth-child(8),#viewMaterial .tablewrap>table.tbl td:nth-child(8){width:180px}
 #viewMaterial .tablewrap>table.tbl th:nth-child(9),#viewMaterial .tablewrap>table.tbl td:nth-child(9){width:120px}
 #viewMaterial .tablewrap>table.tbl th:nth-child(10),#viewMaterial .tablewrap>table.tbl td:nth-child(10){width:95px}
-#viewOverview .tablewrap>table.tbl{width:1050px;min-width:1050px;table-layout:fixed}
-#viewOverview .tablewrap>table.tbl th:nth-child(1),#viewOverview .tablewrap>table.tbl td:nth-child(1){width:55px}
-#viewOverview .tablewrap>table.tbl th:nth-child(2),#viewOverview .tablewrap>table.tbl td:nth-child(2){width:105px}
-#viewOverview .tablewrap>table.tbl th:nth-child(3),#viewOverview .tablewrap>table.tbl td:nth-child(3){width:110px}
-#viewOverview .tablewrap>table.tbl th:nth-child(4),#viewOverview .tablewrap>table.tbl td:nth-child(4){width:260px;text-align:left}
-#viewOverview .tablewrap>table.tbl th:nth-child(5),#viewOverview .tablewrap>table.tbl td:nth-child(5){width:150px}
-#viewOverview .tablewrap>table.tbl th:nth-child(6),#viewOverview .tablewrap>table.tbl td:nth-child(6){width:100px}
-#viewOverview .tablewrap>table.tbl th:nth-child(7),#viewOverview .tablewrap>table.tbl td:nth-child(7){width:110px}
-#viewOverview .tablewrap>table.tbl th:nth-child(8),#viewOverview .tablewrap>table.tbl td:nth-child(8){width:130px}
-#viewOverview .tablewrap>table.tbl th:nth-child(9),#viewOverview .tablewrap>table.tbl td:nth-child(9){width:100px}
 #viewDashboard .bottom .tablewrap>table.tbl{width:1050px;min-width:1050px;table-layout:fixed}
 #viewDashboard .bottom .tablewrap>table.tbl th:nth-child(1),#viewDashboard .bottom .tablewrap>table.tbl td:nth-child(1){width:55px}
 #viewDashboard .bottom .tablewrap>table.tbl th:nth-child(2),#viewDashboard .bottom .tablewrap>table.tbl td:nth-child(2){width:105px}
@@ -190,6 +143,7 @@ html,body{max-width:100%;overflow-x:hidden}
   .filters,.report-search{grid-template-columns:1fr}
   .report-grid{grid-template-columns:repeat(2,1fr)}
 }
+</style>
 <style id="table-wrap-and-i18n-20260923">
 /* Table usability: horizontal scrolling + readable wrapping */
 .tablewrap{
@@ -217,12 +171,6 @@ html,body{max-width:100%;overflow-x:hidden}
   overflow-wrap:normal;
   word-break:normal;
 }
-.progress-table th,.progress-table td{padding:8px 7px}
-.progress-table td:nth-child(3){
-  text-align:left;
-  line-height:1.35;
-  overflow-wrap:anywhere;
-}
 .report-main-table th,.report-main-table td,
 .manual-table th,.manual-table td{
   line-height:1.3;
@@ -237,6 +185,39 @@ html,body{max-width:100%;overflow-x:hidden}
   white-space:normal !important;
   overflow-wrap:anywhere;
 }
+</style>
+<style id="integrated-reliability-view-20260923">
+/* 신뢰성 시험 현황 통합 화면 (V3) */
+/* 앱 전체 폭 고정: 넓은 표 때문에 화면 전체가 늘어나 오른쪽 컬럼/언어 버튼이 잘리던 문제 수정 → 표 내부 가로 스크롤로 처리 */
+.app{width:100%;max-width:100vw}#appShell{flex:1 1 0;min-width:0;width:100%}
+.ov-filters{display:grid;grid-template-columns:2fr 1.3fr 1fr 1fr 1fr 1.7fr;gap:10px;margin-top:4px}
+.ov-dates{display:flex;align-items:center;gap:5px}.ov-dates input{flex:1;min-width:0}.ov-dates span{color:var(--muted)}
+.ov-actions{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:8px;margin-top:10px}
+.ov-actions .ov-excel{background:#e7f7ee;color:#18844c;border:1px solid #bde4cc}
+.ov-kpis{grid-template-columns:repeat(5,1fr)}
+.ov-kpis .kpi .label{color:var(--navy)}
+.ov-kpi-run .num{color:#2167c7}.ov-kpi-done .num{color:#18844c}.ov-kpi-wait .num{color:#667085}.ov-kpi-cpk .num{color:#c93a31}
+.reliability-overview-wrap{width:100%;max-height:62vh;overflow-x:scroll !important;overflow-y:auto}
+.reliability-overview-table{width:2140px;min-width:2140px;table-layout:fixed}
+.reliability-overview-table th,.reliability-overview-table td{vertical-align:middle;text-align:center;padding:8px 7px;line-height:1.3}
+.reliability-overview-table th{position:sticky;top:0;z-index:1}
+.reliability-overview-table th:nth-child(1){width:55px}.reliability-overview-table th:nth-child(2){width:105px}.reliability-overview-table th:nth-child(3){width:280px}.reliability-overview-table th:nth-child(4){width:130px}.reliability-overview-table th:nth-child(5){width:200px}.reliability-overview-table th:nth-child(6){width:110px}.reliability-overview-table th:nth-child(7){width:120px}.reliability-overview-table th:nth-child(8){width:150px}.reliability-overview-table th:nth-child(9){width:130px}.reliability-overview-table th:nth-child(10){width:100px}.reliability-overview-table th:nth-child(11){width:140px}.reliability-overview-table th:nth-child(12){width:115px}.reliability-overview-table th:nth-child(13){width:95px}.reliability-overview-table th:nth-child(14){width:115px}.reliability-overview-table th:nth-child(15){width:140px}.reliability-overview-table th:nth-child(16){width:110px}
+.reliability-overview-table td.ov-left{text-align:left}
+/* 긴 텍스트: 최대 3줄, 전체 내용은 마우스 오버(title) 또는 행 클릭 상세에서 확인 */
+.ov-clamp{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;line-clamp:3;overflow:hidden;white-space:pre-line;overflow-wrap:anywhere;word-break:break-word;line-height:1.35;max-height:4.05em}
+.reliability-overview-table .missing-cell{display:inline-block;color:#b76500;background:#fff8ed;border-radius:6px;padding:2px 6px;font-weight:800;white-space:normal;line-height:1.3}
+.reliability-overview-table .badge,.reliability-overview-table .cpk-status,.reliability-overview-table .test-status,.reliability-overview-table .download-btn{white-space:nowrap !important}
+.reliability-overview-table .download-btn{border:1px solid #b9d1e7;background:#edf4fb;color:var(--navy);border-radius:7px;padding:6px 9px;font-weight:800;cursor:pointer}
+.reliability-overview-table .download-btn:hover{background:#dfeefb}.reliability-overview-table .download-btn:disabled{opacity:.55;cursor:wait}
+.reliability-overview-table .dash{color:#a0a8b1}
+.ov-steps{display:flex;justify-content:center;gap:3px;margin-top:5px}.ov-steps i{width:18px;height:4px;border-radius:2px;background:#dfe5ec}.ov-steps i.on{background:currentColor}
+.ov-step-1{color:#98a2b3}.ov-step-2{color:#2167c7}.ov-step-3{color:#18844c}
+.ov-scroll-hint{font-size:11px;color:var(--muted);text-align:center;margin-top:6px}
+#dbStatus,.userbox,.logout,.langs button{white-space:nowrap}
+@media(max-width:1300px){.top{flex-wrap:wrap;gap:8px}.top>div:first-child{flex:1 1 100%}}
+@media(max-width:1200px){.ov-filters{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:900px){.ov-kpis{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:760px){.ov-filters{grid-template-columns:1fr}.ov-kpis{grid-template-columns:repeat(2,1fr)}.ov-actions{justify-content:stretch}.ov-actions .btn{flex:1}}
 </style>
 </head><body>
 <div id="loginScreen">
@@ -285,7 +266,7 @@ const LOGIN_SCREEN=document.getElementById('loginScreen');
  passEl.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();doLogin();}});
 })();
 </script>
-<div class="app"><div id="appShell"><aside class="side"><div class="brand">SJIT VINA<small>Smart Connection, Better Tomorrow</small></div><div class="nav"><button class="active" data-view="dashboard">⌂ <span data-k="menuDashboard">대시보드</span></button><button data-view="overview">✓ <span data-k="menuOverview">신뢰성 시험 현황</span></button><button data-view="material">♙ <span data-k="menuMaterial">자재별 분석</span></button><button data-view="report">▤ <span data-k="menuReport">보고서 관리</span></button><button data-view="notice">♧ <span data-k="menuNotice">알림 / 공지</span></button></div><div class="tag">Good<br>Quality<br>Better<br>Tomorrow<br><br><small>© 2026 SJIT VINA</small></div></aside><main class="main"><div class="top"><div><div class="title" data-k="title">신뢰성 관리 대시보드</div><div class="sub" data-k="subtitle">신뢰성 시험 통합 현황</div><div style="font-size:11px;color:#8a98a7;margin-top:3px">※ 현재 원본 데이터에는 거래처(Customer) 컬럼이 없어, 거래처 필터는 다음 단계에서 데이터 항목 추가 후 연결</div></div><div id="dbStatus" style="display:inline-block;margin-right:8px;padding:6px 10px;border-radius:999px;background:#eef3f8;color:#6b7280;font-size:11px;font-weight:700">SUPABASE DB 연결 확인 중...</div><div class="userbox"><span id="userEmail"></span><button id="logoutBtn" class="logout">로그아웃</button></div><div class="langs"><button class="active" data-lang="ko">한국어</button><button data-lang="vi">Tiếng Việt</button></div></div><div id="viewDashboard" class="view active"><section class="panel filters">
+<div class="app"><div id="appShell"><aside class="side"><div class="brand">SJIT VINA<small>Smart Connection, Better Tomorrow</small></div><div class="nav"><button class="active" data-view="dashboard">⌂ <span data-k="menuDashboard">대시보드</span></button><button data-view="overview">✓ <span data-k="menuOverview">신뢰성 시험 현황</span></button><button data-view="material">♙ <span data-k="menuMaterial">자재별 분석</span></button><button data-view="report">▤ <span data-k="menuReport">보고서 관리</span></button><button data-view="notice">♧ <span data-k="menuNotice">알림 / 공지</span></button></div><div class="tag">Good<br>Quality<br>Better<br>Tomorrow<br><br><small>© 2026 SJIT VINA</small></div></aside><main class="main"><div class="top"><div><div class="title" data-k="title">신뢰성 관리 대시보드</div><div class="sub" data-k="subtitle">신뢰성 시험 통합 현황</div><div style="font-size:11px;color:#8a98a7;margin-top:3px">※ 현재 원본 데이터에는 거래처(Customer) 컬럼이 없어, 거래처 필터는 다음 단계에서 데이터 항목 추가 후 연결</div></div><div id="dbStatus" style="display:inline-block;margin-right:8px;padding:6px 10px;border-radius:999px;background:#eef3f8;color:#6b7280;font-size:11px;font-weight:700">SUPABASE DB 연결 확인 중...</div><div class="userbox"><span id="userEmail"></span><button id="logoutBtn" class="logout">로그아웃</button></div><div class="langs"><button class="active" data-lang="ko">한국어</button><button data-lang="en">English</button><button data-lang="vi">Tiếng Việt</button></div></div><div id="viewDashboard" class="view active"><section class="panel filters">
 <div class="field"><label data-k="date">기간</label><div style="display:grid;grid-template-columns:1fr 1fr;gap:5px"><input id="dateFrom" type="date" value="2026-01-01"><input id="dateTo" type="date" value="2026-09-10"></div></div>
 <div class="field"><label data-k="condition">시험항목</label><select id="condition"><option value="">전체</option></select></div>
 <div class="field"><label data-k="model">제품명</label><select id="model"><option value="">전체</option></select></div>
@@ -297,53 +278,35 @@ const LOGIN_SCREEN=document.getElementById('loginScreen');
 <div id="viewOverview" class="view">
 <section class="panel" style="padding:14px;margin-bottom:12px">
 <div class="detailbar"><div><h2 data-k="overviewTitle" style="margin:0;color:var(--navy);font-size:22px">신뢰성 시험 현황</h2><div data-k="overviewDesc" style="font-size:12px;color:var(--muted);margin-top:4px">시험 건별 상세 조회 및 상태 관리</div></div><button class="smallbtn" id="backDashboard">← <span data-k="dashboard">대시보드</span></button></div>
-<div class="filters" style="box-shadow:none;margin:0;padding:0">
-<div class="field"><label data-k="status">진행상태</label><select id="detailStatus"><option value="">전체</option><option value="Finished">Finished</option><option value="Not tested">Not tested</option><option value="blank">미입력</option></select></div>
+<div class="ov-filters">
+<div class="field ov-field-q"><label data-k="ovKeyword">검색어</label><input id="detailSearch" data-k-placeholder="ovSearchPlaceholder" placeholder="CR No. / Report No. / Model / 시험사유 / 요청일"></div>
+<div class="field"><label>Model</label><select id="detailModel"><option value="">전체</option></select></div>
+<div class="field"><label data-k="condition">시험항목</label><select id="detailCondition"><option value="">전체</option></select></div>
+<div class="field"><label data-k="status">진행상태</label><select id="detailStatus"><option value="">전체</option><option value="Finished">완료</option><option value="신뢰성 진행 중">진행중</option><option value="Not tested">미실시</option><option value="blank">미입력</option></select></div>
 <div class="field"><label data-k="resultFilter">시험결과</label><select id="detailResult"><option value="">전체</option><option value="Pass">Pass</option><option value="Fail">Fail</option><option value="blank">미입력</option></select></div>
-<div class="field"><label data-k="model">제품명</label><input id="detailSearchModel" data-k-placeholder="modelPlaceholder" placeholder="Model"></div>
-<div class="field"><label data-k="search">검색</label><input id="detailSearch" data-k-placeholder="detailSearchPlaceholder" placeholder="CR No. / Report No. / Model / 시험사유 / 요청일"></div>
-<button class="btn ghost" id="detailClear">↻ <span data-k="reset">초기화</span></button>
-</div></section>
-<div class="table-card detail-table integrated-reliability-table">
-<div class="detailbar"><h3 data-k="detailListTitle">시험 목록</h3><div style="display:flex;align-items:center;gap:8px"><span id="detailCount"></span><button class="btn primary" id="overviewDownloadAll">↓ <span data-k="progressDownloadAll">전체 다운로드 (Excel)</span></button></div></div>
-<div class="tablewrap reliability-overview-wrap"><table class="tbl reliability-overview-table"><thead><tr>
-<th>No.</th><th data-k="requestDate">요청일</th><th data-k="reason">시험사유</th><th>Model</th><th data-k="material">자재</th><th data-k="condition">시험항목</th><th data-k="cpkBefore">CPK Before</th><th data-k="cpkAfter">CPK After</th><th data-k="crNo">CR No.</th><th data-k="progressResult">실험결과</th><th data-k="reportNo">Report No.</th><th data-k="status">상태</th><th data-k="pic">PIC</th><th data-k="reliabilityStartDate">TEST 시작일</th><th data-k="reliabilityExpectedEndDate">TEST 종료예정일</th><th data-k="download">다운로드</th>
-</tr></thead><tbody id="detailBody"></tbody></table></div></div></div>
-<div id="viewProgress" class="view">
-<section class="panel progress-page">
-  <div class="detailbar">
-    <div>
-      <h2 data-k="progressTitle" style="margin:0;color:var(--navy);font-size:22px">신뢰성 진행 내역</h2>
-      <div data-k="progressDesc" style="font-size:12px;color:var(--muted);margin-top:4px">엑셀 관리대장과 동일한 기준으로 누락 여부를 빠르게 확인합니다.</div>
-    </div>
-    <div style="display:flex;gap:8px">
-      <button class="btn ghost" id="progressRefresh">↻ DB 새로고침</button>
-    </div>
-  </div>
-  <div class="progress-summary" id="progressSummary"></div>
-  <div class="progress-toolbar">
-    <input id="progressSearch" data-k-placeholder="progressSearchPlaceholder" placeholder="CR No. / Report No. / Model / 시험사유 / 요청일">
-    <button class="btn ghost" id="progressClear">↻ <span data-k="reset">초기화</span></button>
-    <button class="btn primary" id="progressDownloadAll">↓ <span data-k="progressDownloadAll">전체 다운로드 (Excel)</span></button>
-  </div>
-  <div class="tablewrap progress-table-wrap">
-    <table class="tbl progress-table">
-      <thead><tr>
-        <th>No.</th>
-        <th data-k="requestDate">요청일</th>
-        <th data-k="reason">시험사유</th>
-        <th data-k="cpkBefore">CPK Before</th>
-        <th data-k="cpkAfter">신뢰성 후 CPK 결과</th>
-        <th data-k="crNo">CR. NO.</th>
-        <th data-k="progressResult">실험결과</th>
-        <th data-k="reportNo">레포트 NO.</th>
-        <th data-k="download">다운로드</th>
-      </tr></thead>
-      <tbody id="progressBody"></tbody>
-    </table>
-  </div>
-</section>
+<div class="field"><label data-k="requestDate">요청일</label><div class="ov-dates"><input id="detailDateFrom" type="date" aria-label="From"><span>~</span><input id="detailDateTo" type="date" aria-label="To"></div></div>
 </div>
+<div class="ov-actions">
+<button class="btn primary" id="detailSearchBtn">⌕ <span data-k="search">조회</span></button>
+<button class="btn ghost" id="detailClear">↻ <span data-k="reset">초기화</span></button>
+<button class="btn primary addbtn" id="detailManualBtn">＋ <span data-k="ovManual">수동 등록</span></button>
+<button class="btn ghost ov-excel" id="overviewDownloadAll">↓ <span data-k="ovExcel">Excel 다운로드</span></button>
+</div>
+</section>
+<section class="kpis ov-kpis">
+<div class="kpi"><div class="label" data-k="ovKpiTotal">전체</div><div class="num" id="ovKpiTotal">0</div></div>
+<div class="kpi ov-kpi-run"><div class="label" data-k="ovKpiProgress">진행중</div><div class="num" id="ovKpiProgress">0</div></div>
+<div class="kpi ov-kpi-done"><div class="label" data-k="ovKpiDone">완료</div><div class="num" id="ovKpiDone">0</div></div>
+<div class="kpi ov-kpi-wait"><div class="label" data-k="ovKpiNotTested">미실시</div><div class="num" id="ovKpiNotTested">0</div><div class="rate" id="ovKpiNotTestedNote"></div></div>
+<div class="kpi ov-kpi-cpk"><div class="label" data-k="ovKpiCpk">CPK 이슈</div><div class="num" id="ovKpiCpk">0</div></div>
+</section>
+<div class="table-card detail-table integrated-reliability-table">
+<div class="detailbar"><h3 data-k="detailListTitle">시험 목록</h3><span id="detailCount" class="mini-count"></span></div>
+<div class="tablewrap reliability-overview-wrap"><table class="tbl reliability-overview-table"><thead><tr>
+<th>No.</th><th data-k="requestDate">요청일</th><th data-k="ovThReason">시험사유</th><th>Model</th><th data-k="material">자재</th><th data-k="condition">시험항목</th><th>CPK Before</th><th>CPK After</th><th data-k="crNo">CR No.</th><th data-k="ovThResult">실험결과</th><th>Report No.</th><th data-k="ovThStatus">상태</th><th>PIC</th><th data-k="ovThStart">TEST 시작일</th><th data-k="ovThEnd">TEST 종료예정일</th><th data-k="ovThDownload">다운로드</th>
+</tr></thead><tbody id="detailBody"></tbody></table></div>
+<div class="ov-scroll-hint" data-k="ovScrollHint">← 표를 좌우로 스크롤하여 전체 컬럼을 확인하세요 →</div>
+</div></div>
 
 <div id="viewMaterial" class="view">
 <section class="panel" style="padding:14px;margin-bottom:12px">
@@ -457,7 +420,8 @@ const LOGIN_SCREEN=document.getElementById('loginScreen');
    <div class="manual-field"><label data-k="material">자재</label><input id="mMaterial"></div>
    <div class="manual-field"><label data-k="condition">시험항목</label><select id="mCondition"><option value="">선택</option><option>VD</option><option>DA</option><option>HP</option><option>Other</option></select></div>
    <div class="manual-field"><label data-k="result">시험결과</label><select id="mResult"><option value="">미입력</option><option>Pass</option><option>Fail</option></select></div>
-   <div class="manual-field"><label data-k="cpkBefore">신뢰성 전 CPK 검토결과</label><select id="mCpkBefore"><option value="">미검토</option><option value="양호">양호</option><option value="보완필요">보완필요</option><option value="미검토">미검토</option></select></div>\n   <div class="manual-field"><label data-k="cpkAfter">신뢰성 후 CPK 결과</label><input id="mCpkAfter" type="text" data-k-placeholder="cpkAfterPlaceholder" placeholder="CPK 결과 / 검토결과"></div>
+   <div class="manual-field"><label data-k="cpkBefore">신뢰성 전 CPK 검토결과</label><select id="mCpkBefore"><option value="">미검토</option><option value="양호">양호</option><option value="보완필요">보완필요</option><option value="미검토">미검토</option></select></div>
+   <div class="manual-field"><label data-k="cpkAfter">신뢰성 후 CPK 결과</label><input id="mCpkAfter" type="text" data-k-placeholder="cpkAfterPlaceholder" placeholder="CPK 결과 / 검토결과"></div>
    <div class="manual-field"><label data-k="resultBefore">신뢰성 시험 전 결과</label><input id="mResultBefore" type="text" data-k-placeholder="resultBeforePlaceholder" placeholder="Pass / Fail / CPK 내용"></div>
    <div class="manual-field"><label data-k="resultAfter">신뢰성 시험 후</label><select id="mResultAfter"><option value="">미입력</option><option>Pass</option><option>Fail</option></select></div>
    <div class="manual-field"><label data-k="reliabilityTestStatus">신뢰성 TEST 상태</label><select id="mStatus"><option value="Not tested">대기</option><option value="신뢰성 진행 중">TEST 중</option><option value="Finished">완료</option></select></div>
@@ -564,7 +528,7 @@ const rv=(x['Reliability Test Result']||'').toString().trim();
 return (!from||dt>=from)&&(!to||dt<=to)&&(!cond||cleanCond(x['Test Condition'])===cond)&&(!model||(x.Model||'').toString().trim()===model)&&(!mat||cleanMaterial(x.Material)===mat)&&(!st||(st==='blank'?!x['Reliability Test Status']:x['Reliability Test Status']===st))&&(!res||(res==='blank'?!rv:rv===res));
 });
 render()}
-function render(){renderKPI();renderCharts();renderTable();renderAttention()}
+function render(){renderKPI();renderCharts();renderTable();renderAttention();if(document.getElementById('viewOverview')?.classList.contains('active'))renderDetailTable()}
 function renderKPI(){let total=filtered.length, fin=filtered.filter(x=>x['Reliability Test Status']==='Finished').length, not=filtered.filter(x=>x['Reliability Test Status']==='Not tested').length, blank=total-fin-not, pass=filtered.filter(x=>x['Reliability Test Result']==='Pass').length, fail=filtered.filter(x=>['Fail','NG'].includes(x['Reliability Test Result'])).length, rep=filtered.filter(x=>x['Report No']).length; document.getElementById('kTotal').textContent=total;document.getElementById('kFinished').textContent=fin;document.getElementById('kPending').textContent=not+blank;document.getElementById('kFail').textContent=fail;document.getElementById('kPass').textContent=pass;document.getElementById('kReport').textContent=total-rep;document.getElementById('kFinishedRate').textContent=pct(fin,total)+'%';document.getElementById('kPendingRate').textContent=pct(not+blank,total)+'%';document.getElementById('kFailRate').textContent=pct(fail,total)+'%';document.getElementById('kPassRate').textContent=pct(pass,total)+'%';document.getElementById('kReportRate').textContent=pct(total-rep,total)+'%'}
 function destroy(id){if(charts[id])charts[id].destroy()}
 function mk(id,type,labels,datasets,opts={}){destroy(id);charts[id]=new Chart(document.getElementById(id),{type,data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:12}}},scales:type==='doughnut'?{}:{x:{grid:{color:'#e5edf4'}},y:{beginAtZero:true,grid:{color:'#e5edf4'}}},...opts}})}
@@ -591,19 +555,20 @@ function setLang(l){
  const fileNote=document.getElementById('mFileName');if(fileNote&&!manualFile)fileNote.textContent=l==='ko'?'선택된 파일 없음':l==='en'?'No file selected':'Chưa chọn tệp';
  const reportFileNote=document.getElementById('chosenFile');if(reportFileNote&&!currentReportFile)reportFileNote.textContent=l==='ko'?'선택된 파일 없음':l==='en'?'No file selected':'Chưa chọn tệp'; const mfNote=document.getElementById('mFileName');if(mfNote&&!manualFile&&!editingManualNo)mfNote.textContent=t('noFileSelected');
  window.reportPage=1;
+ if(typeof ovApplyLang==='function')ovApplyLang();
  render();
+ if(typeof renderDetailTable==='function' && document.getElementById('viewOverview')?.classList.contains('active'))renderDetailTable();
  if(typeof renderReport==='function')renderReport();
 }
 document.querySelectorAll('.langs button').forEach(b=>b.onclick=()=>setLang(b.dataset.lang));
 const navButtons=document.querySelectorAll('.nav button[data-view]');
 function showView(v){
  document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
- const map={dashboard:'viewDashboard',overview:'viewOverview',progress:'viewProgress',material:'viewMaterial',report:'viewReport',notice:'viewNotice'};
+ const map={dashboard:'viewDashboard',overview:'viewOverview',material:'viewMaterial',report:'viewReport',notice:'viewNotice'};
  const el=document.getElementById(map[v]||'viewDashboard');
  if(el)el.classList.add('active');
  navButtons.forEach(b=>b.classList.toggle('active',b.dataset.view===v));
  if(v==='overview')renderDetailTable();
- if(v==='progress')renderReliabilityProgress();
  if(v==='material')renderMaterialAnalysis();
  if(v==='report')renderReport();
  if(v==='notice')loadNoticesV29();
@@ -611,44 +576,231 @@ function showView(v){
 navButtons.forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));
 document.getElementById('backDashboard').onclick=()=>showView('dashboard');
 
-function detailFiltered(){
- const st=document.getElementById('detailStatus').value, rs=document.getElementById('detailResult').value;
- const sm=(document.getElementById('detailSearchModel').value||'').toLowerCase().trim();
- const q=(document.getElementById('detailSearch').value||'').toLowerCase().trim();
+/* ===== 신뢰성 시험 현황 통합 화면 (V3) ===== */
+(function(){
+ const add={
+  ko:{ovKeyword:'검색어',ovSearchPlaceholder:'CR No. / Report No. / Model / 시험사유 / 요청일',ovManual:'수동 등록',ovExcel:'Excel 다운로드',
+   ovKpiTotal:'전체',ovKpiProgress:'진행중',ovKpiDone:'완료',ovKpiNotTested:'미실시',ovKpiCpk:'CPK 이슈',ovBlankIncluded:'미입력 {n}건 포함',
+   ovThReason:'시험사유',ovThResult:'실험결과',ovThStatus:'상태',ovThStart:'TEST 시작일',ovThEnd:'TEST 종료예정일',ovThDownload:'다운로드',ovThReportFile:'Report 파일',
+   ovScrollHint:'← 표를 좌우로 스크롤하여 전체 컬럼을 확인하세요 →',ovCpkGood:'양호',ovCpkImprove:'보완필요',ovCpkReview:'미검토',ovCases:'건',ovExcelFail:'Excel 생성 실패: ',
+   progressResult:'실험결과',download:'다운로드',progressDownloadAll:'전체 다운로드 (Excel)',detailSearchPlaceholder:'CR No. / Report No. / Model / 시험사유 / 요청일'},
+  en:{ovKeyword:'Keyword',ovSearchPlaceholder:'CR No. / Report No. / Model / Test Reason / Request Date',ovManual:'Manual Registration',ovExcel:'Download Excel',
+   ovKpiTotal:'Total',ovKpiProgress:'In Progress',ovKpiDone:'Completed',ovKpiNotTested:'Not Tested',ovKpiCpk:'CPK Issues',ovBlankIncluded:'incl. {n} not entered',
+   ovThReason:'Test Reason',ovThResult:'Test Result',ovThStatus:'Status',ovThStart:'Test Start Date',ovThEnd:'Expected End Date',ovThDownload:'Download',ovThReportFile:'Report File',
+   ovScrollHint:'← Scroll the table left/right to see all columns →',ovCpkGood:'Good',ovCpkImprove:'Needs Improvement',ovCpkReview:'Not Reviewed',ovCases:'cases',ovExcelFail:'Excel export failed: ',
+   progressResult:'Test Result',download:'Download',progressDownloadAll:'Download All (Excel)',detailSearchPlaceholder:'CR No. / Report No. / Model / Test Reason / Request Date'},
+  vi:{ovKeyword:'Từ khóa',ovSearchPlaceholder:'CR No. / Report No. / Model / Lý do kiểm tra / Ngày yêu cầu',ovManual:'Đăng ký thủ công',ovExcel:'Tải Excel',
+   ovKpiTotal:'Tổng',ovKpiProgress:'Đang tiến hành',ovKpiDone:'Đã hoàn thành',ovKpiNotTested:'Chưa thực hiện',ovKpiCpk:'Vấn đề CPK',ovBlankIncluded:'gồm {n} chưa nhập',
+   ovThReason:'Lý do kiểm tra',ovThResult:'Kết quả kiểm tra',ovThStatus:'Trạng thái',ovThStart:'Ngày bắt đầu TEST',ovThEnd:'Ngày dự kiến kết thúc',ovThDownload:'Tải xuống',ovThReportFile:'Tệp Report',
+   ovScrollHint:'← Cuộn bảng sang trái/phải để xem tất cả các cột →',ovCpkGood:'Tốt',ovCpkImprove:'Cần cải thiện',ovCpkReview:'Chưa đánh giá',ovCases:'ca',ovExcelFail:'Xuất Excel thất bại: ',
+   progressResult:'Kết quả kiểm tra',download:'Tải xuống',progressDownloadAll:'Tải xuống tất cả (Excel)',detailSearchPlaceholder:'CR No. / Report No. / Model / Lý do kiểm tra / Ngày yêu cầu'}
+ };
+ for(const L of Object.keys(add)) Object.assign(I18N[L],add[L]);
+})();
+
+const OV_STATUS={Finished:{k:'ovKpiDone',cls:'test-done',step:3},'신뢰성 진행 중':{k:'ovKpiProgress',cls:'test-run',step:2},'Not tested':{k:'ovKpiNotTested',cls:'test-wait',step:1}};
+function ovText(v){return (v??'').toString().replace(/\r/g,'').replace(/[ \t]+\n/g,'\n').replace(/\n{2,}/g,'\n').trim()}
+function ovEmpty(v){const s=ovText(v);return !s||s==='-'}
+function ovMaterialText(v){return ovEmpty(v)?'':ovText(v).split('\n').map(s=>s.replace(/^-\s*/,'').trim()).filter(Boolean).join('\n')}
+function ovStatusText(v){const s=(v||'').toString().trim();if(!s)return t('notEntered');return OV_STATUS[s]?t(OV_STATUS[s].k):s}
+function ovCpkText(v){const s=(v||'').toString().trim();return s==='양호'?t('ovCpkGood'):s==='보완필요'?t('ovCpkImprove'):s==='미검토'?t('ovCpkReview'):s}
+function ovResultText(v){const s=(v||'').toString().trim();return s||t('notEntered')}
+function ovIsCpkIssue(x){
+ if((x['CPK Review Result']||'').toString().trim()==='보완필요')return true;
+ if((x['CPK After']||'').toString().trim()==='보완필요')return true;
+ return /CPK\s*FAIL/i.test((x['Result before reliability test']||'')+' '+(x['Result after reliability test']||''));
+}
+function ovClamp(v,cls){const s=ovText(v);return '<div class="ov-clamp'+(cls?' '+cls:'')+'" title="'+escapeHtml(s)+'">'+escapeHtml(s)+'</div>'}
+function ovMissing(key){return '<span class="missing-cell">'+escapeHtml(key==='missing'?t('notEntered'):progressText(key))+'</span>'}
+function ovVal(id){const e=document.getElementById(id);return e?e.value:''}
+
+let ovFilterSig='';
+function ovInitFilters(force){
+ const sig=DATA.length+'|'+(DATA[0]?.No??'')+'|'+(DATA[DATA.length-1]?.No??'')+'|'+lang;
+ if(!force&&sig===ovFilterSig)return; ovFilterSig=sig;
+ const mSel=document.getElementById('detailModel'), cSel=document.getElementById('detailCondition');
+ if(mSel){const cur=mSel.value;const vals=[...new Set(DATA.map(x=>(x.Model||'').toString().trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'en'));
+  mSel.innerHTML='<option value="">'+escapeHtml(t('all'))+'</option>'+vals.map(v=>'<option value="'+escapeHtml(v)+'">'+escapeHtml(v)+'</option>').join('');if(vals.includes(cur))mSel.value=cur;}
+ if(cSel){const cur=cSel.value;const order=['VD','DA','HP','기타','미입력'];const vals=[...new Set(DATA.map(x=>cleanCond(x['Test Condition'])))].sort((a,b)=>(order.indexOf(a)+1||9)-(order.indexOf(b)+1||9)||a.localeCompare(b));
+  cSel.innerHTML='<option value="">'+escapeHtml(t('all'))+'</option>'+vals.map(v=>'<option value="'+escapeHtml(v)+'">'+escapeHtml(dashboardDisplayCondition(v==='기타'?'X':v==='미입력'?'':v))+'</option>').join('');if(vals.includes(cur))cSel.value=cur;}
+}
+function ovApplyLang(){
+ const st=document.getElementById('detailStatus');
+ if(st)[...st.options].forEach(o=>{o.text=o.value===''?t('all'):o.value==='blank'?t('notEntered'):ovStatusText(o.value)});
+ const rs=document.getElementById('detailResult');
+ if(rs)[...rs.options].forEach(o=>{if(o.value==='')o.text=t('all');if(o.value==='blank')o.text=t('notEntered')});
+ ovInitFilters(true);
+}
+
+/* 필터: excludeStatus=true 이면 상태 필터를 제외(KPI 계산용) */
+function detailFiltered(excludeStatus){
+ const st=excludeStatus?'':ovVal('detailStatus'), rs=ovVal('detailResult'), model=ovVal('detailModel'), cond=ovVal('detailCondition');
+ const from=ovVal('detailDateFrom'), to=ovVal('detailDateTo');
+ const q=(ovVal('detailSearch')||'').toLowerCase().trim();
  return DATA.filter(x=>{
   const rv=(x['Reliability Test Result']||'').toString().trim(), sv=(x['Reliability Test Status']||'').toString().trim();
-  const hay=[x.Model,x.Material,x['Report No'],x.PIC,x['CR No'],x.Remark].map(v=>(v||'').toString().toLowerCase()).join(' ');
-  return (!st||(st==='blank'?!sv:sv===st))&&(!rs||(rs==='blank'?!rv:rv===rs))&&(!sm||(x.Model||'').toString().toLowerCase().includes(sm))&&(!q||hay.includes(q));
+  const rd=(x['Requested Date by Planning team']||'').toString().slice(0,10);
+  if(st&&(st==='blank'?!!sv:sv!==st))return false;
+  if(rs&&(rs==='blank'?!!rv:rv!==rs))return false;
+  if(model&&(x.Model||'').toString().trim()!==model)return false;
+  if(cond&&cleanCond(x['Test Condition'])!==cond)return false;
+  if(from&&(!rd||rd<from))return false;
+  if(to&&(!rd||rd>to))return false;
+  if(q){
+   const hay=[x['CR No'],x['Report No'],x.Model,x['Reason for Running Sample'],x['Requested Date by Planning team'],x.Material,x['Test Condition'],x.PIC,x.Remark,x['CPK Review Result'],x['CPK After']].map(v=>(v??'').toString().toLowerCase()).join(' \u0001 ');
+   if(!hay.includes(q))return false;
+  }
+  return true;
  });
 }
+function ovSorted(arr){return arr.sort((a,b)=>String(b['Requested Date by Planning team']||'').localeCompare(String(a['Requested Date by Planning team']||''))||Number(b.No)-Number(a.No))}
+function renderDetailKpis(){
+ const arr=detailFiltered(true);
+ const sv=x=>(x['Reliability Test Status']||'').toString().trim();
+ const blank=arr.filter(x=>!sv(x)).length;
+ const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
+ set('ovKpiTotal',arr.length);
+ set('ovKpiProgress',arr.filter(x=>sv(x)==='신뢰성 진행 중').length);
+ set('ovKpiDone',arr.filter(x=>sv(x)==='Finished').length);
+ set('ovKpiNotTested',arr.filter(x=>sv(x)==='Not tested').length+blank);
+ set('ovKpiNotTestedNote',blank?t('ovBlankIncluded').replace('{n}',blank):'');
+ set('ovKpiCpk',arr.filter(ovIsCpkIssue).length);
+}
+function ovCpkCell(v,emptyKey){
+ const s=(v||'').toString().trim();
+ if(!s)return ovMissing(emptyKey);
+ return ovClamp(s);
+}
 function renderDetailTable(){
- const arr=detailFiltered().sort((a,b)=>String(b['Requested Date by Planning team']||'').localeCompare(String(a['Requested Date by Planning team']||''))||Number(b.No)-Number(a.No));
- const countEl=document.getElementById('detailCount'); if(countEl)countEl.textContent=arr.length+' '+(lang==='ko'?'건':lang==='en'?'cases':'ca');
+ ovInitFilters(false);
+ renderDetailKpis();
+ const arr=ovSorted(detailFiltered(false));
+ const countEl=document.getElementById('detailCount'); if(countEl)countEl.textContent=arr.length+' '+t('ovCases');
  const body=document.getElementById('detailBody'); if(!body)return;
  if(!arr.length){body.innerHTML='<tr><td colspan="16" class="empty">'+escapeHtml(t('noData'))+'</td></tr>';return;}
  body.innerHTML=arr.map((x,i)=>{
-  const res=(x['Reliability Test Result']||x['Result after reliability test']||'').toString().trim();
+  const res=(x['Reliability Test Result']||'').toString().trim();
   const resCls=res==='Pass'?'pass':(res==='Fail'||res==='NG')?'fail':'pending';
-  const before=(x['CPK Review Result']||'').toString().trim(), after=(x['CPK After']||'').toString().trim();
-  const beforeHtml=before?'<span class="cpk-status '+(before==='양호'?'cpk-good':before==='보완필요'?'cpk-improve':'cpk-review')+'">'+escapeHtml(before)+'</span>':'<span class="missing-cell">'+escapeHtml(progressText('review'))+'</span>';
-  const afterHtml=after?'<span class="cpk-status '+(after==='양호'?'cpk-good':after==='보완필요'?'cpk-improve':'cpk-review')+'">'+escapeHtml(after)+'</span>':'<span class="missing-cell">'+escapeHtml(progressText('missing'))+'</span>';
   const cr=(x['CR No']||'').toString().trim(), report=(x['Report No']||'').toString().trim(), reason=progressReason(x), file=x.__report_path||x.__report_filename;
-  const download=file?'<button type="button" class="download-btn" onclick="event.stopPropagation();downloadReliabilityProgressReport('+Number(x.No)+',this)">↓ '+escapeHtml(lang==='vi'?'Tải xuống':lang==='en'?'Download':'다운로드')+'</button>':'<span class="dash">-</span>';
-  return '<tr data-no="'+Number(x.No)+'"><td>'+Number(i+1)+'</td><td>'+escapeHtml(x['Requested Date by Planning team']||'-')+'</td><td class="reason-cell">'+escapeHtml(reason||progressText('missing'))+'</td><td>'+escapeHtml(x.Model||'-')+'</td><td class="wrap-cell">'+escapeHtml(cleanMaterial(x.Material))+'</td><td class="wrap-cell">'+escapeHtml(cleanCond(x['Test Condition']))+'</td><td>'+beforeHtml+'</td><td>'+afterHtml+'</td><td class="'+(cr?'present-cell':'missing-cell')+'">'+escapeHtml(cr||progressText('crMissing'))+'</td><td>'+(res?'<span class="badge '+resCls+'">'+escapeHtml(res)+'</span>':'<span class="missing-cell">'+escapeHtml(progressText('missing'))+'</span>')+'</td><td class="'+(report?'present-cell':'missing-cell')+'">'+escapeHtml(report||progressText('reportMissing'))+'</td><td>'+escapeHtml(x['Reliability Test Status']||'-')+'</td><td>'+escapeHtml(x.PIC||'-')+'</td><td>'+escapeHtml(x['Reliability Test Start Date']||'-')+'</td><td>'+escapeHtml(x['Reliability Test Expected End Date']||'-')+'</td><td>'+download+'</td></tr>';
+  const mat=ovMaterialText(x.Material), sv=(x['Reliability Test Status']||'').toString().trim(), so=OV_STATUS[sv];
+  const statusHtml=sv?'<span class="test-status '+(so?so.cls:'test-wait')+'">'+escapeHtml(ovStatusText(sv))+'</span>'+(so?'<div class="ov-steps ov-step-'+so.step+'">'+[1,2,3].map(n=>'<i'+(n<=so.step?' class="on"':'')+'></i>').join('')+'</div>':''):ovMissing('missing');
+  const download=file?'<button type="button" class="download-btn" onclick="event.stopPropagation();downloadReliabilityProgressReport('+Number(x.No)+',this)">↓ '+escapeHtml(t('download'))+'</button>':'<span class="dash">-</span>';
+  return '<tr data-no="'+Number(x.No)+'">'+
+   '<td>'+(i+1)+'</td>'+
+   '<td>'+escapeHtml(x['Requested Date by Planning team']||'-')+'</td>'+
+   '<td class="ov-left">'+(ovEmpty(reason)?ovMissing('missing'):ovClamp(reason))+'</td>'+
+   '<td>'+(ovEmpty(x.Model)?ovMissing('missing'):ovClamp(x.Model))+'</td>'+
+   '<td class="ov-left">'+(mat?ovClamp(mat):ovMissing('missing'))+'</td>'+
+   '<td>'+escapeHtml(dashboardDisplayCondition(x['Test Condition']))+'</td>'+
+   '<td>'+ovCpkCell(x['CPK Review Result'],'missing')+'</td>'+
+   '<td>'+ovCpkCell(x['CPK After'],'missing')+'</td>'+
+   '<td>'+(cr?ovClamp(cr):ovMissing('crMissing'))+'</td>'+
+   '<td>'+(res?'<span class="badge '+resCls+'">'+escapeHtml(res)+'</span>':ovMissing('missing'))+'</td>'+
+   '<td>'+(report?ovClamp(report):ovMissing('reportMissing'))+'</td>'+
+   '<td>'+statusHtml+'</td>'+
+   '<td>'+(ovEmpty(x.PIC)?'-':ovClamp(x.PIC))+'</td>'+
+   '<td>'+escapeHtml(x['Reliability Test Start Date']||'-')+'</td>'+
+   '<td>'+escapeHtml(x['Reliability Test Expected End Date']||'-')+'</td>'+
+   '<td>'+download+'</td></tr>';
  }).join('');
- document.querySelectorAll('#detailBody tr[data-no]').forEach(tr=>tr.onclick=()=>openDetail(tr.dataset.no));
+ body.querySelectorAll('tr[data-no]').forEach(tr=>tr.onclick=()=>openDetail(tr.dataset.no));
 }
 
 function openDetail(no){
  const x=DATA.find(r=>String(r.No)===String(no)); if(!x)return;
- const f=[['requestDate','요청일',x['Requested Date by Planning team']],['model','제품명',x.Model],['material','자재',cleanMaterial(x.Material)],['condition','시험항목',cleanCond(x['Test Condition'])],['status','진행상태',x['Reliability Test Status']],['result','시험결과',x['Reliability Test Result']],['reportNo','Report No.',x['Report No']],['pic','PIC',x.PIC],['CR No.','CR No.',x['CR No']],['Test Qty','Test Qty',x['Test Qty']],['reliabilityStartDate','신뢰성 TEST 시작 일자',x['Reliability Test Start Date']],['reliabilityExpectedEndDate','신뢰성 TEST 종료 예상 일자',x['Reliability Test Expected End Date']],['Test Start Time','시험 시작',x['Test Start Time']],['Test End Time','시험 종료',x['Test End Time']],['Production Date','생산일',x['Production Date']],['Lot No','Lot No.',x['Lot No']],['reason','시험 사유',x['Reason for Running Sample']],['before','시험 전 결과',x['Result before reliability test']],['after','시험 후 결과',x['Result after reliability test']],['remark','비고',x.Remark]];
- document.getElementById('detailContent').innerHTML=f.map(a=>`<div class="detailitem ${['reason','before','after','remark'].includes(a[0])?'full':''}"><b>${escapeHtml(lang==='ko'?a[1]:a[0])}</b><div class="longtext">${escapeHtml(a[2]??'-')}</div></div>`).join('');
+ const L=(ko,en,vi)=>lang==='en'?en:lang==='vi'?vi:ko;
+ const f=[
+  [L('요청일','Request Date','Ngày yêu cầu'),x['Requested Date by Planning team']],
+  ['Model',x.Model],
+  [L('자재','Material','Vật liệu'),ovMaterialText(x.Material)],
+  [L('시험항목','Test Item','Hạng mục kiểm tra'),ovText(x['Test Condition'])],
+  [L('상태','Status','Trạng thái'),ovStatusText(x['Reliability Test Status'])],
+  [L('실험결과','Test Result','Kết quả kiểm tra'),ovResultText(x['Reliability Test Result'])],
+  ['CPK Before',ovCpkText(x['CPK Review Result'])],
+  ['CPK After',ovCpkText(x['CPK After'])],
+  ['CR No.',x['CR No']],
+  ['Report No.',x['Report No']],
+  ['PIC',x.PIC],
+  ['Test Qty',x['Test Qty']],
+  [L('TEST 시작일','Test Start Date','Ngày bắt đầu TEST'),x['Reliability Test Start Date']],
+  [L('TEST 종료예정일','Expected End Date','Ngày dự kiến kết thúc'),x['Reliability Test Expected End Date']],
+  [L('생산일','Production Date','Ngày sản xuất'),x['Production Date']],
+  ['Lot No.',x['Lot No']],
+  [L('시험사유','Test Reason','Lý do kiểm tra'),x['Reason for Running Sample'],1],
+  [L('신뢰성 시험 전 결과','Result Before Reliability Test','Kết quả trước kiểm tra độ tin cậy'),x['Result before reliability test'],1],
+  [L('신뢰성 시험 후 결과','Result After Reliability Test','Kết quả sau kiểm tra độ tin cậy'),x['Result after reliability test'],1],
+  [L('비고','Remark','Ghi chú'),x.Remark,1]
+ ];
+ document.getElementById('detailContent').innerHTML=f.map(a=>{const v=ovText(a[1]);return '<div class="detailitem'+(a[2]?' full':'')+'"><b>'+escapeHtml(a[0])+'</b><div class="longtext">'+escapeHtml(v||'-')+'</div></div>'}).join('');
  document.getElementById('detailModal').classList.add('show');
 }
 document.getElementById('closeModal').onclick=()=>document.getElementById('detailModal').classList.remove('show');
 document.getElementById('detailModal').onclick=e=>{if(e.target.id==='detailModal')e.currentTarget.classList.remove('show')};
-['detailStatus','detailResult','detailSearchModel','detailSearch'].forEach(id=>document.getElementById(id).addEventListener('input',renderDetailTable));
-document.getElementById('detailClear').onclick=()=>{['detailStatus','detailResult','detailSearchModel','detailSearch'].forEach(id=>document.getElementById(id).value='');renderDetailTable()};
+
+/* ----- Excel(.xlsx) 다운로드: 이미 로드된 JSZip으로 생성 ----- */
+function ovXml(s){return String(s??'').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function ovColName(i){let s='';i++;while(i>0){const m=(i-1)%26;s=String.fromCharCode(65+m)+s;i=Math.floor((i-1)/26)}return s}
+function ovExcelRows(){
+ const headers=['No.',t('requestDate'),t('ovThReason'),'Model',t('material'),t('condition'),'CPK Before','CPK After','CR No.',t('ovThResult'),'Report No.',t('ovThStatus'),'PIC',t('ovThStart'),t('ovThEnd'),t('ovThReportFile')];
+ const rows=ovSorted(detailFiltered(false)).map((x,i)=>[
+  i+1,
+  x['Requested Date by Planning team']||'',
+  ovEmpty(x['Reason for Running Sample'])?'':ovText(x['Reason for Running Sample']),
+  ovText(x.Model),
+  ovMaterialText(x.Material),
+  ovEmpty(x['Test Condition'])?'':ovText(x['Test Condition']),
+  ovText(x['CPK Review Result']),
+  ovText(x['CPK After']),
+  ovText(x['CR No']),
+  (x['Reliability Test Result']||'').toString().trim(),
+  ovText(x['Report No']),
+  (x['Reliability Test Status']||'').toString().trim()?ovStatusText(x['Reliability Test Status']):'',
+  ovText(x.PIC),
+  x['Reliability Test Start Date']||'',
+  x['Reliability Test Expected End Date']||'',
+  x.__report_filename||''
+ ]);
+ return {headers,rows};
+}
+async function ovBuildXlsx(headers,rows){
+ const widths=[6,12,45,16,32,18,14,22,16,11,18,14,12,14,16,28];
+ const cell=(v,r,c,style)=>{const ref=ovColName(c)+r;if(typeof v==='number')return '<c r="'+ref+'" s="'+style+'"><v>'+v+'</v></c>';const s=String(v??'');if(!s)return '<c r="'+ref+'" s="'+style+'"/>';return '<c r="'+ref+'" s="'+style+'" t="inlineStr"><is><t xml:space="preserve">'+ovXml(s)+'</t></is></c>'};
+ let sheet='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><sheetFormatPr defaultRowHeight="15"/><cols>'+widths.map((w,i)=>'<col min="'+(i+1)+'" max="'+(i+1)+'" width="'+w+'" customWidth="1"/>').join('')+'</cols><sheetData>';
+ sheet+='<row r="1">'+headers.map((h,c)=>cell(h,1,c,1)).join('')+'</row>';
+ rows.forEach((row,ri)=>{const r=ri+2;sheet+='<row r="'+r+'">'+row.map((v,c)=>cell(v,r,c,2)).join('')+'</row>'});
+ sheet+='</sheetData><autoFilter ref="A1:'+ovColName(headers.length-1)+(rows.length+1)+'"/></worksheet>';
+ const styles='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="10"/><name val="Arial"/></font><font><b/><sz val="10"/><color rgb="FF10385F"/><name val="Arial"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFEAF3FB"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style="thin"><color rgb="FFD9E3EC"/></left><right style="thin"><color rgb="FFD9E3EC"/></right><top style="thin"><color rgb="FFD9E3EC"/></top><bottom style="thin"><color rgb="FFD9E3EC"/></bottom><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="3"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
+ const zip=new JSZip();
+ zip.file('[Content_Types].xml','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>');
+ zip.file('_rels/.rels','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>');
+ zip.file('xl/workbook.xml','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Reliability Tests" sheetId="1" r:id="rId1"/></sheets><definedNames><definedName name="_xlnm._FilterDatabase" localSheetId="0" hidden="1">\'Reliability Tests\'!$A$1:$'+ovColName(headers.length-1)+'$'+(rows.length+1)+'</definedName></definedNames></workbook>');
+ zip.file('xl/_rels/workbook.xml.rels','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>');
+ zip.file('xl/worksheets/sheet1.xml',sheet);
+ zip.file('xl/styles.xml',styles);
+ return zip.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',compression:'DEFLATE'});
+}
+async function ovDownloadExcel(){
+ const btn=document.getElementById('overviewDownloadAll');
+ try{
+  if(btn)btn.disabled=true;
+  if(typeof JSZip==='undefined')throw new Error('JSZip not loaded');
+  const {headers,rows}=ovExcelRows();
+  const blob=await ovBuildXlsx(headers,rows);
+  const url=URL.createObjectURL(blob), a=document.createElement('a');
+  a.href=url; a.download='SJIT_Reliability_Test_List_'+new Date().toISOString().slice(0,10)+'.xlsx';
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1500);
+ }catch(e){console.error(e);alert(t('ovExcelFail')+(e.message||e));}
+ finally{if(btn)btn.disabled=false;}
+}
+
+/* ----- 이벤트 연결 ----- */
+['detailStatus','detailResult','detailModel','detailCondition','detailDateFrom','detailDateTo'].forEach(id=>document.getElementById(id)?.addEventListener('change',renderDetailTable));
+document.getElementById('detailSearch')?.addEventListener('input',renderDetailTable);
+document.getElementById('detailSearchBtn')?.addEventListener('click',renderDetailTable);
+document.getElementById('detailClear')?.addEventListener('click',()=>{['detailStatus','detailResult','detailModel','detailCondition','detailDateFrom','detailDateTo','detailSearch'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=''});renderDetailTable()});
+document.getElementById('detailManualBtn')?.addEventListener('click',()=>document.getElementById('newReportBtn')?.click());
+document.getElementById('overviewDownloadAll')?.addEventListener('click',ovDownloadExcel);
 
 
 function initMaterialAnalysis(){
@@ -1709,17 +1861,9 @@ document.addEventListener('DOMContentLoaded',()=>{
 
 
 
-\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n
+
 
 <script id="reliability-progress-v1-js">
-function progressDisplay(v){
-  const s=(v??'').toString().trim();
-  return s?escapeHtml(s):'<span class="dash">미입력</span>';
-}
-function progressCell(v){
-  const s=(v??'').toString().trim();
-  return s?'<td class="present">'+escapeHtml(s)+'</td>':'<td class="missing">미입력</td>';
-}
 function progressText(key, fallback){
   const vi=typeof lang!=='undefined'&&lang==='vi', en=typeof lang!=='undefined'&&lang==='en';
   const map={
@@ -1734,79 +1878,6 @@ function progressText(key, fallback){
 }
 function progressReason(x){
   return (x['Reason for Running Sample']||x['Reason']||'').toString().trim();
-}
-function progressCsvEscape(v){
-  const s=(v??'').toString().replace(/"/g,'""');
-  return '"'+s+'"';
-}
-function downloadReliabilityProgressExcel(){
-  const rows=[...DATA].sort((a,b)=>String(b['Requested Date by Planning team']||'').localeCompare(String(a['Requested Date by Planning team']||''))||Number(b.No)-Number(a.No));
-  const vi=typeof lang!=='undefined'&&lang==='vi', en=typeof lang!=='undefined'&&lang==='en';
-  const headers=vi
-    ? ['No.','Ngày yêu cầu','Lý do kiểm tra','CPK Before','CPK After','CR No.','Test Result','Report No.']
-    : en
-    ? ['No.','Request Date','Test Reason','CPK Before','CPK After','CR No.','Test Result','Report No.']
-    : ['No.','요청일','시험사유','CPK Before','CPK After','CR No.','실험결과','Report No.'];
-  const lines=[headers.map(progressCsvEscape).join(',')];
-  rows.forEach(x=>{
-    const cpkBefore=x['CPK Review Result']||progressText('review');
-    const cpkAfter=x['CPK After']||progressText('missing');
-    const cr=x['CR No']||progressText('crMissing');
-    const result=(x['Reliability Test Result']||x['Result after reliability test']||'').toString().trim()||progressText('missing');
-    const report=x['Report No']||progressText('reportMissing');
-    lines.push([
-      x.No,
-      x['Requested Date by Planning team']||'',
-      progressReason(x)||progressText('missing'),
-      cpkBefore,cpkAfter,cr,result,report
-    ].map(progressCsvEscape).join(','));
-  });
-  const blob=new Blob(['\ufeff'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  const d=new Date().toISOString().slice(0,10);
-  a.href=url;
-  a.download=(vi?'danh_sach_tien_do_do_tin_cay_':en?'reliability_progress_':'신뢰성_진행내역_')+d+'.csv';
-  document.body.appendChild(a);a.click();a.remove();
-  setTimeout(()=>URL.revokeObjectURL(url),1000);
-}
-function renderReliabilityProgress(){
-  const body=document.getElementById('progressBody');
-  if(!body)return;
-  const q=(document.getElementById('progressSearch')?.value||'').toLowerCase().trim();
-  const rows=[...DATA].sort((a,b)=>String(b['Requested Date by Planning team']||'').localeCompare(String(a['Requested Date by Planning team']||''))||Number(b.No)-Number(a.No));
-  const filteredRows=!q?rows:rows.filter(x=>{
-    const hay=[x.No,x['Requested Date by Planning team'],progressReason(x),x['CR No'],x.Model,x['Report No'],x['Result after reliability test'],x['CPK Review Result'],x['CPK After']].map(v=>(v??'').toString().toLowerCase()).join(' ');
-    return hay.includes(q);
-  });
-  const issued=filteredRows.filter(x=>(x['Report No']||'').toString().trim()).length;
-  const missingCpkAfter=filteredRows.filter(x=>!(x['CPK After']||'').toString().trim()).length;
-  const missingCr=filteredRows.filter(x=>!(x['CR No']||'').toString().trim()).length;
-  const summary=document.getElementById('progressSummary');
-  if(summary)summary.innerHTML=[
-    '<span class="summary-chip">'+(lang==='vi'?'Tổng: ':lang==='en'?'Total: ':'전체: ')+filteredRows.length+'</span>',
-    '<span class="summary-chip warn">'+(lang==='vi'?'CPK After chưa nhập: ':lang==='en'?'CPK After missing: ':'후 CPK 미입력: ')+missingCpkAfter+'</span>',
-    '<span class="summary-chip warn">'+(lang==='vi'?'CR chưa đăng ký: ':lang==='en'?'CR missing: ':'CR 미등록: ')+missingCr+'</span>',
-    '<span class="summary-chip '+(issued===filteredRows.length&&filteredRows.length?'ok':'warn')+'">'+(lang==='vi'?'Report chưa phát hành: ':lang==='en'?'Report missing: ':'레포트 미발행: ')+(filteredRows.length-issued)+'</span>'
-  ].join('');
-  if(!filteredRows.length){body.innerHTML='<tr><td colspan="9" class="empty">'+progressText('noData')+'</td></tr>';return;}
-  body.innerHTML=filteredRows.map((x,i)=>{
-    const report=(x['Report No']||'').toString().trim();
-    const file=x.__report_path||x.__report_filename;
-    const btn=file?'<button class="download-btn" onclick="downloadReliabilityProgressReport('+Number(x.No)+',this)">↓ '+(lang==='vi'?'Tải xuống':lang==='en'?'Download':'다운로드')+'</button>':'<span class="dash">-</span>';
-    const result=(x['Reliability Test Result']||x['Result after reliability test']||'').toString().trim();
-    return '<tr>'+
-      '<td>'+Number(x.No)+'</td>'+
-      '<td>'+progressDisplay(x['Requested Date by Planning team'])+'</td>'+
-      (progressReason(x)?'<td class="present">'+escapeHtml(progressReason(x))+'</td>':'<td class="missing">'+progressText('missing')+'</td>')+
-      (x['CPK Review Result']?'<td class="present">'+escapeHtml(x['CPK Review Result'])+'</td>':'<td class="missing">'+progressText('review')+'</td>')+
-      progressCell(x['CPK After'])+
-      (x['CR No']?'<td class="present">'+escapeHtml(x['CR No'])+'</td>':'<td class="missing">'+progressText('crMissing')+'</td>')+
-      (result?'<td class="present">'+escapeHtml(result)+'</td>':'<td class="missing">'+progressText('missing')+'</td>')+
-      (report?'<td class="present">'+escapeHtml(report)+'</td>':'<td class="missing">'+progressText('reportMissing')+'</td>')+
-      '<td>'+btn+'</td>'+
-      '</tr>';
-  }).join('');
 }
 async function downloadReliabilityProgressReport(no,btn){
   const old=btn?.textContent;
@@ -1838,17 +1909,6 @@ async function downloadReliabilityProgressReport(no,btn){
     if(btn){btn.disabled=false;btn.textContent=old||'↓ 다운로드';}
   }
 }
-document.addEventListener('DOMContentLoaded',()=>{
-  document.getElementById('progressSearch')?.addEventListener('input',renderReliabilityProgress);
-  document.getElementById('progressClear')?.addEventListener('click',()=>{
-    const el=document.getElementById('progressSearch');if(el)el.value='';
-    renderReliabilityProgress();
-  });
-  document.getElementById('progressDownloadAll')?.addEventListener('click',downloadReliabilityProgressExcel);
-  document.getElementById('progressRefresh')?.addEventListener('click',async()=>{
-    try{await bootSupabase();}catch(e){console.error(e);alert('DB 새로고침 실패: '+(e.message||e));}
-  });
-});
 </script>
 <script id="final-message-i18n">
 (function(){
@@ -1961,7 +2021,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     const wrappedShowView=function(v){
       originalShowView.apply(this,arguments);
       requestAnimationFrame(function(){
-        const map={dashboard:'viewDashboard',overview:'viewOverview',progress:'viewProgress',material:'viewMaterial',report:'viewReport',notice:'viewNotice'};
+        const map={dashboard:'viewDashboard',overview:'viewOverview',material:'viewMaterial',report:'viewReport',notice:'viewNotice'};
         resetViewScroll(map[v]||'viewDashboard');
       });
     };
