@@ -876,7 +876,8 @@ function openManualForEdit(no){
  document.getElementById('mMaterial').value=cleanMaterial(x.Material)||'';
  document.getElementById('mCondition').value=x['Test Condition']||'';
  document.getElementById('mResult').value=x['Reliability Test Result']||'';
- document.getElementById('mCpkBefore').value=x['CPK Review Result']||'미검토';\n document.getElementById('mCpkAfter').value=x['CPK After']||'';
+ document.getElementById('mCpkBefore').value=x['CPK Review Result']||'미검토';
+ document.getElementById('mCpkAfter').value=x['CPK After']||'';
  document.getElementById('mResultBefore').value=x['Result before reliability test']||'';
  document.getElementById('mResultAfter').value=x['Result after reliability test']||'';
  document.getElementById('mStatus').value=x['Reliability Test Status']||'';
@@ -1248,7 +1249,8 @@ async function saveManualV16(closeAfter){
     test_result:document.getElementById('mResult').value||null,
     result_before:document.getElementById('mResultBefore')?.value||old['Result before reliability test']||null,
     result_after:document.getElementById('mResultAfter').value||old['Result after reliability test']||null,
-    cpk_review_result:document.getElementById('mCpkBefore')?.value||old['CPK Review Result']||null,\n    cpk_after:document.getElementById('mCpkAfter')?.value.trim()||old['CPK After']||null,
+    cpk_review_result:document.getElementById('mCpkBefore')?.value||old['CPK Review Result']||null,
+    cpk_after:document.getElementById('mCpkAfter')?.value.trim()||old['CPK After']||null,
     test_status:statusValue,
     reliability_start_date:reliabilityStartDate,
     reliability_expected_end_date:reliabilityExpectedEndDate,
