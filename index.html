@@ -2061,13 +2061,20 @@ async function downloadReliabilityProgressReport(no,btn){
   Object.assign(I18N.en,{requestDate:'Request date',cpkBefore:'CPK Before',cpkAfter:'CPK After',manualNote:'Saved tests and reports update the shared data and are available in other menus.',reportUploadDesc:'Select a PDF or Excel report to save to the shared server.'});
   Object.assign(I18N.vi,{requestDate:'Ngày đề nghị',cpkBefore:'CPK trước kiểm tra',cpkAfter:'CPK sau kiểm tra',manualNote:'Bài kiểm tra và báo cáo đã lưu được cập nhật vào dữ liệu dùng chung và hiển thị ở các mục khác.',reportUploadDesc:'Chọn báo cáo PDF hoặc Excel để lưu trên máy chủ dùng chung.'});
   const esc=v=>escapeHtml(String(v??''));
-  const val=v=>['-','None','null'].includes(String(v??'').trim())?'':String(v??'').trim();
+  const val=v=>['-','None','null'].includes(String(v??'').trim())?'':String(v??'').replace(/\r\n?/g,'\n').trim();
   const today=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Ho_Chi_Minh',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
   const key=r=>{const cr=val(r['CR No']);return [cr,r.Model,r['Test Condition'],r['Requested Date by Planning team'],...(cr?[]:[r.Material,r['Lot No']])].map(x=>val(x).toLowerCase().replace(/\s+/g,' ')).join('\u001f');};
   const keys={request_date:'Requested Date by Planning team',production_date:'Production Date',pic:'PIC',test_status:'Reliability Test Status',test_result:'Reliability Test Result',reliability_start_date:'Reliability Test Start Date',reliability_expected_end_date:'Reliability Test Expected End Date',cpk_review_result:'CPK Review Result',cpk_after:'CPK After',remark:'Remark'};
   let mode='open', ready=false, imported=[], saving=false;
-  function hasEdits(){return [...document.querySelectorAll('#workBody tr[data-id]')].some(tr=>{const old=DATA.find(r=>Number(r.No)===Number(tr.dataset.id));return old&&[...tr.querySelectorAll('[data-field]')].some(e=>val(e.value)!==val(old[keys[e.dataset.field]]));});}
-  function leave(){return !hasEdits()||confirm(L('저장하지 않은 수정 내용이 있습니다. 변경 내용을 버릴까요?','Discard unsaved changes?','Bỏ các thay đổi chưa lưu?'));}
+  const editBaselines=new WeakMap();
+  const changedField=e=>val(e.value)!==val(editBaselines.get(e)??e.value);
+  function hasEdits(){return [...document.querySelectorAll('#workBody [data-field]')].some(changedField);}
+  function discardEdits(){for(const e of document.querySelectorAll('#workBody [data-field]'))if(editBaselines.has(e))e.value=editBaselines.get(e);}
+  function leave(){
+    if(!hasEdits())return true;
+    if(!confirm(L('저장하지 않은 수정 내용이 있습니다. 변경 내용을 버릴까요?','Discard unsaved changes?','Bỏ các thay đổi chưa lưu?')))return false;
+    discardEdits();return true;
+  }
   window.addEventListener('beforeunload',e=>{if(hasEdits()){e.preventDefault();e.returnValue='';}});
   const norm=v=>val(v).normalize('NFKC').toLowerCase();
   function flags(r){
@@ -2115,12 +2122,12 @@ async function downloadReliabilityProgressReport(no,btn){
     el('workFilters').innerHTML=modes.map(([k,t])=>'<button data-mode="'+k+'" aria-pressed="'+(mode===k)+'">'+esc(t)+' '+arr.filter(r=>k==='all'||flags(r)[k]).length+'</button>').join('');
     const visible=arr.filter(r=>mode==='all'||flags(r)[mode]).sort((a,b)=>Number(flags(b).overdue)-Number(flags(a).overdue)||val(a['Reliability Test Expected End Date']).localeCompare(val(b['Reliability Test Expected End Date'])));
     el('workBody').innerHTML=visible.map(r=>{const st=val(r['Reliability Test Status']);return '<tr data-id="'+Number(r.No)+'"><td><b>'+esc(r.Model)+'</b><br>'+esc(r['CR No'])+'<br><span class="work-info">'+esc(r['Test Condition'])+' / '+esc(r.Material)+'</span><br><strong>'+esc(next(r))+'</strong></td><td><input type="date" data-field="request_date" value="'+esc(val(r['Requested Date by Planning team']))+'"><div class="work-info">'+esc(L('시험 발의 날짜','Test requested on','Ngày đề nghị kiểm tra'))+'</div></td><td><input type="text" data-field="production_date" placeholder="YYYY-MM-DD" value="'+esc(val(r['Production Date']))+'"><div class="work-info">'+esc(/plan|pending|예정/i.test(val(r['Production Date']))?L('생산 예정 · 실제 생산일 아님','Planned / pending, not actual production','Dự kiến / chờ, chưa phải ngày sản xuất thực tế'):val(r['Production Date'])?L('제품 생산 날짜','Product production date','Ngày sản xuất sản phẩm'):L('생산일 미입력','Production date not entered','Chưa nhập ngày sản xuất'))+'</div></td><td><input data-field="pic" value="'+esc(r.PIC)+'"></td><td>'+select('test_status',st,[['','—'],['Not tested',L('미착수','Not started','Chưa bắt đầu')],['신뢰성 진행 중',L('진행 중','Testing','Đang kiểm tra')],['Finished',L('시험 완료','Test finished','Đã kiểm tra')]])+'</td>'+['reliability_start_date','reliability_expected_end_date'].map(k=>'<td><input type="date" data-field="'+k+'" value="'+esc(val(r[keys[k]]))+'"></td>').join('')+'<td>'+select('test_result',val(r['Reliability Test Result']),[['','—'],['Pass',L('합격 (Pass)','Pass','Đạt (Pass)')],['Fail',L('불합격 (Fail)','Fail','Không đạt (Fail)')]])+'</td><td>'+select('cpk_review_result',val(r['CPK Review Result']),[['','—'],['미검토',L('미검토','Not reviewed','Chưa đánh giá')],['양호',L('양호','Good','Tốt')],['보완필요',L('보완 필요','Needs improvement','Cần cải thiện')]])+'</td><td><textarea data-field="cpk_after">'+esc(val(r['CPK After']))+'</textarea></td><td><textarea data-field="remark">'+esc(r.Remark)+'</textarea></td><td><button class="btn primary" data-save>'+esc(L('저장','Save','Lưu'))+'</button><br><button class="smallbtn" data-detail>'+esc(L('상세 / 보고서','Details / Report','Chi tiết / Báo cáo'))+'</button><div class="work-info" data-row-message role="status"></div></td></tr>';}).join('')||'<tr><td colspan="12" class="empty">'+esc(ready?L('해당 업무가 없습니다.','No matching tasks.','Không có công việc phù hợp.'):L('데이터를 불러오는 중입니다.','Loading data.','Đang tải dữ liệu.'))+'</td></tr>';
-    root.querySelectorAll('[data-field]').forEach(input=>{const th=input.closest('td').cellIndex;input.setAttribute('aria-label',el('workHeaders').querySelectorAll('th')[th].textContent);});
+    root.querySelectorAll('[data-field]').forEach(input=>{editBaselines.set(input,input.value);const th=input.closest('td').cellIndex;input.setAttribute('aria-label',el('workHeaders').querySelectorAll('th')[th].textContent);});
   }
   async function refresh(){await bootSupabase();ready=true;renderWork();}
   async function saveRow(tr){
     const id=Number(tr.dataset.id),old=DATA.find(r=>Number(r.No)===id),patch={};
-    tr.querySelectorAll('[data-field]').forEach(e=>{if(val(e.value)!==val(old[keys[e.dataset.field]]))patch[e.dataset.field]=val(e.value)||null;});
+    tr.querySelectorAll('[data-field]').forEach(e=>{if(changedField(e))patch[e.dataset.field]=val(e.value)||null;});
     const msg=tr.querySelector('[data-row-message]');if(patch.request_date===null){msg.textContent=L('발의일을 입력하세요.','Enter the request date.','Nhập ngày đề nghị.');return;}if(!Object.keys(patch).length){msg.textContent=L('변경 없음','No changes','Không có thay đổi');return;}
     const start=patch.reliability_start_date===undefined?val(old['Reliability Test Start Date']):patch.reliability_start_date,end=patch.reliability_expected_end_date===undefined?val(old['Reliability Test Expected End Date']):patch.reliability_expected_end_date;
     if(start&&end&&end<start){msg.textContent=L('종료 예정일은 시작일 이후로 지정하세요.','Expected end cannot precede start.','Ngày kết thúc không được trước ngày bắt đầu.');return;}
