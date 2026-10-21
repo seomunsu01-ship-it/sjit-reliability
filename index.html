@@ -2060,7 +2060,7 @@ async function downloadReliabilityProgressReport(no,btn){
   const esc=v=>escapeHtml(String(v??''));
   const val=v=>['-','None','null'].includes(String(v??'').trim())?'':String(v??'').trim();
   const today=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Ho_Chi_Minh',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
-  const key=r=>[r['CR No'],r.Model,r['Test Condition'],r['Requested Date by Planning team'],r.Material,r['Lot No']].map(x=>val(x).toLowerCase()).join('\u001f');
+  const key=r=>{const cr=val(r['CR No']);return [cr,r.Model,r['Test Condition'],r['Requested Date by Planning team'],...(cr?[]:[r.Material,r['Lot No']])].map(x=>val(x).toLowerCase().replace(/\s+/g,' ')).join('\u001f');};
   const keys={pic:'PIC',test_status:'Reliability Test Status',test_result:'Reliability Test Result',reliability_start_date:'Reliability Test Start Date',reliability_expected_end_date:'Reliability Test Expected End Date',cpk_review_result:'CPK Review Result',cpk_after:'CPK After',remark:'Remark'};
   let mode='open', ready=false, imported=[], saving=false;
   function hasEdits(){return [...document.querySelectorAll('#workBody tr[data-id]')].some(tr=>{const old=DATA.find(r=>Number(r.No)===Number(tr.dataset.id));return old&&[...tr.querySelectorAll('[data-field]')].some(e=>val(e.value)!==val(old[keys[e.dataset.field]]));});}
@@ -2122,9 +2122,11 @@ async function downloadReliabilityProgressReport(no,btn){
       let query=supabaseClient.from('reliability_tests').update({...patch,updated_at:new Date().toISOString()}).eq('id',id);
       query=fresh.data.updated_at?query.eq('updated_at',fresh.data.updated_at):query.is('updated_at',null);
       const res=await query.select('*').single();if(res.error)throw res.error;
-      DATA[DATA.findIndex(r=>Number(r.No)===id)]=mapDbRow(res.data);filtered=[...DATA];render();renderWork();message(L('저장했습니다.','Saved.','Đã lưu.'));
+      const drafts=[...el('workBody').querySelectorAll('tr[data-id]')].filter(r=>Number(r.dataset.id)!==id).map(r=>({id:r.dataset.id,fields:[...r.querySelectorAll('[data-field]')].map(e=>[e.dataset.field,e.value])}));
+      DATA[DATA.findIndex(r=>Number(r.No)===id)]=mapDbRow(res.data);filtered=[...DATA];render();renderWork();for(const d of drafts)for(const [field,value] of d.fields){const input=el('workBody').querySelector('tr[data-id="'+d.id+'"] [data-field="'+field+'"]');if(input)input.value=value;}message(L('저장했습니다.','Saved.','Đã lưu.'));
     }catch(e){msg.textContent=L('저장 실패: ','Save failed: ','Lưu thất bại: ')+(e.message||e);btn.disabled=false;}
   }
+  el('workBody').onchange=e=>{if(e.target.dataset.field==='test_status'&&e.target.value==='신뢰성 진행 중'){const start=e.target.closest('tr').querySelector('[data-field="reliability_start_date"]');if(!start.value)start.value=today();}};
   el('workBody').onclick=e=>{const tr=e.target.closest('tr[data-id]');if(!tr)return;if(e.target.closest('[data-save]'))saveRow(tr);if(e.target.closest('[data-detail]')&&leave())openManualForEdit(tr.dataset.id);};
   el('workFilters').onclick=e=>{const b=e.target.closest('[data-mode]');if(b&&leave()){mode=b.dataset.mode;renderWork();}};
   el('workPic').onchange=()=>{if(!leave()){el('workPic').value=localStorage.getItem(userKey())||'';return;}localStorage.setItem(userKey(),el('workPic').value);renderWork();};el('workSearch').oninput=()=>{if(leave())renderWork();};
