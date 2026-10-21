@@ -2053,4 +2053,123 @@ async function downloadReliabilityProgressReport(no,btn){
   setTimeout(bindHorizontalScroll,500);
 })();
 </script>
+<script id="operator-workbench-20261021">
+/* Operator workbench. Uses existing authentication, RLS and test fields. */
+(() => {
+  const L=(ko,en,vi)=>lang==='vi'?vi:lang==='en'?en:ko;
+  const esc=v=>escapeHtml(String(v??''));
+  const val=v=>['-','None','null'].includes(String(v??'').trim())?'':String(v??'').trim();
+  const today=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Ho_Chi_Minh',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+  const key=r=>{const cr=val(r['CR No']);return [cr,r.Model,r['Test Condition'],r['Requested Date by Planning team'],...(cr?[]:[r.Material,r['Lot No']])].map(x=>val(x).toLowerCase().replace(/\s+/g,' ')).join('\u001f');};
+  const keys={pic:'PIC',test_status:'Reliability Test Status',test_result:'Reliability Test Result',reliability_start_date:'Reliability Test Start Date',reliability_expected_end_date:'Reliability Test Expected End Date',cpk_review_result:'CPK Review Result',cpk_after:'CPK After',remark:'Remark'};
+  let mode='open', ready=false, imported=[], saving=false;
+  function hasEdits(){return [...document.querySelectorAll('#workBody tr[data-id]')].some(tr=>{const old=DATA.find(r=>Number(r.No)===Number(tr.dataset.id));return old&&[...tr.querySelectorAll('[data-field]')].some(e=>val(e.value)!==val(old[keys[e.dataset.field]]));});}
+  function leave(){return !hasEdits()||confirm(L('저장하지 않은 수정 내용이 있습니다. 변경 내용을 버릴까요?','Discard unsaved changes?','Bỏ các thay đổi chưa lưu?'));}
+  window.addEventListener('beforeunload',e=>{if(hasEdits()){e.preventDefault();e.returnValue='';}});
+  const norm=v=>val(v).normalize('NFKC').toLowerCase();
+  function flags(r){
+    const st=val(r['Reliability Test Status']),done=st==='Finished',running=st==='신뢰성 진행 중',due=val(r['Reliability Test Expected End Date']);
+    const before=val(r['CPK Review Result']),after=val(r['CPK After']);
+    const cpk=(before? !['양호','Pass'].includes(before):true)||(after?/fail|보완/i.test(after):done);
+    const result=!val(r['Reliability Test Result']),report=!val(r['Report No'])||!r.__report_path;
+    return {start:!done&&!running,overdue:running&&!!due&&due<today(),due:running&&due===today(),cpk,result:done&&result,report:done&&report,open:!done||cpk||result||report};
+  }
+  function next(r){const f=flags(r);return f.overdue?L('일정 초과 확인','Review overdue test','Kiểm tra quá hạn'):f.due?L('오늘 종료 예정','Due today','Dự kiến kết thúc hôm nay'):f.start?L('시험 시작','Start test','Bắt đầu kiểm tra'):f.result?L('결과 입력','Enter result','Nhập kết quả'):f.cpk?L('CPK 확인','Review CPK','Kiểm tra CPK'):f.report?L('보고서 등록','Add report','Đăng ký báo cáo'):!f.open?L('추가 확인 항목 없음','No outstanding checks','Không có mục cần kiểm tra thêm'):L('시험 진행 중','Test in progress','Đang kiểm tra');}
+  const root=document.createElement('section');root.id='viewWork';root.className='view';
+  document.querySelector('.main').append(root);const footer=document.querySelector('.main .footer');if(footer)document.querySelector('.main').append(footer);
+  const nav=document.createElement('button');nav.dataset.view='work';document.querySelector('.nav').prepend(nav);
+  const oldShow=window.showView;
+  window.showView=function(v){if(!leave())return;if(v!=='work'){oldShow(v);nav.classList.remove('active');return;}document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id==='viewWork'));document.querySelectorAll('.nav button').forEach(x=>x.classList.toggle('active',x===nav));renderWork();};
+  nav.onclick=()=>showView('work');
+  const style=document.createElement('style');style.textContent=`
+    .work-head{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center;margin:12px 0}.work-head h2{margin:0;color:var(--navy)}
+    .work-tools{display:flex;gap:8px;flex-wrap:wrap}.work-tools select,.work-tools input{height:40px;border:1px solid var(--line);border-radius:7px;padding:8px;background:white;max-width:240px}
+    .work-filters{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}.work-filters button{background:white;border:1px solid var(--line);border-radius:8px;padding:10px;color:var(--navy);cursor:pointer}.work-filters button[aria-pressed=true]{background:var(--blue);color:white}
+    .work-table{min-width:1700px;table-layout:fixed}.work-table th:first-child,.work-table td:first-child{width:220px}.work-table th:first-child{z-index:4!important}.work-table th:last-child,.work-table td:last-child{width:170px}.work-table td{vertical-align:top;white-space:normal}.work-table input,.work-table select,.work-table textarea{width:100%;min-width:110px;padding:7px;border:1px solid var(--line);border-radius:5px;font:inherit;background:white}.work-table textarea{min-width:170px;height:62px}.work-table button{margin-bottom:5px}.work-table th:first-child,.work-table td:first-child{position:sticky;left:0;background:#f2f7fc;z-index:1;min-width:180px;max-width:220px}.work-table th{z-index:2}.work-info{font-size:12px;color:var(--muted);line-height:1.6}.work-live{min-height:24px;margin:8px 0;color:var(--navy)}.work-preview{margin-top:16px;padding:14px;background:#f5f9fc;border:1px solid var(--line)}
+  `;document.head.append(style);
+  root.innerHTML=`<div class="work-head"><h2 id="workTitle"></h2><div class="work-tools"><button class="btn ghost" id="workNew"></button><button class="btn ghost" id="workRefresh"></button><button class="btn ghost" id="workExport"></button><button class="btn primary" id="workImport"></button><input type="file" id="workFile" accept=".xlsx" hidden></div></div><p class="work-info" id="workIntro"></p><div class="work-tools"><label><span id="workPicLabel"></span> <select id="workPic"></select></label><input id="workSearch" type="search"></div><div id="workFilters" class="work-filters"></div><div id="workLive" role="status" aria-live="polite" class="work-live"></div><div class="panel tablewrap" style="max-height:65vh"><table class="tbl work-table"><thead id="workHeaders"></thead><tbody id="workBody"></tbody></table></div><div id="workImportPanel" class="work-preview" hidden></div>`;
+  const el=id=>document.getElementById(id);
+  function message(t){el('workLive').textContent=t;}
+  function userKey(){return 'sjit.work.pic.'+(el('userEmail')?.textContent||'anonymous');}
+  function labels(){
+    nav.textContent=L('오늘 할 일','My work','Công việc hôm nay');
+    const texts={workTitle:L('오늘 처리할 시험 업무','Today’s test work','Công việc kiểm tra hôm nay'),workNew:L('신규 시험','New test','Thêm kiểm tra'),workRefresh:L('새로고침','Refresh','Làm mới'),workExport:L('엑셀 목록 다운로드','Download Excel list','Tải danh sách Excel'),workImport:L('엑셀 일괄 등록','Import Excel','Nhập từ Excel'),workPicLabel:L('담당자','PIC','Người phụ trách'),workIntro:L('담당자와 처리할 업무를 선택하세요. 행을 수정한 뒤 저장하면 공용 데이터에 반영됩니다. 담당자 선택은 조회용이며 접근 권한을 변경하지 않습니다.','Choose your PIC and task. Save each edited row to update shared data. The PIC filter does not change access permissions.','Chọn người phụ trách và công việc. Nhấn Lưu từng dòng để cập nhật dữ liệu dùng chung. Bộ lọc không thay đổi quyền truy cập.')};
+    Object.entries(texts).forEach(([id,t])=>el(id).textContent=t);el('workSearch').placeholder=L('Model / CR / 자재 검색','Search Model / CR / Material','Tìm Model / CR / Vật liệu');
+    el('workHeaders').innerHTML='<tr>'+[L('시험 / 다음 할 일','Test / Next action','Kiểm tra / Việc tiếp theo'),L('담당자','PIC','Phụ trách'),L('시험 상태','Test status','Trạng thái'),L('시작일','Start date','Ngày bắt đầu'),L('종료 예정일','Expected end','Dự kiến kết thúc'),L('시험 결과','Test result','Kết quả'), 'CPK Before','CPK After',L('비고','Remark','Ghi chú'),L('저장 / 상세','Save / Details','Lưu / Chi tiết')].map(t=>'<th>'+esc(t)+'</th>').join('')+'</tr>';
+  }
+  function rows(){const pic=el('workPic').value,q=norm(el('workSearch').value);return DATA.filter(r=>(!pic||norm(r.PIC)===norm(pic))&&(!q||norm([r.Model,r['CR No'],r.Material].join(' ')).includes(q)));}
+  function option(v,t,selected){return '<option value="'+esc(v)+'"'+(v===selected?' selected':'')+'>'+esc(t)+'</option>';}
+  function select(name,value,options){let opts=[...options];if(value&&!opts.some(x=>x[0]===value))opts.push([value,value]);return '<select data-field="'+name+'">'+opts.map(x=>option(x[0],x[1],value)).join('')+'</select>';}
+  function renderWork(){
+    labels();const old=el('workPic').value||localStorage.getItem(userKey())||'';const pics=[...new Set(DATA.map(r=>val(r.PIC)).filter(Boolean))].sort();el('workPic').innerHTML=option('',L('전체 담당자','All PICs','Tất cả'),old)+pics.map(x=>option(x,x,old)).join('');
+    const arr=rows();const modes=[['open',L('처리 필요','To do','Cần xử lý')],['start',L('미착수','Not started','Chưa bắt đầu')],['due',L('오늘 종료','Due today','Kết thúc hôm nay')],['overdue',L('일정 초과','Overdue','Quá hạn')],['cpk',L('CPK 확인','CPK review','Kiểm tra CPK')],['result',L('결과 미입력','Missing results','Chưa nhập kết quả')],['report',L('보고서 대기','Report pending','Chờ báo cáo')],['all',L('전체','All','Tất cả')]];
+    el('workFilters').innerHTML=modes.map(([k,t])=>'<button data-mode="'+k+'" aria-pressed="'+(mode===k)+'">'+esc(t)+' '+arr.filter(r=>k==='all'||flags(r)[k]).length+'</button>').join('');
+    const visible=arr.filter(r=>mode==='all'||flags(r)[mode]).sort((a,b)=>Number(flags(b).overdue)-Number(flags(a).overdue)||val(a['Reliability Test Expected End Date']).localeCompare(val(b['Reliability Test Expected End Date'])));
+    el('workBody').innerHTML=visible.map(r=>{const st=val(r['Reliability Test Status']);return '<tr data-id="'+Number(r.No)+'"><td><b>'+esc(r.Model)+'</b><br>'+esc(r['CR No'])+'<br><span class="work-info">'+esc(r['Test Condition'])+' / '+esc(r.Material)+'</span><br><strong>'+esc(next(r))+'</strong></td><td><input data-field="pic" value="'+esc(r.PIC)+'"></td><td>'+select('test_status',st,[['','—'],['Not tested',L('미착수','Not started','Chưa bắt đầu')],['신뢰성 진행 중',L('진행 중','Testing','Đang kiểm tra')],['Finished',L('시험 완료','Test finished','Đã kiểm tra')]])+'</td>'+['reliability_start_date','reliability_expected_end_date'].map(k=>'<td><input type="date" data-field="'+k+'" value="'+esc(val(r[keys[k]]))+'"></td>').join('')+'<td>'+select('test_result',val(r['Reliability Test Result']),[['','—'],['Pass','Pass'],['Fail','Fail']])+'</td><td>'+select('cpk_review_result',val(r['CPK Review Result']),[['','—'],['미검토',L('미검토','Not reviewed','Chưa đánh giá')],['양호',L('양호','Good','Tốt')],['보완필요',L('보완 필요','Needs improvement','Cần cải thiện')]])+'</td><td><textarea data-field="cpk_after">'+esc(val(r['CPK After']))+'</textarea></td><td><textarea data-field="remark">'+esc(r.Remark)+'</textarea></td><td><button class="btn primary" data-save>'+esc(L('저장','Save','Lưu'))+'</button><br><button class="smallbtn" data-detail>'+esc(L('상세 / 보고서','Details / Report','Chi tiết / Báo cáo'))+'</button><div class="work-info" data-row-message role="status"></div></td></tr>';}).join('')||'<tr><td colspan="10" class="empty">'+esc(ready?L('해당 업무가 없습니다.','No matching tasks.','Không có công việc phù hợp.'):L('데이터를 불러오는 중입니다.','Loading data.','Đang tải dữ liệu.'))+'</td></tr>';
+    root.querySelectorAll('[data-field]').forEach(input=>{const th=input.closest('td').cellIndex;input.setAttribute('aria-label',el('workHeaders').querySelectorAll('th')[th].textContent);});
+  }
+  async function refresh(){await bootSupabase();ready=true;renderWork();}
+  async function saveRow(tr){
+    const id=Number(tr.dataset.id),old=DATA.find(r=>Number(r.No)===id),patch={};
+    tr.querySelectorAll('[data-field]').forEach(e=>{if(val(e.value)!==val(old[keys[e.dataset.field]]))patch[e.dataset.field]=val(e.value)||null;});
+    const msg=tr.querySelector('[data-row-message]');if(!Object.keys(patch).length){msg.textContent=L('변경 없음','No changes','Không có thay đổi');return;}
+    const start=patch.reliability_start_date===undefined?val(old['Reliability Test Start Date']):patch.reliability_start_date,end=patch.reliability_expected_end_date===undefined?val(old['Reliability Test Expected End Date']):patch.reliability_expected_end_date;
+    if(start&&end&&end<start){msg.textContent=L('종료 예정일은 시작일 이후로 지정하세요.','Expected end cannot precede start.','Ngày kết thúc không được trước ngày bắt đầu.');return;}
+    const btn=tr.querySelector('[data-save]');btn.disabled=true;msg.textContent=L('저장 중…','Saving…','Đang lưu…');
+    try{
+      const fresh=await supabaseClient.from('reliability_tests').select('*').eq('id',id).single();if(fresh.error)throw fresh.error;
+      const mapped=mapDbRow(fresh.data);if(Object.keys(patch).some(k=>val(mapped[keys[k]])!==val(old[keys[k]])))throw Error(L('다른 사용자가 수정했습니다. 내용을 복사한 후 새로고침하세요.','Another user changed this row. Copy your edits, then refresh.','Dòng đã được người khác sửa. Sao chép nội dung rồi làm mới.'));
+      let query=supabaseClient.from('reliability_tests').update({...patch,updated_at:new Date().toISOString()}).eq('id',id);
+      query=fresh.data.updated_at?query.eq('updated_at',fresh.data.updated_at):query.is('updated_at',null);
+      const res=await query.select('*').single();if(res.error)throw res.error;
+      const drafts=[...el('workBody').querySelectorAll('tr[data-id]')].filter(r=>Number(r.dataset.id)!==id).map(r=>({id:r.dataset.id,fields:[...r.querySelectorAll('[data-field]')].map(e=>[e.dataset.field,e.value])}));
+      DATA[DATA.findIndex(r=>Number(r.No)===id)]=mapDbRow(res.data);filtered=[...DATA];render();renderWork();for(const d of drafts)for(const [field,value] of d.fields){const input=el('workBody').querySelector('tr[data-id="'+d.id+'"] [data-field="'+field+'"]');if(input)input.value=value;}message(L('저장했습니다.','Saved.','Đã lưu.'));
+    }catch(e){msg.textContent=L('저장 실패: ','Save failed: ','Lưu thất bại: ')+(e.message||e);btn.disabled=false;}
+  }
+  el('workBody').onchange=e=>{if(e.target.dataset.field==='test_status'&&e.target.value==='신뢰성 진행 중'){const start=e.target.closest('tr').querySelector('[data-field="reliability_start_date"]');if(!start.value)start.value=today();}};
+  el('workBody').onclick=e=>{const tr=e.target.closest('tr[data-id]');if(!tr)return;if(e.target.closest('[data-save]'))saveRow(tr);if(e.target.closest('[data-detail]')&&leave())openManualForEdit(tr.dataset.id);};
+  el('workFilters').onclick=e=>{const b=e.target.closest('[data-mode]');if(b&&leave()){mode=b.dataset.mode;renderWork();}};
+  el('workPic').onchange=()=>{if(!leave()){el('workPic').value=localStorage.getItem(userKey())||'';return;}localStorage.setItem(userKey(),el('workPic').value);renderWork();};el('workSearch').oninput=()=>{if(leave())renderWork();};
+  el('workRefresh').onclick=()=>leave()&&refresh().catch(e=>message(e.message));el('workNew').onclick=()=>{if(leave())el('newReportBtn').click();};
+  // Excel output retains the familiar input headings. It does not infer final closure.
+  const headers=["Plan' No ",'No','Test Condition','Month','Requested Date by Planning team','CR No','Model','Material','Test Qty','Production Date','Reason for Running Sample','Input Reliability Web','Lot No','Test Start Time','Test End Time','Reliability Test Status','Reliability Test Result','Result before reliability test','Result after reliability test','Report No','Report date','PIC','Status','Remark'];
+  el('workExport').onclick=async()=>{try{const data=rows();const values=data.map((r,i)=>['',i+1,r['Test Condition'],r.Month,r['Requested Date by Planning team'],r['CR No'],r.Model,r.Material,r['Test Qty'],r['Production Date'],r['Reason for Running Sample'],'Input Reliability Web',r['Lot No'],r['Reliability Test Start Date'],'',r['Reliability Test Status'],r['Reliability Test Result'],r['Result before reliability test'],r['Result after reliability test'],r['Report No'],'',r.PIC,'',r.Remark]);const blob=await ovBuildXlsx(headers,values);const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='Reliability_Test_Sample_List_'+today()+'.xlsx';a.click();setTimeout(()=>URL.revokeObjectURL(url),2000);}catch(e){message(e.message);}};
+  const xml=s=>new DOMParser().parseFromString(s,'application/xml');
+  async function readWorkbook(file){
+    if(file.size>30*1024*1024)throw Error(L('30MB 이하의 파일을 선택하세요.','Choose a file smaller than 30 MB.','Chọn tệp nhỏ hơn 30 MB.'));
+    const zip=await JSZip.loadAsync(file);const wb=xml(await zip.file('xl/workbook.xml').async('string'));if(wb.querySelector('workbookPr')?.getAttribute('date1904')==='1')throw Error(L('1904 날짜 형식은 지원하지 않습니다.','1904 date system is not supported.','Không hỗ trợ hệ ngày 1904.'));
+    const sheets=[...wb.getElementsByTagName('sheet')],sheet=sheets.find(s=>s.getAttribute('name')==='Summary')||sheets[0];const rels=xml(await zip.file('xl/_rels/workbook.xml.rels').async('string'));const rel=[...rels.getElementsByTagName('Relationship')].find(r=>r.getAttribute('Id')===sheet.getAttribute('r:id'));let target=rel.getAttribute('Target').replace(/^\//,'');if(!target.startsWith('xl/'))target='xl/'+target;
+    const shared=zip.file('xl/sharedStrings.xml')?xml(await zip.file('xl/sharedStrings.xml').async('string')):null;const strings=shared?[...shared.getElementsByTagName('si')].map(si=>[...si.getElementsByTagName('t')].map(t=>t.textContent).join('')):[];
+    const doc=xml(await zip.file(target).async('string'));const table=[...doc.getElementsByTagName('row')].map(row=>{const out=[];for(const c of row.getElementsByTagName('c')){let n=0;for(const ch of c.getAttribute('r').replace(/\d/g,''))n=n*26+ch.charCodeAt(0)-64;const type=c.getAttribute('t'),v=c.getElementsByTagName('v')[0]?.textContent||'';out[n-1]=type==='s'?strings[Number(v)]||'':type==='inlineStr'?[...c.getElementsByTagName('t')].map(t=>t.textContent).join(''):v;}return out;});
+    return parseTable(table);
+  }
+  function date(v){const text=val(v);if(!text)return null;if(/^\d+(\.\d+)?$/.test(text)){const n=Number(text);if(n<20000||n>100000)throw Error('Invalid Excel date');return new Date(Date.UTC(1899,11,30)+Math.floor(n)*86400000).toISOString().slice(0,10);}if(/^\d{4}-\d{2}-\d{2}/.test(text)&&!isNaN(Date.parse(text)))return text.slice(0,10);throw Error(L('날짜 형식을 확인하세요: ','Check date format: ','Kiểm tra định dạng ngày: ')+text);}
+  function parseTable(table){
+    const h=table.findIndex(r=>r.some(c=>val(c)==='Model')&&r.some(c=>val(c)==='Test Condition'));if(h<0)throw Error(L('Model 및 Test Condition 열을 찾을 수 없습니다.','Missing Model and Test Condition headers.','Thiếu cột Model và Test Condition.'));
+    const hs=table[h].map(val),seen=new Set(DATA.map(key));return table.slice(h+1).filter(r=>r.some(c=>val(c))).map((row,i)=>{const get=n=>val(row[hs.indexOf(n)]),raw=Object.fromEntries(hs.map((n,c)=>[n,val(row[c])]));let error='',payload={},record={},warnings=[];try{
+      if(!get('Model'))throw Error('Model');if(!get('Test Condition'))throw Error('Test Condition');
+      const st=get('Reliability Test Status');if(st&&!['Finished','Not tested','신뢰성 진행 중'].includes(st))throw Error('Reliability Test Status: '+st);
+      const result=get('Reliability Test Result');if(result&&!['Pass','Fail'].includes(result))throw Error('Reliability Test Result: '+result);
+      const rawQty=get('Test Qty'),qty=rawQty&&Number.isInteger(Number(rawQty))&&Number(rawQty)>=0?rawQty:'';if(rawQty&&!qty)warnings.push('[Excel Test Qty] '+rawQty);
+      const optionalDate=(name)=>{try{return date(get(name));}catch(_){warnings.push('[Excel '+name+'] '+get(name));return null;}};
+      const request=date(get('Requested Date by Planning team'));if(!request)throw Error('Requested Date by Planning team');
+      const extra=[get('Test Start Time')?'[Excel Test Start Time] '+get('Test Start Time'):'',get('Test End Time')?'[Excel Test End Time] '+get('Test End Time'):'',get('Report date')?'[Excel Report date] '+get('Report date'):'',get('Status')?'[Excel Status] '+get('Status'):''].filter(Boolean);
+      payload={request_date:request,model:get('Model'),material:get('Material')||null,test_condition:get('Test Condition'),cr_no:get('CR No')||null,lot_no:get('Lot No')||null,test_qty:qty?Number(qty):null,production_date:optionalDate('Production Date'),reason:get('Reason for Running Sample')||null,test_status:st||null,test_result:result||null,result_before:get('Result before reliability test')||null,result_after:get('Result after reliability test')||null,cpk_review_result:get('Result before reliability test')==='Pass'?'양호':/cpk\s*fail/i.test(get('Result before reliability test'))?'보완필요':'미검토',cpk_after:get('Result after reliability test')||null,pic:get('PIC')||null,report_no:get('Report No')||null,reliability_start_date:optionalDate('Test Start Time'),remark:[get('Remark'),...extra,...warnings].filter(Boolean).join('\n')||null};record=mapDbRow(payload);
+    }catch(e){error=e.message;}
+    const duplicate=!error&&seen.has(key(record));if(!error)seen.add(key(record));return {row:i+h+2,raw,payload,record,error,warnings,duplicate,saved:false};});
+  }
+  function preview(){const box=el('workImportPanel');box.hidden=false;const valid=imported.filter(r=>!r.error&&!r.duplicate&&!r.saved);box.innerHTML='<h3>'+esc(L('일괄 등록 미리보기','Import preview','Xem trước nhập dữ liệu'))+'</h3><p>'+esc(L('기존 항목은 건너뛰며 수정하지 않습니다. 오류 행은 제외합니다. 실제 종료시간·보고일·업무 종결 상태는 비고에 보존합니다.','Existing records are skipped, never overwritten. Invalid rows are excluded. Actual end time, report date and closure status are preserved in remarks.','Bỏ qua bản ghi đã có, không ghi đè. Loại dòng lỗi. Giữ thời gian kết thúc, ngày báo cáo và trạng thái đóng trong ghi chú.'))+'</p><p>'+esc(L('등록 가능','Ready','Có thể nhập'))+': '+valid.length+'</p><div class="tablewrap"><table class="tbl"><thead><tr><th>Row</th><th>Model</th><th>CR No</th><th>'+esc(L('검토','Review','Kiểm tra'))+'</th></tr></thead><tbody>'+imported.map(r=>'<tr><td>'+r.row+'</td><td>'+esc(r.raw.Model)+'</td><td>'+esc(r.raw['CR No'])+'</td><td>'+esc(r.error?L('오류: ','Error: ','Lỗi: ')+r.error:r.saved?L('저장됨','Saved','Đã lưu'):r.duplicate?L('중복 제외','Duplicate skipped','Bỏ qua trùng lặp'):r.warnings.length?L('신규 등록 · 원문 확인: ','New record · review source: ','Bản ghi mới · kiểm tra nội dung gốc: ')+r.warnings.join(' / '):L('신규 등록','New record','Bản ghi mới'))+'</td></tr>').join('')+'</tbody></table></div><button class="btn primary" id="workImportSave" '+(!valid.length?'disabled':'')+'>'+esc(L('확인한 신규 항목 저장','Save reviewed new records','Lưu bản ghi mới đã kiểm tra'))+'</button> <button class="btn ghost" id="workImportClose">'+esc(L('닫기','Close','Đóng'))+'</button>';el('workImportSave').onclick=commitImport;el('workImportClose').onclick=()=>box.hidden=true;}
+  async function commitImport(){if(saving)return;saving=true;el('workImportSave').disabled=true;el('workImportClose').disabled=true;try{await refresh();const existing=new Set(DATA.map(key));for(const r of imported){if(r.error||r.saved||r.duplicate)continue;if(existing.has(key(r.record))){r.duplicate=true;continue;}const res=await supabaseClient.from('reliability_tests').insert(r.payload).select('*').single();if(res.error)throw res.error;r.saved=true;existing.add(key(r.record));}await refresh();message(L('일괄 등록을 완료했습니다.','Import complete.','Đã nhập dữ liệu.'));}catch(e){message(L('일괄 등록 중단: ','Import stopped: ','Dừng nhập: ')+(e.message||e));}finally{saving=false;preview();}}
+  el('workImport').onclick=()=>{el('workFile').value='';el('workFile').click();};el('workFile').onchange=async()=>{const file=el('workFile').files[0];if(!file||!leave())return;try{await refresh();imported=await readWorkbook(file);preview();}catch(e){message(e.message);}};
+  const oldBoot=bootSupabase;bootSupabase=async function(){await oldBoot();ready=true;renderWork();};
+  const oldLang=setLang;setLang=function(l){if(!leave())return;oldLang(l);message('');localStorage.setItem('sjit.work.language',l);renderWork();};
+  const oldAuth=startAuthenticated;startAuthenticated=async function(session){await oldAuth(session);if(session&&ready)showView('work');};
+  const storedLang=localStorage.getItem('sjit.work.language');if(['ko','en','vi'].includes(storedLang))setLang(storedLang);else renderWork();
+  // Render from the shared source after the existing edit modal saves a record.
+  el('manualModal')&&new MutationObserver(()=>{if(!el('manualModal').classList.contains('show'))renderWork();}).observe(el('manualModal'),{attributes:true,attributeFilter:['class']});
+  window.SJITWorkbench={flags,next,parseTable,readWorkbook,date,key,refresh,render:renderWork};
+})();
+
+
+</script>
 </body></html>
