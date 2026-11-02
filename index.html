@@ -2065,7 +2065,7 @@ async function downloadReliabilityProgressReport(no,btn){
   const today=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Ho_Chi_Minh',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
   const key=r=>{const cr=val(r['CR No']);return [cr,r.Model,r['Test Condition'],r['Requested Date by Planning team'],...(cr?[]:[r.Material,r['Lot No']])].map(x=>val(x).toLowerCase().replace(/\s+/g,' ')).join('\u001f');};
   const keys={request_date:'Requested Date by Planning team',production_date:'Production Date',pic:'PIC',test_status:'Reliability Test Status',test_result:'Reliability Test Result',reliability_start_date:'Reliability Test Start Date',reliability_expected_end_date:'Reliability Test Expected End Date',cpk_review_result:'CPK Review Result',cpk_after:'CPK After',remark:'Remark'};
-  let mode='open', ready=false, imported=[], saving=false;
+  let mode='open', ready=false, imported=[], saving=false, importing=false, importFileName='', importNotice='', importNoticeError=false;
   const editBaselines=new WeakMap();
   const changedField=e=>val(e.value)!==val(editBaselines.get(e)??e.value);
   function hasEdits(){return [...document.querySelectorAll('#workBody [data-field]')].some(changedField);}
@@ -2075,7 +2075,7 @@ async function downloadReliabilityProgressReport(no,btn){
     if(!confirm(L('저장하지 않은 수정 내용이 있습니다. 변경 내용을 버릴까요?','Discard unsaved changes?','Bỏ các thay đổi chưa lưu?')))return false;
     discardEdits();return true;
   }
-  window.addEventListener('beforeunload',e=>{if(hasEdits()){e.preventDefault();e.returnValue='';}});
+  window.addEventListener('beforeunload',e=>{if(saving||importing||hasEdits()){e.preventDefault();e.returnValue='';}});
   const norm=v=>val(v).normalize('NFKC').toLowerCase();
   function flags(r){
     const st=val(r['Reliability Test Status']),done=st==='Finished',running=st==='신뢰성 진행 중',due=val(r['Reliability Test Expected End Date']);
@@ -2095,11 +2095,19 @@ async function downloadReliabilityProgressReport(no,btn){
     .work-head{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center;margin:12px 0}.work-head h2{margin:0;color:var(--navy)}
     .work-tools{display:flex;gap:8px;flex-wrap:wrap}.work-tools select,.work-tools input{height:40px;border:1px solid var(--line);border-radius:7px;padding:8px;background:white;max-width:240px}
     .work-filters{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}.work-filters button{background:white;border:1px solid var(--line);border-radius:8px;padding:10px;color:var(--navy);cursor:pointer}.work-filters button[aria-pressed=true]{background:var(--blue);color:white}
-    .work-table{min-width:1980px;table-layout:fixed}.work-table th:first-child,.work-table td:first-child{width:220px}.work-table th:first-child{z-index:4!important}.work-table th:last-child,.work-table td:last-child{width:170px}.work-table td{vertical-align:top;white-space:normal}.work-table input,.work-table select,.work-table textarea{width:100%;min-width:110px;padding:7px;border:1px solid var(--line);border-radius:5px;font:inherit;background:white}.work-table textarea{min-width:170px;height:62px}.work-table button{margin-bottom:5px}.work-table th:first-child,.work-table td:first-child{position:sticky;left:0;background:#f2f7fc;z-index:1;min-width:180px;max-width:220px}.work-table th{z-index:2}.work-info{font-size:12px;color:var(--muted);line-height:1.6}.work-live{min-height:24px;margin:8px 0;color:var(--navy)}.work-preview{margin-top:16px;padding:14px;background:#f5f9fc;border:1px solid var(--line)}
+    .work-table{min-width:1980px;table-layout:fixed}.work-table th:first-child,.work-table td:first-child{width:220px}.work-table th:first-child{z-index:4!important}.work-table th:last-child,.work-table td:last-child{width:170px}.work-table td{vertical-align:top;white-space:normal}.work-table input,.work-table select,.work-table textarea{width:100%;min-width:110px;padding:7px;border:1px solid var(--line);border-radius:5px;font:inherit;background:white}.work-table textarea{min-width:170px;height:62px}.work-table button{margin-bottom:5px}.work-table th:first-child,.work-table td:first-child{position:sticky;left:0;background:#f2f7fc;z-index:1;min-width:180px;max-width:220px}.work-table th{z-index:2}.work-info{font-size:12px;color:var(--muted);line-height:1.6}.work-live{min-height:24px;margin:8px 0;color:var(--navy)}.import-summary{font-weight:700;margin:10px 0}.import-notice{white-space:pre-wrap;padding:12px;border:1px solid #91b9db;background:#edf6ff;border-radius:8px;margin:10px 0}.import-error{color:#a11b1b!important;background:#fff0f0!important}.work-preview{scroll-margin-top:16px;margin-bottom:16px;margin-top:16px;padding:14px;background:#f5f9fc;border:1px solid var(--line)}
   `;document.head.append(style);
-  root.innerHTML=`<div class="work-head"><h2 id="workTitle"></h2><div class="work-tools"><button class="btn ghost" id="workNew"></button><button class="btn ghost" id="workRefresh"></button><button class="btn ghost" id="workExport"></button><button class="btn primary" id="workImport"></button><input type="file" id="workFile" accept=".xlsx" hidden></div></div><p class="work-info" id="workIntro"></p><div class="work-tools"><label><span id="workPicLabel"></span> <select id="workPic"></select></label><input id="workSearch" type="search"></div><div id="workFilters" class="work-filters"></div><div id="workLive" role="status" aria-live="polite" class="work-live"></div><div class="panel tablewrap" style="max-height:65vh"><table class="tbl work-table"><thead id="workHeaders"></thead><tbody id="workBody"></tbody></table></div><div id="workImportPanel" class="work-preview" hidden></div>`;
+  root.innerHTML=`<div class="work-head"><h2 id="workTitle"></h2><div class="work-tools"><button class="btn ghost" id="workNew"></button><button class="btn ghost" id="workRefresh"></button><button class="btn ghost" id="workExport"></button><button class="btn primary" id="workImport"></button><input type="file" id="workFile" accept=".xlsx" hidden></div></div><p class="work-info" id="workIntro"></p><div class="work-tools"><label><span id="workPicLabel"></span> <select id="workPic"></select></label><input id="workSearch" type="search"></div><div id="workFilters" class="work-filters"></div><div id="workLive" role="status" aria-live="polite" class="work-live"></div><section id="workImportPanel" class="work-preview" aria-label="Excel import preview" tabindex="-1" hidden></section><div class="panel tablewrap" style="max-height:65vh"><table class="tbl work-table"><thead id="workHeaders"></thead><tbody id="workBody"></tbody></table></div>`;
   const el=id=>document.getElementById(id);
   function message(t){el('workLive').textContent=t;}
+  function importFeedback(text,error=false){
+    importNotice=text;importNoticeError=error;
+    const box=el('workImportPanel');box.hidden=false;
+    box.innerHTML='<h3>'+esc(L('엑셀 일괄 등록','Excel import','Nhập Excel'))+'</h3><p>'+esc(importFileName)+'</p><div role="'+(error?'alert':'status')+'" class="import-notice '+(error?'import-error':'')+'">'+esc(text)+'</div>';
+    box.scrollIntoView({block:'start',behavior:'smooth'});box.focus({preventScroll:true});
+  }
+  function importError(e){return [e?.message||String(e),e?.code?'Code: '+e.code:'',e?.details,e?.hint].filter(Boolean).join(' · ');}
+
   function userKey(){return 'sjit.work.pic.'+(el('userEmail')?.textContent||'anonymous');}
   function labels(){
     I18N.ko.requestDate='발의일';I18N.en.requestDate='Request date';I18N.vi.requestDate='Ngày đề nghị';
@@ -2188,15 +2196,30 @@ async function downloadReliabilityProgressReport(no,btn){
     const box=el('workImportPanel');box.hidden=false;
     for(const r of imported){if(!r.error&&dateCandidates(r).length>1)r.error=L('동일 시험이 여러 건입니다. 기존 항목을 확인하세요.','Multiple matching tests. Review existing records.','Có nhiều bài kiểm tra trùng khớp. Kiểm tra bản ghi hiện có.');r.match=!r.error?dateMatch(r):null;r.datePatch=r.match?datePatch(r,r.match):{};r.conflicts=r.match?dateConflicts(r,r.match):[];}
     const valid=imported.filter(r=>!r.error&&!r.saved&&(r.match?Object.keys(r.datePatch).length:!r.duplicate));
-    box.innerHTML='<h3>'+esc(L('엑셀 등록 및 날짜 보완 미리보기','Excel import and date preview','Xem trước nhập Excel và bổ sung ngày'))+'</h3><p>'+esc(L('발의일 = 시험 요청 날짜. 생산일 = 제품 생산 날짜. plan/Pending은 예정 정보로 그대로 보존합니다. 기존 건은 빈 날짜만 보완하며 저장된 날짜가 다르면 덮어쓰지 않습니다.','Request date is when the test was requested. Production date is when the product was made. plan/Pending remains planned information. Existing records receive missing dates only; differing dates are not overwritten.','Ngày đề nghị là ngày yêu cầu kiểm tra. Ngày sản xuất là ngày làm ra sản phẩm. Giữ nguyên plan/Pending là thông tin dự kiến. Chỉ bổ sung ngày còn trống, không ghi đè ngày khác.'))+'</p><p>'+esc(L('저장 가능','Ready to save','Có thể lưu'))+': '+valid.length+'</p><div class="tablewrap"><table class="tbl"><thead><tr><th>'+esc(L('엑셀 행','Excel row','Dòng Excel'))+'</th><th>Model</th><th>'+esc(L('발의일','Request date','Ngày đề nghị'))+'</th><th>'+esc(L('생산일 / 예정','Production / Plan','Sản xuất / Dự kiến'))+'</th><th>'+esc(L('반영 내용','Action','Nội dung cập nhật'))+'</th></tr></thead><tbody>'+imported.map(r=>'<tr><td>'+r.row+'</td><td>'+esc(r.raw.Model)+'</td><td>'+esc(r.payload.request_date||r.raw['Requested Date by Planning team'])+'</td><td>'+esc(r.payload.production_date||'—')+'</td><td>'+esc(r.error?L('오류: ','Error: ','Lỗi: ')+r.error:r.saved?L('저장됨','Saved','Đã lưu'):r.match?Object.keys(r.datePatch).length?L('기존 건: 누락 날짜 보완','Existing: fill missing dates','Bản ghi có sẵn: bổ sung ngày thiếu'):r.conflicts.length?L('날짜 차이 확인 · 기존 값 유지: ','Date differences; keep existing: ','Ngày khác nhau; giữ giá trị cũ: ')+r.conflicts.join(' / '):L('기존 건 · 변경 없음','Existing: no changes','Đã có: không thay đổi'):r.duplicate?L('중복 제외','Duplicate skipped','Bỏ qua trùng lặp'):L('신규 등록','New record','Bản ghi mới'))+'</td></tr>').join('')+'</tbody></table></div><button class="btn primary" id="workImportSave" '+(!valid.length?'disabled':'')+'>'+esc(L('확인한 신규 건·누락 날짜 저장','Save reviewed new records and missing dates','Lưu bản ghi mới và ngày còn thiếu'))+'</button> <button class="btn ghost" id="workImportClose">'+esc(L('닫기','Close','Đóng'))+'</button>';
+    box.innerHTML='<h3>'+esc(L('엑셀 등록 및 날짜 보완 미리보기','Excel import and date preview','Xem trước dữ liệu Excel và bổ sung ngày'))+'</h3><p>'+esc(L('발의일 = 시험 요청 날짜. 생산일 = 제품 생산 날짜. plan/Pending은 예정 정보로 그대로 보존합니다. 기존 건은 빈 날짜만 보완하며 저장된 날짜가 다르면 덮어쓰지 않습니다.','Request date is when the test was requested. Production date is when the product was made. plan/Pending remains planned information. Existing records receive missing dates only; differing dates are not overwritten.','Ngày đề nghị là ngày yêu cầu kiểm tra. Ngày sản xuất là ngày sản phẩm được sản xuất. Giữ nguyên plan/Pending là thông tin dự kiến. Chỉ bổ sung ngày còn trống, không ghi đè ngày khác.'))+'</p><p>'+esc(L('저장 가능','Ready to save','Có thể lưu'))+': '+valid.length+'</p><div class="tablewrap"><table class="tbl"><thead><tr><th>'+esc(L('엑셀 행','Excel row','Dòng Excel'))+'</th><th>Model</th><th>'+esc(L('발의일','Request date','Ngày đề nghị'))+'</th><th>'+esc(L('생산일 / 예정','Production / Plan','Sản xuất / Dự kiến'))+'</th><th>'+esc(L('반영 내용','Action','Nội dung cập nhật'))+'</th></tr></thead><tbody>'+imported.map(r=>'<tr><td>'+r.row+'</td><td>'+esc(r.raw.Model)+'</td><td>'+esc(r.payload.request_date||r.raw['Requested Date by Planning team'])+'</td><td>'+esc(r.payload.production_date||'—')+'</td><td>'+esc(r.error?L('오류: ','Error: ','Lỗi: ')+r.error:r.saved?L('저장됨','Saved','Đã lưu'):r.match?Object.keys(r.datePatch).length?L('기존 건: 누락 날짜 보완','Existing: fill missing dates','Bản ghi có sẵn: bổ sung ngày thiếu'):r.conflicts.length?L('날짜 차이 확인 · 기존 값 유지: ','Date differences; keep existing: ','Ngày khác nhau; giữ giá trị cũ: ')+r.conflicts.join(' / '):L('기존 건 · 변경 없음','Existing: no changes','Đã có: không thay đổi'):r.duplicate?L('중복 제외','Duplicate skipped','Bỏ qua trùng lặp'):L('신규 등록','New record','Bản ghi mới'))+'</td></tr>').join('')+'</tbody></table></div><button class="btn primary" id="workImportSave" '+(!valid.length?'disabled':'')+'>'+esc(L('확인한 신규 건·누락 날짜 저장','Save reviewed new records and missing dates','Lưu bản ghi mới và ngày còn thiếu'))+'</button> <button class="btn ghost" id="workImportClose">'+esc(L('닫기','Close','Đóng'))+'</button>';
+    const failed=imported.filter(r=>r.error||r.saveError).length;
+    const saved=imported.filter(r=>r.saved).length;
+    const skipped=imported.filter(r=>!r.error&&!r.saveError&&!r.saved&&!valid.includes(r)).length;
+    const summary=document.createElement('div');summary.className='import-summary';
+    summary.textContent=importFileName+' · '+L('전체','Total','Tổng')+' '+imported.length+' / '+L('저장 가능','Ready','Có thể lưu')+' '+valid.length+' / '+L('저장됨','Saved','Đã lưu')+' '+saved+' / '+L('제외·변경 없음','Skipped / unchanged','Bỏ qua / không đổi')+' '+skipped+' / '+L('오류','Errors','Lỗi')+' '+failed;
+    box.insertBefore(summary,box.children[1]);
+    if(importNotice){const notice=document.createElement('div');notice.className='import-notice'+(failed||importNoticeError?' import-error':'');notice.setAttribute('role',failed||importNoticeError?'alert':'status');notice.textContent=importNotice;box.insertBefore(notice,summary.nextSibling);}
+    imported.forEach((r,i)=>{if(r.error||r.saveError){const cell=box.querySelectorAll('tbody tr')[i]?.lastElementChild;if(cell){cell.textContent=r.saveError?L('저장 실패: ','Save failed: ','Lưu thất bại: ')+r.saveError:L('오류: ','Error: ','Lỗi: ')+r.error;cell.classList.add('import-error');}}});
     el('workImportSave').onclick=commitImport;el('workImportClose').onclick=()=>box.hidden=true;
+    el('workImportSave').disabled=saving||importing||!valid.length;el('workImportClose').disabled=saving||importing;
+
   }
   async function commitImport(){
-    if(saving||!leave())return;saving=true;el('workImportSave').disabled=true;el('workImportClose').disabled=true;
+    if(saving||importing||!leave())return;saving=true;el('workImportSave').disabled=true;el('workImportClose').disabled=true;
+    let activeRow=null,phase='refresh';importNoticeError=false;
+    importNotice=L('저장 중입니다. 창을 닫지 마세요.','Saving. Keep this window open.','Đang lưu dữ liệu. Vui lòng không đóng cửa sổ.');
+    imported.forEach(r=>delete r.saveError);preview();el('workImport').disabled=true;
     try{
       await refresh();const seen=new Set(DATA.map(key));
       for(const r of imported){
         if(r.error||r.saved)continue;
+        activeRow=r;phase='save';
+        message(L('저장 중 · 엑셀 행 ','Saving · Excel row ','Đang lưu · Dòng Excel ')+r.row);
         if(dateCandidates(r).length>1)throw Error(L('중복 시험을 확인한 뒤 다시 업로드하세요.','Review duplicate tests before importing again.','Kiểm tra bài kiểm tra trùng lặp trước khi nhập lại.'));const match=dateMatch(r);
         if(match){
           const fresh=await supabaseClient.from('reliability_tests').select('*').eq('id',Number(match.No)).single();if(fresh.error)throw fresh.error;
@@ -2209,12 +2232,27 @@ async function downloadReliabilityProgressReport(no,btn){
           const res=await supabaseClient.from('reliability_tests').insert(r.payload).select('*').single();if(res.error)throw res.error;r.saved=true;seen.add(key(r.record));DATA.push(mapDbRow(res.data));
         }
       }
-      await refresh();message(L('엑셀 등록과 누락 날짜 보완을 완료했습니다.','Excel import and missing-date updates completed.','Đã nhập Excel và bổ sung ngày còn thiếu.'));
-    }catch(e){message(L('저장 중단: ','Save stopped: ','Dừng lưu: ')+(e.message||e));}finally{saving=false;preview();}
+      activeRow=null;phase='refresh';await refresh();importNotice=L('엑셀 등록과 누락 날짜 보완을 완료했습니다.','Excel import and missing-date updates completed.','Đã nhập Excel và bổ sung ngày còn thiếu.');message(importNotice);
+    }catch(e){
+      importNoticeError=true;const detail=importError(e);if(activeRow)activeRow.saveError=detail;
+      importNotice=(phase==='save'?L('저장 중단 · 엑셀 행 ','Save stopped · Excel row ','Dừng lưu · Dòng Excel ')+(activeRow?.row||'')+': ':L('목록 새로고침 실패: ','List refresh failed: ','Không thể tải lại danh sách: '))+detail+'\n'+L('이미 저장된 행은 유지됩니다. 연결·권한 또는 데이터를 확인한 후 저장 버튼으로 남은 행을 재시도하세요. 응답이 끊긴 경우 목록을 새로고침해 반영 여부를 확인하세요.','Saved rows are retained. Check connection, permissions or data, then retry remaining rows. If a response was lost, refresh the list to verify the outcome.','Các dòng đã lưu được giữ lại. Kiểm tra kết nối, quyền hoặc dữ liệu rồi thử lại. Nếu mất phản hồi, tải lại danh sách để kiểm tra.');message(importNotice);
+    }finally{saving=false;el('workImport').disabled=false;preview();el('workImportPanel').scrollIntoView({block:'start',behavior:'smooth'});}
+
   }
-  el('workImport').onclick=()=>{el('workFile').value='';el('workFile').click();};el('workFile').onchange=async()=>{const file=el('workFile').files[0];if(!file||!leave())return;try{await refresh();imported=await readWorkbook(file);preview();}catch(e){message(e.message);}};
+  el('workImport').onclick=()=>{if(saving||importing)return;el('workFile').value='';el('workFile').click();};el('workFile').onchange=async()=>{
+    const file=el('workFile').files[0];if(!file||saving||importing||!leave())return;
+    importing=true;imported=[];importFileName=file.name;importNotice='';importNoticeError=false;el('workImport').disabled=true;
+    importFeedback(L('파일 분석 중입니다…','Reading workbook…','Đang đọc và kiểm tra tệp Excel…'));
+    try{
+      if(!/\.xlsx$/i.test(file.name))throw Error(L('.xlsx 파일을 선택하세요.','Choose an .xlsx file.','Chọn tệp .xlsx.'));
+      const parsed=await readWorkbook(file);await refresh();imported=parsed;
+      importNotice=imported.length?L('미리보기를 확인한 후 아래 저장 버튼을 누르세요. 기존 건은 빈 날짜만 보완합니다.','Review the preview, then click Save below. Existing records receive missing dates only.','Vui lòng kiểm tra dữ liệu xem trước rồi nhấn nút Lưu bên dưới. Bản ghi có sẵn chỉ bổ sung ngày thiếu.'):L('등록할 데이터 행이 없습니다.','No data rows to import.','Không có dòng dữ liệu để nhập.');
+      importing=false;preview();el('workImportPanel').scrollIntoView({block:'start',behavior:'smooth'});el('workImportPanel').focus({preventScroll:true});
+    }catch(e){importFeedback(L('파일을 불러오지 못했습니다: ','Could not load workbook: ','Không thể tải dữ liệu từ tệp Excel: ')+importError(e),true);}
+    finally{importing=false;el('workImport').disabled=false;}
+  };
   const oldBoot=bootSupabase;bootSupabase=async function(){await oldBoot();ready=true;renderWork();};
-  const oldLang=setLang;setLang=function(l){if(!leave())return;const selections=[...el('manualModal').querySelectorAll('select')].map(e=>[e.id,e.value]);oldLang(l);for(const [id,value] of selections)el(id).value=value;message('');localStorage.setItem('sjit.work.language',l);renderWork();if(!el('workImportPanel').hidden)preview();};
+  const oldLang=setLang;setLang=function(l){if(saving||importing||!leave())return;const selections=[...el('manualModal').querySelectorAll('select')].map(e=>[e.id,e.value]);oldLang(l);for(const [id,value] of selections)el(id).value=value;message('');localStorage.setItem('sjit.work.language',l);renderWork();if(!el('workImportPanel').hidden)preview();};
   const oldAuth=startAuthenticated;startAuthenticated=async function(session){await oldAuth(session);if(session&&ready)showView('work');};
   const storedLang=localStorage.getItem('sjit.work.language');setLang(['ko','en','vi'].includes(storedLang)?storedLang:lang);
   // Render from the shared source after the existing edit modal saves a record.
